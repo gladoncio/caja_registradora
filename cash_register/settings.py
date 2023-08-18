@@ -82,19 +82,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'cash_register.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/3.2/ref/settings/#databases
-
-# DATABASES = {
-#         'default': {
-#             'ENGINE': 'django.db.backends.mysql',
-#             'NAME': 'caja',
-#             'USER': 'gladoncio',
-#             'PASSWORD': '2910',
-#             'HOST': '192.168.18.222',
-#             'PORT': '3306',
-#         }
-#     }
 
 DATABASES = {
     'default': {
