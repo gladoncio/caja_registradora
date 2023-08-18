@@ -1,0 +1,165 @@
+{% extends 'base/nav.html' %}
+
+{% block body %}
+{% load static %}
+    <!-- Begin Page Content -->
+    <div class="container-fluid">
+
+        <!-- Page Heading -->
+        <div class="d-sm-flex align-items-center justify-content-between mb-4">
+            <h1 class="h3 mb-0 text-gray-800">Dashboard</h1>
+        </div>
+
+        <!-- Content Row -->
+        <div class="row">
+            <!-- Product Management -->
+            <div class="col-lg-12">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Gestión de Productos</h6>
+                    </div>
+                    <div class="card-body">
+                        <form>
+                            <div class="form-group">
+                                <input type="text" class="form-control form-control-lg" id="inputField" placeholder="Ingrese el código de barras, valor o monto">
+                            </div>
+                            <button type="button" class="btn btn-primary" id="addAmountButton">Agregar Monto</button>
+                            <button type="button" class="btn btn-primary" id="addBarcodeButton">Agregar por Código de Barras</button>
+
+                        </form>
+                        <div class="mt-4" id="productList">
+                            <p class="h3">Total: <span id="totalAmountDisplay">$0.00</span></p>
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Precio</th>
+                                        <th>Código de Barras</th>
+                                        <th>Foto</th> <!-- Agregamos la columna para la foto -->
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="productListBody">
+                                    <!-- Espacio para mostrar la lista de productos -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- /.container-fluid -->
+</div>
+
+<!-- End of Main Content -->
+
+<!-- Footer -->
+{% include 'base/footer.html' %}
+<!-- End of Footer -->
+
+</div>
+<!-- End of Content Wrapper -->
+{% include 'base/logout.html' %}
+</div>
+<!-- End of Page Wrapper -->
+
+<!-- Scroll to Top Button-->
+<a class="scroll-to-top rounded" href="#page-top">
+    <i class="fas fa-angle-up"></i>
+</a>
+
+<script>
+    let totalAmount = 0;
+    document.addEventListener("DOMContentLoaded", function () {
+        const productListBody = document.getElementById("productListBody");
+        const addButton = document.getElementById("addAmountButton");
+        const inputField = document.getElementById("inputField");
+        const addBarcodeButton = document.getElementById("addBarcodeButton");
+
+        addButton.addEventListener("click", function () {
+            const inputValue = inputField.value;
+            const itemRow = document.createElement("tr");
+
+            if (!isNaN(inputValue)) {
+                const amount = parseFloat(inputValue);
+                if (amount > 0) {
+                    const newRow = document.createElement("tr");
+                    newRow.innerHTML = `
+                        <td></td>
+                        <td>$${amount.toFixed(2)}</td>
+                        <td></td>
+                        <td>...</td>
+                        <td>
+                            <button class="btn btn-danger btn-sm" onclick="removeRow(this)">Eliminar</button>
+                        </td>
+                    `;
+                    productListBody.appendChild(newRow);
+                }
+            } else {
+                const [name, price] = inputValue.split("|");
+                if (name && price) {
+                    const newRow = document.createElement("tr");
+                    newRow.innerHTML = `
+                        <td>${name}</td>
+                        <td>$${parseFloat(price).toFixed(2)}</td>
+                        <td></td>
+                        <td>...</td>
+                        <td>
+                            <button class="btn btn-danger btn-sm" onclick="removeRow(this)">Eliminar</button>
+                        </td>
+                    `;
+                    productListBody.appendChild(newRow);
+                }
+            }
+
+            inputField.value = "";
+        });
+
+        window.removeRow = function(button) {
+            const row = button.closest("tr");
+            row.remove();
+        };
+    });
+
+    addBarcodeButton.addEventListener("click", async function () {
+        const inputValue = inputField.value;
+
+        const response = await fetch(`http://localhost:8000/api/busqueda/?search=${inputValue}`);
+        const data = await response.json();
+
+        if (response.ok) {
+            const product = data[0];
+
+            const newRow = document.createElement("tr");
+            newRow.innerHTML = `
+                <td>${product.nombre}</td>
+                <td>$${parseFloat(product.precio).toFixed(2)}</td>
+                <td>${product.codigo_barras}</td>
+                <td>...</td>
+                <td>
+                    <button class="btn btn-danger btn-sm" onclick="removeRow(this)">Eliminar</button>
+                </td>
+            `;
+
+            productListBody.appendChild(newRow);
+        } else {
+            console.error("Error al obtener el producto desde el API");
+        }
+
+        inputField.value = "";
+    });
+    
+    window.addEventListener('keydown',function(e) {
+        if (e.keyIdentifier=='U+000A' || e.keyIdentifier=='Enter' || e.keyCode==13) {
+            if (e.target.nodeName=='INPUT' && e.target.type=='text') {
+                e.preventDefault();
+                return false;
+            }
+        }
+    }, true);
+</script>
+
+{% endblock %}
+
+
