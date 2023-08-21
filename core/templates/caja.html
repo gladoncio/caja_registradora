@@ -2,55 +2,89 @@
 
 {% block body %}
 {% load static %}
-    <!-- Begin Page Content -->
-    <div class="container-fluid">
+<!-- Begin Page Content -->
+<div class="container-fluid">
 
-        <!-- Page Heading -->
-        <div class="d-sm-flex align-items-center justify-content-between mb-4">
-            <h1 class="h3 mb-0 text-gray-800">Dashboard</h1>
-        </div>
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Dashboard</h1>
+    </div>
 
-        <!-- Content Row -->
-        <div class="row">
-            <!-- Product Management -->
-            <div class="col-lg-12">
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Gestión de Productos</h6>
-                    </div>
-                    <div class="card-body">
-                        <form>
-                            <div class="form-group">
-                                <input type="text" class="form-control form-control-lg" id="inputField" placeholder="Ingrese el código de barras, valor o monto">
-                            </div>
-                            <button type="button" class="btn btn-primary" id="addAmountButton">Agregar Monto</button>
-                            <button type="button" class="btn btn-primary" id="addBarcodeButton">Agregar por Código de Barras</button>
-
-                        </form>
-                        <div class="mt-4" id="productList">
-                            <p class="h3">Total: <span id="totalAmountDisplay">$0.00</span></p>
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>Nombre</th>
-                                        <th>Precio</th>
-                                        <th>Código de Barras</th>
-                                        <th>Foto</th> <!-- Agregamos la columna para la foto -->
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="productListBody">
-                                    <!-- Espacio para mostrar la lista de productos -->
-                                </tbody>
-                            </table>
+    <!-- Content Row -->
+    <div class="row">
+        <!-- Product Management -->
+        <div class="col-lg-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Gestión de Productos</h6>
+                </div>
+                <div class="card-body">
+                    <form>
+                        <div class="form-group">
+                            <input type="text" class="form-control form-control-lg" id="inputField"
+                                placeholder="Ingrese el código de barras, valor o monto">
                         </div>
+                        <button type="button" class="btn btn-primary" data-toggle="modal"
+                            data-target="#addBarcodeModal">Agregar por Código de Barras</button>
+
+                    </form>
+                    <div class="mt-4" id="productList">
+                        <p class="h3">Total: <span id="totalAmountDisplay">$0.00</span></p>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Precio</th>
+                                    <th>Código de Barras</th>
+                                    <th>Foto</th>
+                                    <th>Cantidad</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productListBody">
+                                <!-- Espacio para mostrar la lista de productos -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    <!-- /.container-fluid -->
 </div>
+<!-- /.container-fluid -->
+</div>
+
+<!-- Modal -->
+<!-- Modal -->
+<div class="modal fade" id="addBarcodeModal" tabindex="-1" role="dialog" aria-labelledby="addBarcodeModalLabel" aria-hidden="true" data-keyboard="false">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addBarcodeModalLabel">Agregar por Código de Barras</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="form-group">
+                        <p>Producto: <span id="modalProductName"></span></p>
+                        <p>Cantidad Restante: <span id="modalRemainingQuantity"></span></p>
+                        <input type="number" class="form-control" id="modalQuantityField" placeholder="Cantidad">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <div class="modal-footer" id="errorModalFooter" style="display: none;">
+                    <p id="errorMessage" class="text-danger"></p>
+                </div>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="limpiarModal()">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="modalAddButton">Agregar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- End of Modal -->
 
 <!-- End of Main Content -->
 
@@ -68,97 +102,153 @@
 <a class="scroll-to-top rounded" href="#page-top">
     <i class="fas fa-angle-up"></i>
 </a>
-
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-    let totalAmount = 0;
-    document.addEventListener("DOMContentLoaded", function () {
-        const productListBody = document.getElementById("productListBody");
-        const addButton = document.getElementById("addAmountButton");
-        const inputField = document.getElementById("inputField");
-        const addBarcodeButton = document.getElementById("addBarcodeButton");
+    $(document).ready(function () {
+        let totalAmount = 0;
+        const productList = JSON.parse(localStorage.getItem('productList')) || [];
 
-        addButton.addEventListener("click", function () {
-            const inputValue = inputField.value;
-            const itemRow = document.createElement("tr");
+        function actualizarTabla() {
+            $('#productListBody').empty();
+            totalAmount = 0;
 
-            if (!isNaN(inputValue)) {
-                const amount = parseFloat(inputValue);
-                if (amount > 0) {
-                    const newRow = document.createElement("tr");
-                    newRow.innerHTML = `
-                        <td></td>
-                        <td>$${amount.toFixed(2)}</td>
-                        <td></td>
-                        <td>...</td>
-                        <td>
-                            <button class="btn btn-danger btn-sm" onclick="removeRow(this)">Eliminar</button>
-                        </td>
-                    `;
-                    productListBody.appendChild(newRow);
+            for (const producto of productList) {
+                agregarFilaProducto(producto);
+            }
+
+            $('#totalAmountDisplay').text('$' + totalAmount.toFixed(2));
+        }
+
+        function agregarFilaProducto(producto) {
+    const filaExistente = $(`#productListBody tr[data-id="${producto.id_producto}"]`);
+    
+    if (filaExistente.length > 0) {
+        // El producto ya existe, actualizar la cantidad
+        const cantidadExistente = parseInt(filaExistente.find('.cantidad-producto').text());
+        filaExistente.find('.cantidad-producto').text(cantidadExistente + 1);
+    } else {
+        // El producto no existe, agregar nueva fila
+        const nuevaFila = `
+            <tr data-id="${producto.id_producto}">
+                <td>${producto.nombre}</td>
+                <td>${producto.precio}</td>
+                <td>${producto.codigo_barras}</td>
+                <td><img src="${producto.foto}" alt="${producto.nombre}" width="50"></td>
+                <td class="cantidad-producto">1</td>
+                <td><button class="btn btn-danger btn-sm boton-remover">Eliminar</button></td>
+            </tr>
+        `;
+        $('#productListBody').append(nuevaFila);
+    }
+    totalAmount += parseFloat(producto.precio);
+    $('#totalAmountDisplay').text('$' + totalAmount.toFixed(2));
+}
+
+function obtenerDatos(terminoBusqueda, cantidad) {
+    $.ajax({
+        url: `http://127.0.0.1:8000/api/busqueda/?search=${terminoBusqueda}`,
+        method: 'GET',
+        success: function (data) {
+            if (data.length > 0) {
+                const producto = data[0];
+                const productosEnTabla = $('#productListBody tr');
+                let stockDisponible = producto.cantidad ? producto.cantidad.cantidad : 0;
+
+                productosEnTabla.each(function() {
+                    const productoEnTabla = $(this);
+                    const idProductoEnTabla = productoEnTabla.data('id');
+                    if (idProductoEnTabla === producto.id_producto) {
+                        stockDisponible -= parseInt(productoEnTabla.find('.cantidad-producto').text());
+                    }
+                });
+
+                if (stockDisponible >= cantidad) {
+                    for (let i = 0; i < cantidad; i++) {
+                        agregarFilaProducto(producto);
+                    }
+                    $('#addBarcodeModal').modal('hide');
+                } else {
+                    mostrarError('No hay suficiente stock disponible para este producto.');
                 }
             } else {
-                const [name, price] = inputValue.split("|");
-                if (name && price) {
-                    const newRow = document.createElement("tr");
-                    newRow.innerHTML = `
-                        <td>${name}</td>
-                        <td>$${parseFloat(price).toFixed(2)}</td>
-                        <td></td>
-                        <td>...</td>
-                        <td>
-                            <button class="btn btn-danger btn-sm" onclick="removeRow(this)">Eliminar</button>
-                        </td>
-                    `;
-                    productListBody.appendChild(newRow);
-                }
+                mostrarError('Producto no encontrado.');
             }
-
-            inputField.value = "";
-        });
-
-        window.removeRow = function(button) {
-            const row = button.closest("tr");
-            row.remove();
-        };
-    });
-
-    addBarcodeButton.addEventListener("click", async function () {
-        const inputValue = inputField.value;
-
-        const response = await fetch(`http://localhost:8000/api/busqueda/?search=${inputValue}`);
-        const data = await response.json();
-
-        if (response.ok) {
-            const product = data[0];
-
-            const newRow = document.createElement("tr");
-            newRow.innerHTML = `
-                <td>${product.nombre}</td>
-                <td>$${parseFloat(product.precio).toFixed(2)}</td>
-                <td>${product.codigo_barras}</td>
-                <td>...</td>
-                <td>
-                    <button class="btn btn-danger btn-sm" onclick="removeRow(this)">Eliminar</button>
-                </td>
-            `;
-
-            productListBody.appendChild(newRow);
-        } else {
-            console.error("Error al obtener el producto desde el API");
+        },
+        error: function (error) {
+            console.error('Error al obtener datos:', error);
         }
-
-        inputField.value = "";
     });
+}
+
+
+
+function mostrarError(mensaje) {
+    $('#errorMessage').text(mensaje);
+    $('#errorModalFooter').show();
+}
+
+
+
+$('#modalAddButton').click(function () {
+    const terminoBusqueda = $('#inputField').val();
+    const cantidad = parseInt($('#modalQuantityField').val());
+
+    if (terminoBusqueda && !isNaN(cantidad) && cantidad > 0) {
+        obtenerDatos(terminoBusqueda, cantidad);
+    }
+});
+
+
+function limpiarModal() {
+        $('#modalQuantityField').val('');
+        $('#errorModalFooter').hide();
+        $('#errorMessage').text('');
+    }
+
+    // Limpia el modal cada vez que se muestre
+$('#addBarcodeModal').on('show.bs.modal', function () {
+    limpiarModal();
+});
+
+        
+// Manejar el clic en el botón de eliminar
+$(document).on('click', '.boton-remover', function() {
+    const fila = $(this).closest('tr');
+    const idProducto = fila.data('id');
+    const precioProducto = parseFloat(fila.find('td:nth-child(2)').text());
     
-    window.addEventListener('keydown',function(e) {
-        if (e.keyIdentifier=='U+000A' || e.keyIdentifier=='Enter' || e.keyCode==13) {
-            if (e.target.nodeName=='INPUT' && e.target.type=='text') {
-                e.preventDefault();
-                return false;
-            }
-        }
-    }, true);
+    // Restar el valor total por la cantidad de productos
+    totalAmount -= parseFloat(fila.find('.cantidad-producto').text()) * precioProducto;
+
+    // Eliminar todas las filas con el mismo idProducto
+    $('tr[data-id="' + idProducto + '"]').remove();
+
+    // Actualizar la visualización del monto total
+    $('#totalAmountDisplay').text('$' + totalAmount.toFixed(2));
+});
+
+
+
+
+
+
+        $('#inputField').keypress(function(event) {
+    if (event.keyCode === 13) { // 13 is the key code for Enter key
+        event.preventDefault();
+        // Open the modal
+        $('#addBarcodeModal').modal('show');
+        
+        // Clear previous error message and hide error footer
+        $('#errorMessage').text('');
+        $('#errorModalFooter').hide();
+    }
+});
+
+
+        actualizarTabla();
+    });
 </script>
+
 
 {% endblock %}
 

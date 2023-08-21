@@ -7,6 +7,7 @@ class ProductoSearchAPIView(generics.ListAPIView):
     queryset = Producto.objects.all()
     serializer_class = ProductoSerializer
     filter_backends = [filters.SearchFilter]
-    search_fields = ['nombre', 'codigo_barras']  # Campos por los que se permitirá la búsqueda
+    search_fields = ['nombre', 'codigo_barras']
+
 
 

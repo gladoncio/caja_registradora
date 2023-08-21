@@ -54,3 +54,8 @@ class MyAuthForm(AuthenticationForm):
         self.fields['username'].label = False
         self.fields['password'].widget = forms.PasswordInput(attrs={'class': 'form-control form-control-lg', 'placeholder':'Password'}) 
         self.fields['password'].label = False
+
+
+
+class AddProductForm(forms.Form):
+    codigo_barras = forms.CharField(label='Código de Barras', max_length=20)
