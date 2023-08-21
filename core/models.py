@@ -27,6 +27,17 @@ class Producto(models.Model):
     descripcion = models.TextField(blank=True, null=True)
     departamento = models.ForeignKey(Departamento, on_delete=models.CASCADE, related_name='productos_departamento', blank=True, null=True)
     marca = models.ForeignKey(Marca, on_delete=models.CASCADE, blank=True, null=True)
+    TIPO_GRAMAJE_CHOICES = (
+        ('kg', 'Kilogramos'),
+        ('g', 'Gramos'),
+    )
+    tipo_gramaje = models.CharField(max_length=2, choices=TIPO_GRAMAJE_CHOICES, blank=True, null=True)
+
+    TIPO_VENTA_CHOICES = (
+        ('unidad', 'Artículo por unidad'),
+        ('gramaje', 'Artículo por gramaje'),
+    )
+    tipo_venta = models.CharField(max_length=10, choices=TIPO_VENTA_CHOICES, blank=False, null=False,default="unidad")
     
 
     def __str__(self):
@@ -36,6 +47,7 @@ class Producto(models.Model):
 class Stock(models.Model):
     producto = models.OneToOneField(Producto, on_delete=models.CASCADE, primary_key=True)
     cantidad = models.PositiveIntegerField(default=0)
+    gramaje = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return f"Cantidad de {self.producto.nombre}: {self.cantidad}"

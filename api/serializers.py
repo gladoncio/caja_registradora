@@ -4,7 +4,7 @@ from core.models import Producto, Stock
 class StockSerializer(serializers.ModelSerializer):
     class Meta:
         model = Stock
-        fields = ['cantidad']
+        fields = ['cantidad','gramaje']
 
 class ProductoSerializer(serializers.ModelSerializer):
     cantidad = StockSerializer(source='stock', read_only=True)  # Incluir la cantidad desde Stock

@@ -38,6 +38,7 @@
                                     <th>Código de Barras</th>
                                     <th>Foto</th>
                                     <th>Cantidad</th>
+                                    <th>Accion</th>
                                 </tr>
                             </thead>
                             <tbody id="productListBody">
@@ -54,39 +55,10 @@
 </div>
 
 <!-- Modal -->
-<!-- Modal -->
-<div class="modal fade" id="addBarcodeModal" tabindex="-1" role="dialog" aria-labelledby="addBarcodeModalLabel" aria-hidden="true" data-keyboard="false">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="addBarcodeModalLabel">Agregar por Código de Barras</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form>
-                    <div class="form-group">
-                        <p>Producto: <span id="modalProductName"></span></p>
-                        <p>Cantidad Restante: <span id="modalRemainingQuantity"></span></p>
-                        <input type="number" class="form-control" id="modalQuantityField" placeholder="Cantidad">
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <div class="modal-footer" id="errorModalFooter" style="display: none;">
-                    <p id="errorMessage" class="text-danger"></p>
-                </div>
-                <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="limpiarModal()">Cancelar</button>
-                <button type="button" class="btn btn-primary" id="modalAddButton">Agregar</button>
-            </div>
-        </div>
-    </div>
-</div>
+{% include 'base/modal_cantidad.html' %}
 
 <!-- End of Modal -->
 
-<!-- End of Main Content -->
 
 <!-- Footer -->
 {% include 'base/footer.html' %}
