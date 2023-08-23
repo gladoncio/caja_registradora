@@ -9,6 +9,8 @@
         <div class="d-sm-flex align-items-center justify-content-between mb-4">
             <h1 class="h3 mb-0 text-gray-800">Dashboard</h1>
         </div>
+        <!-- Agregar la lista desplegable para cambiar el tamaño del texto -->
+
 
         <!-- Content Row -->
         <div class="row">
@@ -33,6 +35,7 @@
                                                     <th>Nombre</th>
                                                     <th>Precio</th>
                                                     <th>Código de Barras</th>
+                                                    <th>Gramaje</th>
                                                     <th>Foto</th> <!-- Agregamos la columna para la foto -->
                                                 </tr>
                                             </thead>
@@ -69,6 +72,8 @@
 </a>
 
 <script>
+
+    
     const searchButton = document.getElementById('searchButton');
     const productSearchInput = document.getElementById('productSearchInput');
     const searchResults = document.getElementById('searchResults');
@@ -104,12 +109,19 @@
                     const nombreCell = row.insertCell();
                     const precioCell = row.insertCell();
                     const codigoBarrasCell = row.insertCell();
+                    const gramajeCell = row.insertCell();
                     const fotoCell = row.insertCell();  // Agregamos la celda para la foto
 
-                    nombreCell.innerHTML = `<span class="display-4">${product.nombre}</span>`;
-                    precioCell.innerHTML = `<span class="display-4">$${Math.floor(product.precio)}</span>`; // Eliminamos decimales
-                    codigoBarrasCell.innerHTML = `<span class="display-4">${product.codigo_barras}</span>`;
-                    fotoCell.innerHTML = `<img src="${product.foto}" alt="${product.nombre}" style="max-width: 100px;">`;  // Agregamos la imagen
+                nombreCell.innerHTML = `<span>${product.nombre}</span>`;
+                precioCell.innerHTML = `<span>$${Math.floor(product.precio)}</span>`;
+                codigoBarrasCell.innerHTML = `<span>${product.codigo_barras}</span>`;
+                gramajeCell.innerHTML = `<span>${product.gramaje ? product.gramaje + (product.tipo_gramaje === 'kg' ? ' kg' : ' gr') : ''}</span>`; // Display gramaje and unit
+                fotoCell.innerHTML = `<img src="${product.foto}" alt="${product.nombre}" style="max-width: 100px;">`;
+
+            // Agrega la clase de tamaño de texto al contenedor span
+            nombreCell.querySelector('span').classList.add('resize-text');
+            precioCell.querySelector('span').classList.add('resize-text');
+            codigoBarrasCell.querySelector('span').classList.add('resize-text');
                 });
             } else {
                 resultsBody.innerHTML = `<tr><td colspan="4">Producto no encontrado.</td></tr>`;
@@ -126,6 +138,22 @@
 
 
 
+</script>
+<script>
+// Obtener el elemento select y los elementos de celda que deseas cambiar de tamaño
+const textSizeSelect = document.getElementById('textSizeSelect');
+const cellsToResize = document.querySelectorAll('.resize-text');
+
+// Agregar un evento de cambio al elemento select
+textSizeSelect.addEventListener('change', function () {
+    const selectedSize = textSizeSelect.value;
+
+    // Aplicar el tamaño de texto seleccionado a las celdas
+    cellsToResize.forEach(cell => {
+        cell.classList.remove('small-text', 'medium-text', 'large-text');
+        cell.classList.add(`${selectedSize}-text`);
+    });
+});
 </script>
 
 
