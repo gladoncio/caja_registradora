@@ -55,7 +55,7 @@
                                 </tr>
                                 <!-- Modal para confirmar eliminación -->
                                 <div class="modal fade" id="eliminarModal{{ item.producto.id_producto }}" tabindex="-1" role="dialog" aria-labelledby="eliminarModalLabel{{ item.producto.id_producto }}" aria-hidden="true">
-                                    <div class="modal-dialog" role="document">
+                                    <div class="modal-dialog modal-lg" role="document">
                                         <div class="modal-content">
                                             <div class="modal-header">
                                                 <h5 class="modal-title" id="eliminarModalLabel{{ item.producto.id_producto }}">Confirmar Eliminación</h5>
@@ -90,7 +90,7 @@
 <!-- /.container-fluid -->
 </div>
 <div class="modal fade" id="modalPago" tabindex="-1" role="dialog" aria-labelledby="modalPagoLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
+    <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="modalPagoLabel">Seleccionar Monto de Pago</h5>
@@ -133,7 +133,8 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
-                <button type="button" class="btn btn-primary" id="generarVentaBtn" disabled data-toggle="modal" data-target="#confirmarVentaModal">Generar Venta</button>
+                <button type="button" class="btn btn-primary" id="generarVentaBtn" disabled>Generar Venta</button>
+                <button type="button" class="btn btn-primary" id="generarVentaManualBtn" disabled>Generar Venta Con Restante</button>
             </div>
         </div>
     </div>
@@ -141,7 +142,7 @@
 
 <!-- Modal para confirmar venta cuando queda monto pendiente -->
 <div class="modal fade" id="confirmarVentaModal" tabindex="-1" role="dialog" aria-labelledby="confirmarVentaModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
+    <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="confirmarVentaModalLabel">Confirmar Venta</h5>
@@ -150,7 +151,7 @@
                 </button>
             </div>
             <div class="modal-body">
-                <p>Aún queda un monto pendiente de $<span id="montoPendienteVenta">{{ montoPendiente }}</span>. Elige una opción de pago para el resto:</p>
+                <p>Aún queda un monto pendiente de $<span id="montoPendienteModal">{{ montoPendiente }}</span>.</p>
                 <form id="restoPaymentForm">
                     <div class="form-check">
                         <input class="form-check-input resto-payment" type="radio" name="restoPaymentOption" id="restoRadioTransferencia" value="transferencia">
@@ -215,31 +216,34 @@
     let montoPendiente = totalAmount;
 
     const montoRadios = document.querySelectorAll(".monto-radio");
-const montoPagoInput = document.getElementById("montoPago");
-const montoPendienteDisplay = document.getElementById("montoPendiente");
-const vueltoDisplay = document.getElementById("vuelto");
-const generarVentaBtn = document.getElementById("generarVentaBtn");
-const confirmarVentaBtn = document.getElementById("confirmarVentaBtn"); // Agrega esta línea
+    const montoPagoInput = document.getElementById("montoPago");
+    const montoPendienteDisplay = document.getElementById("montoPendiente");
+    const vueltoDisplay = document.getElementById("vuelto");
+    const generarVentaBtn = document.getElementById("generarVentaBtn");
+    const confirmarVentaBtn = document.getElementById("confirmarVentaBtn"); // Agrega esta línea
 
-montoRadios.forEach(function(radio) {
+    montoRadios.forEach(function(radio) {
     radio.addEventListener("change", function() {
         montoPagoInput.disabled = this.value !== "efectivo";
         montoPagoInput.value = "";
         montoPendiente = totalAmount;
         vueltoDisplay.textContent = 0;
-        montoPendienteDisplay.textContent = montoPendiente;
 
         if (this.checked && this.value !== "efectivo") {
             montoPendiente = 0;
-        }
-
-        if (this.checked) {
+            montoPendienteDisplay.textContent = montoPendiente;
             generarVentaBtn.disabled = false;
+            generarVentaManualBtn.disabled = true; // Deshabilitar el botón cuando se selecciona una opción que no sea "Efectivo"
         } else {
+            montoPendienteDisplay.textContent = montoPendiente;
             generarVentaBtn.disabled = true;
+            generarVentaManualBtn.disabled = false; // Habilitar el botón cuando se selecciona la opción "Efectivo"
         }
     });
 });
+
+
+
 
 montoPagoInput.addEventListener("input", function() {
     const montoActual = parseFloat(this.value) || 0;
@@ -254,6 +258,12 @@ montoPagoInput.addEventListener("input", function() {
     } else {
         vueltoDisplay.textContent = 0;
     }
+    if (montoPendiente > 0) {
+        generarVentaManualBtn.disabled = false; // Habilitar el botón si el monto restante no está cubierto
+    } else {
+        generarVentaManualBtn.disabled = true;
+    }
+    
     checkGenerarVentaBtnStatus();
 });
 
@@ -261,9 +271,25 @@ montoPagoInput.addEventListener("input", function() {
         return parseFloat(montoPagoInput.value) || 0;
     }
 
-    function checkGenerarVentaBtnStatus() {
-    if (montoPendiente > 0 && document.querySelector("#radioEfectivo:checked")) {
-        generarVentaBtn.disabled = false;
+function checkGenerarVentaBtnStatus() {
+    const radioEfectivo = document.querySelector("#radioEfectivo:checked");
+    const radioTransferencia = document.querySelector("#radioTransferencia:checked");
+    const radioDebito = document.querySelector("#radioDebito:checked");
+    const radioCredito = document.querySelector("#radioCredito:checked");
+
+    if (radioTransferencia || radioDebito || radioCredito) {
+        montoPendiente = 0;
+        montoPendienteDisplay.textContent = montoPendiente;
+        generarVentaBtn.disabled = false; // Habilitar el botón si se elige una opción que cubre el total
+    } else if (radioEfectivo) {
+        montoPendiente = totalAmount - getMontosSum();
+        montoPendienteDisplay.textContent = montoPendiente;
+
+        if (montoPendiente <= 0) {
+            generarVentaBtn.disabled = false; // Habilitar el botón si el monto pendiente está cubierto
+        } else {
+            generarVentaBtn.disabled = true;
+        }
     } else {
         generarVentaBtn.disabled = true;
     }
@@ -288,6 +314,21 @@ generarVentaBtn.addEventListener("click", function() {
         // Aquí puedes agregar la lógica para finalizar la venta directamente con otras opciones de pago
     }
 });
+
+generarVentaManualBtn.addEventListener("click", function() {
+    if (montoPendiente <= 0) {
+        // Aquí puedes agregar la lógica para notificar al usuario que el monto restante está cubierto
+        // y, si lo deseas, evitar que se genere la venta manualmente.
+        return;
+    }
+    // Actualizar el contenido del <span> con el valor de montoPendiente
+    const montoPendienteModal = document.getElementById("montoPendienteModal");
+    montoPendienteModal.textContent = montoPendiente;
+
+    $('#confirmarVentaModal').modal('show');
+});
+
+
 </script>
 
 
