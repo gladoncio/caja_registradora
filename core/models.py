@@ -1,5 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.utils import timezone
+
+
 
 class Usuario(AbstractUser):
     permisos = models.CharField(max_length=40, null=True, verbose_name="Permiso", default="1")
@@ -30,6 +33,8 @@ class Producto(models.Model):
     TIPO_GRAMAJE_CHOICES = (
         ('kg', 'Kilogramos'),
         ('g', 'Gramos'),
+        ('Ml', 'Mililitros'),
+        ('L', 'Litros'),
     )
     tipo_gramaje = models.CharField(max_length=2, choices=TIPO_GRAMAJE_CHOICES, blank=True, null=True)
 
@@ -48,6 +53,89 @@ class Stock(models.Model):
     producto = models.OneToOneField(Producto, on_delete=models.CASCADE, primary_key=True)
     cantidad = models.PositiveIntegerField(default=0)
     gramaje = models.PositiveIntegerField(default=0)
+    TIPO_GRAMAJE_CHOICES = (
+        ('kg', 'Kilogramos'),
+        ('g', 'Gramos'),
+    )
+    tipo_gramaje = models.CharField(max_length=2, choices=TIPO_GRAMAJE_CHOICES, blank=True, null=True)
 
     def __str__(self):
         return f"Cantidad de {self.producto.nombre}: {self.cantidad}"
+
+
+
+class CarritoItem(models.Model):
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)
+    producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
+    cantidad = models.PositiveIntegerField(default=1)
+    gramaje = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
+    fecha_agregado = models.DateTimeField(auto_now_add=True)
+        
+    def subtotal(self):
+        if self.producto.tipo_venta == 'gramaje':
+            peso_en_gramos = self.gramaje
+            if self.producto.tipo_gramaje == 'kg':
+                return peso_en_gramos * (self.producto.precio / 1000)
+            else:
+                return peso_en_gramos * self.producto.precio
+        else:
+            return self.cantidad * self.producto.precio
+        
+    def __str__(self):
+        return f"{self.cantidad} x {self.producto.nombre} para {self.usuario.username}"
+    
+class Configuracion(models.Model):
+    id = models.AutoField(primary_key=True)
+    decimales = models.PositiveIntegerField(default=2)
+    clave_anulacion = models.CharField(max_length=20)
+    idioma = models.CharField(max_length=20)
+    imprimir_opciones = (
+        ('no', 'No imprimir'),
+        ('con_corte', 'Imprimir con corte'),
+        ('sin_corte', 'Imprimir sin corte'),
+    )
+    imprimir = models.CharField(max_length=20, choices=imprimir_opciones, default='no')
+    porcentaje_iva = models.DecimalField(max_digits=5, decimal_places=2, default=0.0)
+
+    def __str__(self):
+        return 'Configuración de la Aplicación'
+
+
+
+class Venta(models.Model):
+    id = models.AutoField(primary_key=True)
+    fecha_hora = models.DateTimeField(default=timezone.now)
+    productos = models.ManyToManyField(Producto, through='VentaProducto')
+    total = models.DecimalField(max_digits=10, decimal_places=2)
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)
+    # Otros campos según tus necesidades
+
+    def __str__(self):
+        return f'Venta #{self.id} - {self.fecha_hora}'
+
+
+class VentaProducto(models.Model):
+    venta = models.ForeignKey(Venta, on_delete=models.CASCADE)
+    producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
+    cantidad = models.PositiveIntegerField(blank=True, null=True)
+    gramaje = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2)
+    # Otros campos relacionados con la venta de cada producto
+
+    def __str__(self):
+        return f'{self.producto} en Venta #{self.venta.id}'
+
+class FormaPago(models.Model):
+    venta = models.ForeignKey(Venta, on_delete=models.CASCADE)
+    # Agregar campo para el tipo de pago
+    TIPO_PAGO_CHOICES = (
+        ('efectivo', 'Efectivo'),
+        ('transferencia', 'Transferencia'),
+        ('debito', 'Débito'),
+        ('credito', 'Crédito'),
+    )
+    tipo_pago = models.CharField(max_length=20, choices=TIPO_PAGO_CHOICES)
+    monto = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def __str__(self):
+        return f'{self.tipo_pago} - Monto: {self.monto}'

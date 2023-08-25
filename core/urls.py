@@ -14,7 +14,10 @@ urlpatterns = [
     path("robots.txt",TemplateView.as_view(template_name="robots.txt", content_type="text/plain")),
     path('', views.index, name='index'),
     path('caja/', views.caja, name='caja'),
-    path('cerrar_sesion/', views.cerrar_sesion, name='cerrar_sesion'), 
+    path('cerrar_sesion/', views.cerrar_sesion, name='cerrar_sesion'),
+    path('agregar_al_carrito/<int:producto_id>/', views.agregar_al_carrito, name='agregar_al_carrito'),
+    path('eliminar/<int:item_id>/', views.eliminar_item, name='eliminar_item'),
+    path('generar_venta/', views.generar_venta, name='generar_venta'),
 ]
 
 if settings.DEBUG:

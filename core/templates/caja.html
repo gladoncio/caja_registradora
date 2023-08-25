@@ -7,7 +7,7 @@
 
     <!-- Page Heading -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Dashboard</h1>
+        <h1 class="h3 mb-0 text-gray-800">Caja</h1>
     </div>
 
     <!-- Content Row -->
@@ -19,30 +19,66 @@
                     <h6 class="m-0 font-weight-bold text-primary">Gestión de Productos</h6>
                 </div>
                 <div class="card-body">
-                    <form>
-                        <div class="form-group">
-                            <input type="text" class="form-control form-control-lg" id="inputField"
-                                placeholder="Ingrese el código de barras, valor o monto">
-                        </div>
-                        <button type="button" class="btn btn-primary" data-toggle="modal"
-                            data-target="#addBarcodeModal">Agregar por Código de Barras</button>
-
-                    </form>
                     <div class="mt-4" id="productList">
-                        <p class="h3">Total: <span id="totalAmountDisplay">$0.00</span></p>
+                        <p class="h3">Total: <span id="totalAmountDisplay">${{ total }}</span></p>
+                        <button id="generarBoletaBtn" class="btn btn-primary" data-toggle="modal" data-target="#modalPago">Generar Boleta</button>                
+                        
+                        <br>
                         <table class="table">
                             <thead>
                                 <tr>
                                     <th>Nombre</th>
-                                    <th>Precio</th>
+                                    <th>Subtotal</th>
                                     <th>Código de Barras</th>
-                                    <th>Foto</th>
                                     <th>Cantidad</th>
                                     <th>Accion</th>
                                 </tr>
                             </thead>
                             <tbody id="productListBody">
-                                <!-- Espacio para mostrar la lista de productos -->
+                                {% for item in carrito_items %}
+                                <tr>
+                                  <td>{{ item.producto.nombre }}</td>
+                                  <td>${{ item.subtotal }}</td>
+                                  {% if item.producto.codigo_barras %}
+                                  <td>{{ item.producto.codigo_barras}}</td>
+                                  {% else %}
+                                  <td>No tiene codigo de Barras</td>
+                                  {% endif %}
+                                  {% if item.cantidad != 0 %}
+                                  <td>{{ item.cantidad }}</td>
+                                  {% else %}
+                                  <td>{{ item.gramaje }} Gr</td>
+                                    {% endif %}
+                                    <td>
+                                        <a href="#" class="btn btn-danger btn-sm" data-toggle="modal" data-target="#eliminarModal{{ item.producto.id_producto }}">Eliminar</a>
+                                    </td>
+                                </tr>
+                                <!-- Modal para confirmar eliminación -->
+                                <div class="modal fade" id="eliminarModal{{ item.producto.id_producto }}" tabindex="-1" role="dialog" aria-labelledby="eliminarModalLabel{{ item.producto.id_producto }}" aria-hidden="true">
+                                    <div class="modal-dialog" role="document">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="eliminarModalLabel{{ item.producto.id_producto }}">Confirmar Eliminación</h5>
+                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                    <span aria-hidden="true">&times;</span>
+                                                </button>
+                                            </div>
+                                            <form method="post" action="{% url 'eliminar_item' item_id=item.producto.id_producto %}">
+                                                {% csrf_token %}
+                                                <div class="modal-body">
+                                                    <p>¿Estás seguro que deseas eliminar "{{ item.producto.nombre }}" del carrito?</p>
+                                                    <input type="hidden" name="item_id" value="{{ item.producto.id_producto }}">
+                                                    <input type="password" name="clave_anulacion" class="form-control" placeholder="Clave de eliminación" required>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                                                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
                             </tbody>
                         </table>
                     </div>
@@ -53,11 +89,111 @@
 </div>
 <!-- /.container-fluid -->
 </div>
+<div class="modal fade" id="modalPago" tabindex="-1" role="dialog" aria-labelledby="modalPagoLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalPagoLabel">Seleccionar Monto de Pago</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Total de Venta: ${{ total }}</p>
+                <form id="paymentForm">
+                    <div class="form-check">
+                        <input class="form-check-input monto-radio" type="radio" name="paymentOption" id="radioEfectivo" value="efectivo">
+                        <label class="form-check-label" for="radioEfectivo">
+                            Efectivo
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input monto-radio" type="radio" name="paymentOption" id="radioTransferencia" value="transferencia">
+                        <label class="form-check-label" for="radioTransferencia">
+                            Transferencia
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input monto-radio" type="radio" name="paymentOption" id="radioDebito" value="debito">
+                        <label class="form-check-label" for="radioDebito">
+                            Débito
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input monto-radio" type="radio" name="paymentOption" id="radioCredito" value="credito">
+                        <label class="form-check-label" for="radioCredito">
+                            Crédito
+                        </label>
+                    </div>
+                </form>
+                <label for="montoPago">Monto a Pagar:</label>
+                <input type="number" id="montoPago" class="form-control monto-input" disabled>
+                <p>Monto Pendiente: $<span id="montoPendiente">{{ total }}</span></p>
+                <p>Vuelto: $<span id="vuelto">0</span></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" id="generarVentaBtn" disabled data-toggle="modal" data-target="#confirmarVentaModal">Generar Venta</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-<!-- Modal -->
-{% include 'base/modal_cantidad.html' %}
+<!-- Modal para confirmar venta cuando queda monto pendiente -->
+<div class="modal fade" id="confirmarVentaModal" tabindex="-1" role="dialog" aria-labelledby="confirmarVentaModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmarVentaModalLabel">Confirmar Venta</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Aún queda un monto pendiente de $<span id="montoPendienteVenta">{{ montoPendiente }}</span>. Elige una opción de pago para el resto:</p>
+                <form id="restoPaymentForm">
+                    <div class="form-check">
+                        <input class="form-check-input resto-payment" type="radio" name="restoPaymentOption" id="restoRadioTransferencia" value="transferencia">
+                        <label class="form-check-label" for="restoRadioTransferencia">
+                            Transferencia
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input resto-payment" type="radio" name="restoPaymentOption" id="restoRadioDebito" value="debito">
+                        <label class="form-check-label" for="restoRadioDebito">
+                            Débito
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input resto-payment" type="radio" name="restoPaymentOption" id="restoRadioCredito" value="credito">
+                        <label class="form-check-label" for="restoRadioCredito">
+                            Crédito
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="confirmarVentaBtn" disabled>Confirmar Venta</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-<!-- End of Modal -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 <!-- Footer -->
@@ -74,152 +210,103 @@
 <a class="scroll-to-top rounded" href="#page-top">
     <i class="fas fa-angle-up"></i>
 </a>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-    $(document).ready(function () {
-        let totalAmount = 0;
-        const productList = JSON.parse(localStorage.getItem('productList')) || [];
+    const totalAmount = {{ total }};
+    let montoPendiente = totalAmount;
 
-        function actualizarTabla() {
-            $('#productListBody').empty();
-            totalAmount = 0;
+    const montoRadios = document.querySelectorAll(".monto-radio");
+const montoPagoInput = document.getElementById("montoPago");
+const montoPendienteDisplay = document.getElementById("montoPendiente");
+const vueltoDisplay = document.getElementById("vuelto");
+const generarVentaBtn = document.getElementById("generarVentaBtn");
+const confirmarVentaBtn = document.getElementById("confirmarVentaBtn"); // Agrega esta línea
 
-            for (const producto of productList) {
-                agregarFilaProducto(producto);
-            }
+montoRadios.forEach(function(radio) {
+    radio.addEventListener("change", function() {
+        montoPagoInput.disabled = this.value !== "efectivo";
+        montoPagoInput.value = "";
+        montoPendiente = totalAmount;
+        vueltoDisplay.textContent = 0;
+        montoPendienteDisplay.textContent = montoPendiente;
 
-            $('#totalAmountDisplay').text('$' + totalAmount.toFixed(2));
+        if (this.checked && this.value !== "efectivo") {
+            montoPendiente = 0;
         }
 
-        function agregarFilaProducto(producto) {
-    const filaExistente = $(`#productListBody tr[data-id="${producto.id_producto}"]`);
-    
-    if (filaExistente.length > 0) {
-        // El producto ya existe, actualizar la cantidad
-        const cantidadExistente = parseInt(filaExistente.find('.cantidad-producto').text());
-        filaExistente.find('.cantidad-producto').text(cantidadExistente + 1);
+        if (this.checked) {
+            generarVentaBtn.disabled = false;
+        } else {
+            generarVentaBtn.disabled = true;
+        }
+    });
+});
+
+montoPagoInput.addEventListener("input", function() {
+    const montoActual = parseFloat(this.value) || 0;
+    const montoTotal = getMontosSum();
+    montoPendiente = Math.max(totalAmount - montoTotal, 0);
+
+    montoPendienteDisplay.textContent = montoPendiente;
+
+    if (montoActual >= totalAmount) {
+        const vuelto = montoActual - totalAmount;
+        vueltoDisplay.textContent = vuelto.toFixed(2);
     } else {
-        // El producto no existe, agregar nueva fila
-        const nuevaFila = `
-            <tr data-id="${producto.id_producto}">
-                <td>${producto.nombre}</td>
-                <td>${producto.precio}</td>
-                <td>${producto.codigo_barras}</td>
-                <td><img src="${producto.foto}" alt="${producto.nombre}" width="50"></td>
-                <td class="cantidad-producto">1</td>
-                <td><button class="btn btn-danger btn-sm boton-remover">Eliminar</button></td>
-            </tr>
-        `;
-        $('#productListBody').append(nuevaFila);
+        vueltoDisplay.textContent = 0;
     }
-    totalAmount += parseFloat(producto.precio);
-    $('#totalAmountDisplay').text('$' + totalAmount.toFixed(2));
+    checkGenerarVentaBtnStatus();
+});
+
+    function getMontosSum() {
+        return parseFloat(montoPagoInput.value) || 0;
+    }
+
+    function checkGenerarVentaBtnStatus() {
+    if (montoPendiente > 0 && document.querySelector("#radioEfectivo:checked")) {
+        generarVentaBtn.disabled = false;
+    } else {
+        generarVentaBtn.disabled = true;
+    }
 }
 
-function obtenerDatos(terminoBusqueda, cantidad) {
-    $.ajax({
-        url: `http://127.0.0.1:8000/api/busqueda/?search=${terminoBusqueda}`,
-        method: 'GET',
-        success: function (data) {
-            if (data.length > 0) {
-                const producto = data[0];
-                const productosEnTabla = $('#productListBody tr');
-                let stockDisponible = producto.cantidad ? producto.cantidad.cantidad : 0;
-
-                productosEnTabla.each(function() {
-                    const productoEnTabla = $(this);
-                    const idProductoEnTabla = productoEnTabla.data('id');
-                    if (idProductoEnTabla === producto.id_producto) {
-                        stockDisponible -= parseInt(productoEnTabla.find('.cantidad-producto').text());
-                    }
-                });
-
-                if (stockDisponible >= cantidad) {
-                    for (let i = 0; i < cantidad; i++) {
-                        agregarFilaProducto(producto);
-                    }
-                    $('#addBarcodeModal').modal('hide');
-                } else {
-                    mostrarError('No hay suficiente stock disponible para este producto.');
-                }
-            } else {
-                mostrarError('Producto no encontrado.');
-            }
-        },
-        error: function (error) {
-            console.error('Error al obtener datos:', error);
+const restoPaymentRadios = document.querySelectorAll(".resto-payment");
+restoPaymentRadios.forEach(function(radio) {
+    radio.addEventListener("change", function() {
+        confirmarVentaBtn.disabled = false; // Habilitar el botón de "Confirmar Venta" cuando se elija una opción de pago
+        if (this.value !== "efectivo") {
+            montoPendiente = totalAmount; // Restaurar el monto pendiente si no se elige "Efectivo"
+            montoPendienteDisplay.textContent = montoPendiente;
         }
     });
-}
+});
 
-
-
-function mostrarError(mensaje) {
-    $('#errorMessage').text(mensaje);
-    $('#errorModalFooter').show();
-}
-
-
-
-$('#modalAddButton').click(function () {
-    const terminoBusqueda = $('#inputField').val();
-    const cantidad = parseInt($('#modalQuantityField').val());
-
-    if (terminoBusqueda && !isNaN(cantidad) && cantidad > 0) {
-        obtenerDatos(terminoBusqueda, cantidad);
+generarVentaBtn.addEventListener("click", function() {
+    const radioEfectivo = document.querySelector("#radioEfectivo:checked");
+    if (radioEfectivo && montoPendiente > 0) {
+        $('#confirmarVentaModal').modal('show');
+    } else {
+        // Aquí puedes agregar la lógica para finalizar la venta directamente con otras opciones de pago
     }
 });
-
-
-function limpiarModal() {
-        $('#modalQuantityField').val('');
-        $('#errorModalFooter').hide();
-        $('#errorMessage').text('');
-    }
-
-    // Limpia el modal cada vez que se muestre
-$('#addBarcodeModal').on('show.bs.modal', function () {
-    limpiarModal();
-});
-
-        
-// Manejar el clic en el botón de eliminar
-$(document).on('click', '.boton-remover', function() {
-    const fila = $(this).closest('tr');
-    const idProducto = fila.data('id');
-    const precioProducto = parseFloat(fila.find('td:nth-child(2)').text());
-    
-    // Restar el valor total por la cantidad de productos
-    totalAmount -= parseFloat(fila.find('.cantidad-producto').text()) * precioProducto;
-
-    // Eliminar todas las filas con el mismo idProducto
-    $('tr[data-id="' + idProducto + '"]').remove();
-
-    // Actualizar la visualización del monto total
-    $('#totalAmountDisplay').text('$' + totalAmount.toFixed(2));
-});
-
-
-
-
-
-
-        $('#inputField').keypress(function(event) {
-    if (event.keyCode === 13) { // 13 is the key code for Enter key
-        event.preventDefault();
-        // Open the modal
-        $('#addBarcodeModal').modal('show');
-        
-        // Clear previous error message and hide error footer
-        $('#errorMessage').text('');
-        $('#errorModalFooter').hide();
-    }
-});
-
-
-        actualizarTabla();
-    });
 </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 {% endblock %}
