@@ -182,21 +182,6 @@
 </div>
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 <!-- Footer -->
 {% include 'base/footer.html' %}
 <!-- End of Footer -->
@@ -214,7 +199,8 @@
 <script>
     const totalAmount = {{ total }};
     let montoPendiente = totalAmount;
-
+    let selectedPaymentValue = "";
+    let selectedPaymentValueRest = "";
     const montoRadios = document.querySelectorAll(".monto-radio");
     const montoPagoInput = document.getElementById("montoPago");
     const montoPendienteDisplay = document.getElementById("montoPendiente");
@@ -327,6 +313,49 @@ generarVentaManualBtn.addEventListener("click", function() {
 
     $('#confirmarVentaModal').modal('show');
 });
+
+
+// Evento de cambio para los radios de opción de pago
+const paymentRadios = document.querySelectorAll(".monto-radio");
+paymentRadios.forEach(function(radio) {
+    radio.addEventListener("change", function() {
+        selectedPaymentValue = this.value;
+    });
+});
+
+// Evento de cambio para los radios de opción de pago para el resto
+const paymentRestRadios = document.querySelectorAll(".resto-payment");
+paymentRestRadios.forEach(function(radio) {
+    radio.addEventListener("change", function() {
+        selectedPaymentValueRest = this.value;
+    });
+});
+
+// Evento de click para el botón Confirmar Venta
+confirmarVentaBtn.addEventListener("click", function() {
+    checkGenerarVentaBtnStatus();
+    const parametro1 = "venta_con_restante";
+    const parametro2 = selectedPaymentValueRest; // Utilizar el valor seleccionado del radio de opción de pago para el resto
+    const parametro3 = montoPendiente; // Utilizar el valor del monto restante
+    const baseUrl = "/generar_venta/";
+    const url = `${baseUrl}${parametro1}/${parametro2}/${parametro3}`;
+    window.location.href = url;
+});
+
+// Evento de click para el botón Generar Venta
+generarVentaBtn.addEventListener("click", function() {
+    checkGenerarVentaBtnStatus();
+    const parametro1 = "venta_sin_restante";
+    const parametro2 = selectedPaymentValue; // Utilizar el valor seleccionado del radio de opción de pago normal
+    const parametro3 = montoPendiente; // Utilizar el valor del monto restante
+    const baseUrl = "/generar_venta/";
+    const url = `${baseUrl}${parametro1}/${parametro2}/${parametro3}`;
+    window.location.href = url;
+});
+
+
+
+
 
 
 </script>

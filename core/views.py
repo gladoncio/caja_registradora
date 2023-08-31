@@ -92,7 +92,10 @@ def eliminar_item(request, item_id):
 
 
 @login_required
-def generar_venta(request):
+def generar_venta(request,parametro1,parametro2,parametro3):
+    print(parametro1)
+    print(parametro2)
+    print(parametro3)
     try:
         carrito_items = CarritoItem.objects.filter(usuario=request.user)
         
