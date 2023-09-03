@@ -13,8 +13,11 @@ import datetime
 from django.db.models import Sum
 from escpos.printer import Usb
 from django.http import HttpResponse
-import win32print
-import win32ui
+import requests
+import os
+import shutil
+import subprocess
+
 
 def login(request):
     return render(request, 'login.html')
@@ -423,34 +426,69 @@ def imprimir(request):
     except Exception as e:
         return HttpResponse(f"Error al imprimir: {str(e)}", status=500)  # Esto devuelve una respuesta HTTP con un mensaje de error y un estado 500 (Error interno del servidor).
     
-def abrir_caja(request):
-    try:
-        nombre_puerto = 'XP-80'
+    
 
-        # Abre el puerto de impresión
-        hprinter = win32print.OpenPrinter(nombre_puerto)
+def check_github_version():
+    url = "https://api.github.com/repos/gladoncio/caja_registradora/releases/latest"
+    response = requests.get(url)
+    data = response.json()
+    latest_version = data["tag_name"]
+    return latest_version
 
-        # Configura las propiedades de impresión
-        printer_info = win32print.GetPrinter(hprinter, 2)
-        pdc = win32ui.CreateDC()
-        pdc.CreatePrinterDC()
-        pdc.StartDoc('Documento de impresión')
-        pdc.StartPage()
+def download_latest_version(tag_name):
+    # URL del archivo ZIP de la última versión en GitHub
+    url = f"https://github.com/gladoncio/caja_registradora/archive/{tag_name}.zip"
 
-        # Texto que deseas imprimir
-        texto_a_imprimir = "Hola, Se Abrio la caja.\n"
+    # Ruta local donde se almacenará el archivo ZIP descargado
+    local_file_path = "/ruta/a/la/carpeta/temp/latest_version.zip"
+    if not os.path.exists("/ruta/a/la/carpeta/temp"):
+        os.makedirs("/ruta/a/la/carpeta/temp")
 
-        # Imprime el texto
-        pdc.TextOut(100, 100, texto_a_imprimir)
+    # Realizar la descarga
+    response = requests.get(url)
+    if response.status_code == 200:
+        with open(local_file_path, 'wb') as file:
+            file.write(response.content)
+    else:
+        raise Exception(f"No se pudo descargar la última versión. Código de estado: {response.status_code}")
 
-        # Finaliza la página y el documento
-        pdc.EndPage()
-        pdc.EndDoc()
+    # Descomprimir el archivo ZIP (puedes utilizar la biblioteca zipfile)
+    import zipfile
+    with zipfile.ZipFile(local_file_path, 'r') as zip_ref:
+        zip_ref.extractall("/path/to/your/temporary/directory/")
 
-        # Cierra el puerto de impresión
-        win32print.ClosePrinter(hprinter)
+    # Puedes realizar limpieza eliminando el archivo ZIP si es necesario
+    os.remove(local_file_path)
+
+    # Regresar la ruta local donde se descomprimió la última versión
+    return f"/path/to/your/temporary/directory/yourrepository-{tag_name}"
 
 
-        return HttpResponse("Impresión exitosa")  # Esto devuelve una respuesta HTTP con un mensaje de éxito.
-    except Exception as e:
-        return HttpResponse(f"Error al imprimir: {str(e)}", status=500) 
+def update_project(new_version_directory, project_directory):
+    # Copia los archivos de la nueva versión al directorio del proyecto
+    shutil.rmtree(project_directory)  # Borra el contenido actual del directorio del proyecto
+    shutil.copytree(new_version_directory, project_directory)  # Copia los archivos de la nueva versión al directorio del proyecto
+
+
+def update(request):
+    # Realizar copia de seguridad (puedes adaptar esto a tu proyecto)
+    os.system("cp -r D:\Documents\GitHub\caja_registradora D:\Documents\GitHub\caja_backup")
+
+    # Descargar la última versión desde GitHub (puedes usar tu función check_github_version)
+    latest_version = check_github_version()
+    new_version_directory = download_latest_version(latest_version)
+
+    # Directorio donde está ubicado tu proyecto Django
+    project_directory = "D:\Documents\GitHub\caja_registradora"  # Reemplaza con la ruta real
+
+    # Actualizar el proyecto
+    update_project(new_version_directory, project_directory)
+
+    # Reiniciar la aplicación (puedes adaptarlo a tu servidor web)
+    restart_application()
+
+    return render(request, 'update.html')
+
+def restart_application():
+    # Comando para reiniciar Gunicorn (adaptarlo según tu configuración)
+    subprocess.run(["sudo", "systemctl", "restart", "gunicorn"])

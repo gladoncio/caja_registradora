@@ -13,9 +13,12 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Update project
+    - name: Update project on VM
       run: |
-        # Coloca aquí los comandos necesarios para actualizar tu proyecto en la máquina virtual
-        # Por ejemplo, puedes clonar el repositorio y ejecutar un script de actualización.
+        # Comandos para conectarte a la máquina virtual y actualizar el proyecto
+        # Ejemplo (esto puede variar según tu configuración):
+        
+        # Conéctate a la máquina virtual por SSH
+        ssh user@your-vm-ip-address "cd /path/to/your/project && git pull"
 
     # Aquí puedes agregar pasos adicionales según tus necesidades
