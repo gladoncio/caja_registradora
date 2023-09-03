@@ -1,0 +1,21 @@
+name: Auto Update
+
+on:
+  release:
+    types:
+      - published
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Update project
+      run: |
+        # Coloca aquí los comandos necesarios para actualizar tu proyecto en la máquina virtual
+        # Por ejemplo, puedes clonar el repositorio y ejecutar un script de actualización.
+
+    # Aquí puedes agregar pasos adicionales según tus necesidades
