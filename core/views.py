@@ -408,88 +408,88 @@ def agregar_producto(request):
     return render(request, 'agregar_producto.html', {'form': form})
 
 
-# def imprimir(request):
-#     try:
-#         printer = Usb(0x1fc9, 0x2016)
+def imprimir(request):
+    try:
+        printer = Usb(0x1fc9, 0x2016)
 
-#         # Imprimir un texto de ejemplo
-#         text_to_print = "¡Hola, mundo desde Python con Xprinter XP-80C!"
-#         printer.text(text_to_print)
-#         printer.cut()
+        # Imprimir un texto de ejemplo
+        text_to_print = "¡Hola, mundo desde Python con Xprinter XP-80C!"
+        printer.text(text_to_print)
+        printer.cut()
 
-#         # Cerrar la conexión con la impresora
-#         printer.close()
+        # Cerrar la conexión con la impresora
+        printer.close()
 
 
-#         return HttpResponse("Impresión exitosa")  # Esto devuelve una respuesta HTTP con un mensaje de éxito.
-#     except Exception as e:
-#         return HttpResponse(f"Error al imprimir: {str(e)}", status=500)  # Esto devuelve una respuesta HTTP con un mensaje de error y un estado 500 (Error interno del servidor).
+        return HttpResponse("Impresión exitosa")  # Esto devuelve una respuesta HTTP con un mensaje de éxito.
+    except Exception as e:
+        return HttpResponse(f"Error al imprimir: {str(e)}", status=500)  # Esto devuelve una respuesta HTTP con un mensaje de error y un estado 500 (Error interno del servidor).
     
     
 
-# def check_github_version():
-#     url = "https://api.github.com/repos/gladoncio/caja_registradora/releases/latest"
-#     response = requests.get(url)
-#     data = response.json()
-#     latest_version = data["tag_name"]
-#     return latest_version
+def check_github_version():
+    url = "https://api.github.com/repos/gladoncio/caja_registradora/releases/latest"
+    response = requests.get(url)
+    data = response.json()
+    latest_version = data["tag_name"]
+    return latest_version
 
-# def download_latest_version(tag_name):
-#     # URL del archivo ZIP de la última versión en GitHub
-#     url = f"https://github.com/gladoncio/caja_registradora/archive/{tag_name}.zip"
+def download_latest_version(tag_name):
+    # URL del archivo ZIP de la última versión en GitHub
+    url = f"https://github.com/gladoncio/caja_registradora/archive/{tag_name}.zip"
 
-#     # Ruta local donde se almacenará el archivo ZIP descargado
-#     local_file_path = "/ruta/a/la/carpeta/temp/latest_version.zip"
-#     if not os.path.exists("/ruta/a/la/carpeta/temp"):
-#         os.makedirs("/ruta/a/la/carpeta/temp")
+    # Ruta local donde se almacenará el archivo ZIP descargado
+    local_file_path = "/ruta/a/la/carpeta/temp/latest_version.zip"
+    if not os.path.exists("/ruta/a/la/carpeta/temp"):
+        os.makedirs("/ruta/a/la/carpeta/temp")
 
-#     # Realizar la descarga
-#     response = requests.get(url)
-#     if response.status_code == 200:
-#         with open(local_file_path, 'wb') as file:
-#             file.write(response.content)
-#     else:
-#         raise Exception(f"No se pudo descargar la última versión. Código de estado: {response.status_code}")
+    # Realizar la descarga
+    response = requests.get(url)
+    if response.status_code == 200:
+        with open(local_file_path, 'wb') as file:
+            file.write(response.content)
+    else:
+        raise Exception(f"No se pudo descargar la última versión. Código de estado: {response.status_code}")
 
-#     # Descomprimir el archivo ZIP (puedes utilizar la biblioteca zipfile)
-#     import zipfile
-#     with zipfile.ZipFile(local_file_path, 'r') as zip_ref:
-#         zip_ref.extractall("/path/to/your/temporary/directory/")
+    # Descomprimir el archivo ZIP (puedes utilizar la biblioteca zipfile)
+    import zipfile
+    with zipfile.ZipFile(local_file_path, 'r') as zip_ref:
+        zip_ref.extractall("/path/to/your/temporary/directory/")
 
-#     # Puedes realizar limpieza eliminando el archivo ZIP si es necesario
-#     os.remove(local_file_path)
+    # Puedes realizar limpieza eliminando el archivo ZIP si es necesario
+    os.remove(local_file_path)
 
-#     # Regresar la ruta local donde se descomprimió la última versión
-#     return f"/path/to/your/temporary/directory/yourrepository-{tag_name}"
-
-
-# def update_project(new_version_directory, project_directory):
-#     # Copia los archivos de la nueva versión al directorio del proyecto
-#     shutil.rmtree(project_directory)  # Borra el contenido actual del directorio del proyecto
-#     shutil.copytree(new_version_directory, project_directory)  # Copia los archivos de la nueva versión al directorio del proyecto
+    # Regresar la ruta local donde se descomprimió la última versión
+    return f"/path/to/your/temporary/directory/yourrepository-{tag_name}"
 
 
-# def update(request):
-#     # Realizar copia de seguridad (puedes adaptar esto a tu proyecto)
-#     os.system("cp -r D:\Documents\GitHub\caja_registradora D:\Documents\GitHub\caja_backup")
+def update_project(new_version_directory, project_directory):
+    # Copia los archivos de la nueva versión al directorio del proyecto
+    shutil.rmtree(project_directory)  # Borra el contenido actual del directorio del proyecto
+    shutil.copytree(new_version_directory, project_directory)  # Copia los archivos de la nueva versión al directorio del proyecto
 
-#     # Descargar la última versión desde GitHub (puedes usar tu función check_github_version)
-#     latest_version = check_github_version()
-#     new_version_directory = download_latest_version(latest_version)
 
-#     # Directorio donde está ubicado tu proyecto Django
-#     project_directory = "D:\Documents\GitHub\caja_registradora"  # Reemplaza con la ruta real
+def update(request):
+    # Realizar copia de seguridad (puedes adaptar esto a tu proyecto)
+    os.system("cp -r D:\Documents\GitHub\caja_registradora D:\Documents\GitHub\caja_backup")
 
-#     # Actualizar el proyecto
-#     update_project(new_version_directory, project_directory)
+    # Descargar la última versión desde GitHub (puedes usar tu función check_github_version)
+    latest_version = check_github_version()
+    new_version_directory = download_latest_version(latest_version)
 
-#     # Reiniciar la aplicación (puedes adaptarlo a tu servidor web)
-#     restart_application()
+    # Directorio donde está ubicado tu proyecto Django
+    project_directory = "D:\Documents\GitHub\caja_registradora"  # Reemplaza con la ruta real
 
-#     return render(request, 'update.html')
+    # Actualizar el proyecto
+    update_project(new_version_directory, project_directory)
 
-# def restart_application():
-#     # Comando para reiniciar Gunicorn (adaptarlo según tu configuración)
-#     subprocess.run(["sudo", "systemctl", "restart", "gunicorn"])
+    # Reiniciar la aplicación (puedes adaptarlo a tu servidor web)
+    restart_application()
 
-# #dadasdad
+    return render(request, 'update.html')
+
+def restart_application():
+    # Comando para reiniciar Gunicorn (adaptarlo según tu configuración)
+    subprocess.run(["sudo", "systemctl", "restart", "gunicorn"])
+
+#dadasdad
