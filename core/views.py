@@ -464,9 +464,15 @@ def download_latest_version(tag_name):
 
 
 def update_project(new_version_directory, project_directory):
-    # Copia los archivos de la nueva versión al directorio del proyecto
-    shutil.rmtree(project_directory)  # Borra el contenido actual del directorio del proyecto
-    shutil.copytree(new_version_directory, project_directory)  # Copia los archivos de la nueva versión al directorio del proyecto
+    for root, _, files in os.walk(new_version_directory):
+        for file in files:
+            source_file = os.path.join(root, file)
+            relative_path = os.path.relpath(source_file, new_version_directory)
+            destination_file = os.path.join(project_directory, relative_path)
+
+            # Copiar el archivo siempre, incluso si ya existe
+            os.makedirs(os.path.dirname(destination_file), exist_ok=True)
+            shutil.copy2(source_file, destination_file)
 
 
 def update(request):
@@ -476,14 +482,14 @@ def update(request):
     # Realizar copia de seguridad del archivo views.py en una carpeta de respaldo
     backup_directory = os.path.join(current_directory, 'backup')
     os.makedirs(backup_directory, exist_ok=True)
-    os.system(f"cp -r {current_directory} {backup_directory}")
+    shutil.copy(os.path.abspath(__file__), os.path.join(backup_directory, 'views.py'))
 
     # Descargar la última versión desde GitHub (puedes usar tu función check_github_version)
     latest_version = check_github_version()
     new_version_directory = download_latest_version(latest_version)
 
-    # Directorio donde está ubicado tu proyecto Django
-    project_directory = os.path.join(current_directory, '..')  # Suponiendo que el proyecto esté en el directorio padre
+    # Directorio donde está ubicado tu proyecto Django (en este caso, la carpeta principal)
+    project_directory = current_directory
 
     # Actualizar el proyecto
     update_project(new_version_directory, project_directory)
