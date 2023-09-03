@@ -1,0 +1,57 @@
+{% extends 'base/nav.html' %}
+
+{% block body %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Editar Caja Diaria</h1>
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow mb-4">
+                <div class="card-body">
+                  {% if messages %}
+                  <div class="alert alert-danger">
+                      <ul>
+                          {% for message in messages %}
+                              <li>{{ message }}</li>
+                          {% endfor %}
+                      </ul>
+                  </div>
+                  {% endif %}
+                    <h2 class="resize-text">Monto Actual: ${{ form.instance.monto|floatformat:configuracion.decimales  }}</h2> <!-- Muestra el monto actual -->
+                    <h2 class="resize-text">Retiro Actual: ${{ form.instance.retiro|floatformat:configuracion.decimales  }}</h2> <!-- Muestra el retiro actual -->
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="form-group resize-text">
+                            <label for="monto">Agregar o Restar Monto:</label>
+                            <div class="input-group">
+                                <input type="number" id="monto" name="monto" class="form-control" min="0" step="0.01">
+                                <div class="input-group-append">
+                                    <button type="submit" name="operacion" value="sumar" class="btn btn-success">Sumar</button>
+                                    <button type="submit" name="operacion" value="restar" class="btn btn-danger">Restar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="form-group resize-text">
+                            <label for="retiro">Agregar o Restar Retiro:</label>
+                            <div class="input-group">
+                                <input type="number" id="retiro" name="retiro" class="form-control" min="0" step="0.01">
+                                <div class="input-group-append">
+                                    <button type="submit" name="operacion" value="sumar_retiro" class="btn btn-success">Sumar a Retiro</button>
+                                    <button type="submit" name="operacion" value="restar_retiro" class="btn btn-danger">Restar de Retiro</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    {% if form.errors %}
+                    <div class="alert alert-danger mt-3">
+                        Por favor, asegúrate de que la operación sea válida.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

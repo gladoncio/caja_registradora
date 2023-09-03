@@ -3,6 +3,8 @@
 {% block body %}
 {% load static %}
 <!-- Begin Page Content -->
+
+
 <div class="container-fluid">
 
     <!-- Page Heading -->
@@ -16,29 +18,29 @@
         <div class="col-lg-12">
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Gestión de Productos</h6>
+                    <h6 class="m-0 font-weight-bold text-primary resize-text">Gestión de Productos</h6>
                 </div>
                 <div class="card-body">
-                    <div class="mt-4" id="productList">
-                        <p class="h3">Total: <span id="totalAmountDisplay">${{ total }}</span></p>
+                    <div class="mt-4 resize-text" id="productList">
+                        <p class="h3">Total: <span id="totalAmountDisplay">${{ total|floatformat:configuracion.decimales }}</span></p>
                         <button id="generarBoletaBtn" class="btn btn-primary" data-toggle="modal" data-target="#modalPago">Generar Boleta</button>                
                         
                         <br>
-                        <table class="table">
+                        <table class="table resize-text">
                             <thead>
                                 <tr>
                                     <th>Nombre</th>
                                     <th>Subtotal</th>
                                     <th>Código de Barras</th>
                                     <th>Cantidad</th>
-                                    <th>Accion</th>
+                                    <th>Acción</th>
                                 </tr>
                             </thead>
                             <tbody id="productListBody">
                                 {% for item in carrito_items %}
                                 <tr>
                                   <td>{{ item.producto.nombre }}</td>
-                                  <td>${{ item.subtotal }}</td>
+                                  <td>${{ item.subtotal|floatformat:configuracion.decimales }}</td>
                                   {% if item.producto.codigo_barras %}
                                   <td>{{ item.producto.codigo_barras}}</td>
                                   {% else %}
@@ -54,7 +56,7 @@
                                     </td>
                                 </tr>
                                 <!-- Modal para confirmar eliminación -->
-                                <div class="modal fade" id="eliminarModal{{ item.producto.id_producto }}" tabindex="-1" role="dialog" aria-labelledby="eliminarModalLabel{{ item.producto.id_producto }}" aria-hidden="true">
+                                <div class="modal fade resize-text" id="eliminarModal{{ item.producto.id_producto }}" tabindex="-1" role="dialog" aria-labelledby="eliminarModalLabel{{ item.producto.id_producto }}" aria-hidden="true">
                                     <div class="modal-dialog modal-lg" role="document">
                                         <div class="modal-content">
                                             <div class="modal-header">
@@ -89,7 +91,7 @@
 </div>
 <!-- /.container-fluid -->
 </div>
-<div class="modal fade" id="modalPago" tabindex="-1" role="dialog" aria-labelledby="modalPagoLabel" aria-hidden="true">
+<div class="modal fade resize-text" id="modalPago" tabindex="-1" role="dialog" aria-labelledby="modalPagoLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -99,7 +101,7 @@
                 </button>
             </div>
             <div class="modal-body">
-                <p>Total de Venta: ${{ total }}</p>
+                <p>Total de Venta: ${{ total|floatformat:configuracion.decimales }}</p>
                 <form id="paymentForm">
                     <div class="form-check">
                         <input class="form-check-input monto-radio" type="radio" name="paymentOption" id="radioEfectivo" value="efectivo">
@@ -128,7 +130,7 @@
                 </form>
                 <label for="montoPago">Monto a Pagar:</label>
                 <input type="number" id="montoPago" class="form-control monto-input" disabled>
-                <p>Monto Pendiente: $<span id="montoPendiente">{{ total }}</span></p>
+                <p>Monto Pendiente: $<span id="montoPendiente">{{ total|floatformat:configuracion.decimales }}</span></p>
                 <p>Vuelto: $<span id="vuelto">0</span></p>
             </div>
             <div class="modal-footer">
@@ -141,7 +143,7 @@
 </div>
 
 <!-- Modal para confirmar venta cuando queda monto pendiente -->
-<div class="modal fade" id="confirmarVentaModal" tabindex="-1" role="dialog" aria-labelledby="confirmarVentaModalLabel" aria-hidden="true">
+<div class="modal fade resize-text" id="confirmarVentaModal" tabindex="-1" role="dialog" aria-labelledby="confirmarVentaModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -151,7 +153,7 @@
                 </button>
             </div>
             <div class="modal-body">
-                <p>Aún queda un monto pendiente de $<span id="montoPendienteModal">{{ montoPendiente }}</span>.</p>
+                <p>Aún queda un monto pendiente de $<span id="montoPendienteModal">{{ montoPendiente|floatformat:configuracion.decimales }}</span>.</p>
                 <form id="restoPaymentForm">
                     <div class="form-check">
                         <input class="form-check-input resto-payment" type="radio" name="restoPaymentOption" id="restoRadioTransferencia" value="transferencia">

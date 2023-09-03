@@ -1,3 +1,4 @@
+from multiprocessing import context
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from .forms import *
@@ -6,10 +7,14 @@ from django.views import View
 from django.contrib import messages
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
-from django.db.models import F
+from django.db.models import F,Q,Max
 from decimal import Decimal
-
-# Create your views here.
+import datetime
+from django.db.models import Sum
+from escpos.printer import Usb
+from django.http import HttpResponse
+import win32print
+import win32ui
 
 def login(request):
     return render(request, 'login.html')
@@ -93,9 +98,6 @@ def eliminar_item(request, item_id):
 
 @login_required
 def generar_venta(request,parametro1,parametro2,parametro3):
-    print(parametro1)
-    print(parametro2)
-    print(parametro3)
     try:
         carrito_items = CarritoItem.objects.filter(usuario=request.user)
         
@@ -117,6 +119,19 @@ def generar_venta(request,parametro1,parametro2,parametro3):
             
             # Vaciar el carrito del usuario
             carrito_items.delete()
+            parametro3 = float(parametro3)
+            total_venta = float(nueva_venta.total)
+            monto_efectivo = total_venta - parametro3
+            print(monto_efectivo)
+            if parametro1=="venta_con_restante":
+                FormaPago.objects.create(venta=nueva_venta,tipo_pago=parametro2,monto=parametro3)
+                if monto_efectivo > 0:
+                    FormaPago.objects.create(venta=nueva_venta,tipo_pago="efectivo",monto=monto_efectivo)
+            elif parametro1=="venta_sin_restante":
+                FormaPago.objects.create(venta=nueva_venta,tipo_pago=parametro2,monto=total_venta)
+
+            FormaPago.save()
+
             
             # Redireccionar a la página de éxito o factura
             return redirect('caja')  # Cambiar por la página deseada
@@ -129,3 +144,313 @@ def generar_venta(request,parametro1,parametro2,parametro3):
     
     # Redireccionar a la página del carrito si ocurre algún error
     return redirect('caja')  # Cambiar por la página del carrito
+
+
+def listar_ventas(request):
+    # Encuentra la fecha de cierre de la última transacción
+    ultima_fecha_cierre = RegistroTransaccion.objects.aggregate(Max('fecha_ingreso'))['fecha_ingreso__max']
+
+    if ultima_fecha_cierre:
+        # Filtra las ventas por la fecha de cierre de la última transacción
+        ventas = Venta.objects.filter(fecha_hora__gt=ultima_fecha_cierre)
+    else:
+        # Si no hay transacciones registradas, muestra todas las ventas
+        ventas = Venta.objects.all()
+
+    fecha = request.GET.get('fecha')
+    hora_inicio = request.GET.get('hora_inicio')
+    hora_fin = request.GET.get('hora_fin')
+
+    if fecha:
+        # Convierte la fecha de texto a un objeto de fecha
+        fecha = datetime.datetime.strptime(fecha, "%Y-%m-%d").date()
+
+        # Filtra las ventas por la fecha seleccionada
+        ventas = ventas.filter(fecha_hora__date=fecha)
+
+    if hora_inicio and hora_fin:
+        # Formatea las horas de inicio y fin en objetos de tiempo
+        hora_inicio = datetime.datetime.strptime(hora_inicio, "%H:%M").time()
+        hora_fin = datetime.datetime.strptime(hora_fin, "%H:%M").time()
+
+        # Filtra las ventas por el rango de horas
+        ventas = ventas.filter(fecha_hora__time__range=(hora_inicio, hora_fin))
+
+    return render(request, 'lista_ventas.html', {'ventas': ventas})
+
+
+
+
+def detalle_venta(request, venta_id):
+    venta = get_object_or_404(Venta, id=venta_id)
+    productos_vendidos = VentaProducto.objects.filter(venta=venta)
+    formas_pago = FormaPago.objects.filter(venta=venta)
+    return render(request, 'detalle_venta.html', {'venta': venta, 'productos_vendidos': productos_vendidos, 'formas_pago': formas_pago})
+
+
+
+
+def informe_general(request):
+    caja_diaria, created = CajaDiaria.objects.get_or_create(id=1, defaults={'monto': 0.0, 'retiro': 0.0})
+    try:
+        # Obtener la última fecha de RegistroTransaccion si existe
+        ultima_fecha_registro = RegistroTransaccion.objects.latest('fecha_ingreso').fecha_ingreso
+    except RegistroTransaccion.DoesNotExist:
+        ultima_fecha_registro = None
+
+    # Filtrar todas las ventas después de la última fecha de RegistroTransaccion si existe, o todas las ventas si no existe
+    if ultima_fecha_registro:
+        ventas_despues_ultima_fecha = Venta.objects.filter(fecha_hora__gte=ultima_fecha_registro)
+    else:
+        ventas_despues_ultima_fecha = Venta.objects.all()
+
+    # Calcular el total de ventas
+    total_ventas_despues_ultima_fecha = ventas_despues_ultima_fecha.aggregate(Sum('total'))['total__sum'] or 0
+
+    # Calcular los montos divididos
+    monto_efectivo = FormaPago.objects.filter(venta__in=ventas_despues_ultima_fecha, tipo_pago='efectivo').aggregate(Sum('monto'))['monto__sum'] or 0
+    monto_credito = FormaPago.objects.filter(venta__in=ventas_despues_ultima_fecha, tipo_pago='credito').aggregate(Sum('monto'))['monto__sum'] or 0
+    monto_debito = FormaPago.objects.filter(venta__in=ventas_despues_ultima_fecha, tipo_pago='debito').aggregate(Sum('monto'))['monto__sum'] or 0
+    monto_transferencia = FormaPago.objects.filter(venta__in=ventas_despues_ultima_fecha, tipo_pago='transferencia').aggregate(Sum('monto'))['monto__sum'] or 0
+
+    return render(request, 'informe_general.html', {
+        'total_ventas_despues_ultima_fecha': total_ventas_despues_ultima_fecha,
+        'monto_efectivo': monto_efectivo,
+        'monto_credito': monto_credito,
+        'monto_debito': monto_debito,
+        'monto_transferencia': monto_transferencia,
+        'monto_retiro' : caja_diaria.retiro,
+        'monto_caja' : caja_diaria.monto,
+    })
+
+
+
+def cerrar_caja(request):
+    caja_diaria, created = CajaDiaria.objects.get_or_create(id=1, defaults={'monto': 0.0, 'retiro': 0.0})
+    try:
+        ultima_fecha_registro = RegistroTransaccion.objects.latest('fecha_ingreso').fecha_ingreso
+    except RegistroTransaccion.DoesNotExist:
+        ultima_fecha_registro = None
+
+    if ultima_fecha_registro:
+        ventas_despues_ultima_fecha = Venta.objects.filter(fecha_hora__gte=ultima_fecha_registro)
+    else:
+        ventas_despues_ultima_fecha = Venta.objects.all()
+
+    # Calcular el total de ventas
+    total_ventas_despues_ultima_fecha = ventas_despues_ultima_fecha.aggregate(Sum('total'))['total__sum']
+
+    if total_ventas_despues_ultima_fecha is None:
+        total_ventas_despues_ultima_fecha = 0
+
+    # Calcular los montos divididos
+    monto_efectivo = FormaPago.objects.filter(venta__in=ventas_despues_ultima_fecha, tipo_pago='efectivo').aggregate(Sum('monto'))['monto__sum'] or 0
+    monto_credito = FormaPago.objects.filter(venta__in=ventas_despues_ultima_fecha, tipo_pago='credito').aggregate(Sum('monto'))['monto__sum'] or 0
+    monto_debito = FormaPago.objects.filter(venta__in=ventas_despues_ultima_fecha, tipo_pago='debito').aggregate(Sum('monto'))['monto__sum'] or 0
+    monto_transferencia = FormaPago.objects.filter(venta__in=ventas_despues_ultima_fecha, tipo_pago='transferencia').aggregate(Sum('monto'))['monto__sum'] or 0
+    
+
+    # Guardar los datos en el modelo RegistroTransaccion
+    registro = RegistroTransaccion.objects.create(
+        monto_total=total_ventas_despues_ultima_fecha,
+        monto_efectivo=monto_efectivo,
+        monto_credito=monto_credito,
+        monto_debito=monto_debito,
+        monto_transferencia=monto_transferencia,
+        monto_retiro = caja_diaria.retiro,
+        valor_caja_diaria = caja_diaria.monto,
+    )
+
+    caja_diaria_nueva = monto_efectivo + caja_diaria.monto - caja_diaria.retiro
+
+    caja_diaria.monto = caja_diaria_nueva
+    caja_diaria.retiro = 0.0
+    caja_diaria.save()
+
+    # Redirigir a la página de informe general
+    return redirect('informe_general')
+
+
+def editar_monto_caja_diaria(request):
+    # Intenta recuperar el objeto CajaDiaria con ID 1 o crea uno nuevo si no existe
+    caja_diaria, created = CajaDiaria.objects.get_or_create(id=1, defaults={'monto': 0.0, 'retiro': 0.0})
+
+    if request.method == 'POST':
+        # Obtén el valor actual del monto y el retiro antes de guardar
+        monto_anterior = caja_diaria.monto
+        retiro_anterior = caja_diaria.retiro
+
+        # Verifica si se envió una operación de suma o resta
+        operacion = request.POST.get('operacion', None)
+
+        if operacion == 'sumar':
+            # Sumar al monto existente
+            monto_a_sumar = Decimal(request.POST.get('monto', 0))
+            caja_diaria.monto += monto_a_sumar
+        elif operacion == 'restar':
+            # Restar al monto existente si es posible
+            monto_a_restar = Decimal(request.POST.get('monto', 0))
+            if monto_a_restar <= caja_diaria.monto:
+                caja_diaria.monto -= monto_a_restar
+            else:
+                # Muestra un mensaje de error si se intenta restar más de lo disponible
+                messages.error(request, 'No puedes restar más de lo que tienes disponible en la caja.')
+
+
+        if operacion == 'sumar_retiro':
+            # Sumar al retiro existente
+            retiro_a_sumar = Decimal(request.POST.get('retiro', 0))
+            caja_diaria.retiro += retiro_a_sumar
+        elif operacion == 'restar_retiro':
+            # Restar al retiro existente si es posible
+            retiro_a_restar = Decimal(request.POST.get('retiro', 0))
+            if retiro_a_restar <= caja_diaria.retiro:
+                caja_diaria.retiro -= retiro_a_restar
+            else:
+                messages.error(request, 'No puedes restar más de lo que tienes disponible en el retiro.')
+
+        # Asegúrate de que el retiro nunca sea menor que cero
+        if caja_diaria.retiro < 0:
+            caja_diaria.retiro = 0
+
+
+        caja_diaria.save()
+
+        return redirect('editar_caja_diaria')  # Reemplaza 'nombre_de_la_vista' con el nombre de la vista a la que deseas redirigir después de la edición.
+
+    else:
+        form = CajaDiariaForm(instance=caja_diaria)
+
+    return render(request, 'editar_caja_diaria.html', {'form': form})
+
+def cuadrar(request):
+    caja_diaria, created = CajaDiaria.objects.get_or_create(id=1, defaults={'monto': 0.0, 'retiro': 0.0})
+    if request.method == 'POST':
+        form = BilletesMonedasForm(request.POST)
+        if form.is_valid():
+            # Procesa los datos ingresados en el formulario
+            monedas_10 = form.cleaned_data['monedas_10']
+            monedas_50 = form.cleaned_data['monedas_50']
+            monedas_100 = form.cleaned_data['monedas_100']
+            monedas_500 = form.cleaned_data['monedas_500']
+            billetes_1000 = form.cleaned_data['billetes_1000']
+            billetes_2000 = form.cleaned_data['billetes_2000']
+            billetes_5000 = form.cleaned_data['billetes_5000']
+            billetes_10000 = form.cleaned_data['billetes_10000']
+            billetes_20000 = form.cleaned_data['billetes_20000']
+            
+            total_efectivo = (monedas_10 * 10) + (monedas_50 * 50) + (monedas_100 * 100) + (monedas_500 * 500) + (billetes_1000 * 1000) + (billetes_2000 * 2000) + (billetes_5000 * 5000) + (billetes_10000 * 10000) + (billetes_20000 * 20000)
+
+            try:
+                ultima_fecha_registro = RegistroTransaccion.objects.latest('fecha_ingreso').fecha_ingreso
+            except RegistroTransaccion.DoesNotExist:
+                ultima_fecha_registro = None
+
+            if ultima_fecha_registro:
+                ventas_despues_ultima_fecha = Venta.objects.filter(fecha_hora__gte=ultima_fecha_registro)
+            else:
+                ventas_despues_ultima_fecha = Venta.objects.all()
+
+            # Calcular el total de ventas
+            total_ventas_despues_ultima_fecha = ventas_despues_ultima_fecha.aggregate(Sum('total'))['total__sum']
+
+            if total_ventas_despues_ultima_fecha is None:
+                total_ventas_despues_ultima_fecha = 0
+
+            # Calcular los montos divididos
+            monto_efectivo = FormaPago.objects.filter(venta__in=ventas_despues_ultima_fecha, tipo_pago='efectivo').aggregate(Sum('monto'))['monto__sum'] or 0
+            monto_credito = FormaPago.objects.filter(venta__in=ventas_despues_ultima_fecha, tipo_pago='credito').aggregate(Sum('monto'))['monto__sum'] or 0
+            monto_debito = FormaPago.objects.filter(venta__in=ventas_despues_ultima_fecha, tipo_pago='debito').aggregate(Sum('monto'))['monto__sum'] or 0
+            monto_transferencia = FormaPago.objects.filter(venta__in=ventas_despues_ultima_fecha, tipo_pago='transferencia').aggregate(Sum('monto'))['monto__sum'] or 0
+
+            monto_que_deberia_dar = monto_efectivo + caja_diaria.monto - caja_diaria.retiro
+            
+            cuadre = Cuadre.objects.create(
+            usuario=request.user,  # Supongo que quieres asociar al usuario actual
+            fecha_ingreso=timezone.now(),  # Utiliza timezone.now() para obtener la fecha y hora actual
+            # Otra información que quieras guardar en el modelo Cuadre
+            )
+            
+            context = {
+                'total' : total_ventas_despues_ultima_fecha,
+                'caja_diaria': caja_diaria.monto,
+                'retiro' : caja_diaria.retiro,
+                'monto_efectivo': monto_efectivo,
+                'monto_credito': monto_credito,
+                'monto_debito': monto_debito,
+                'monto_transferencia': monto_transferencia,
+                'monto_que_deberia_dar': monto_que_deberia_dar,
+                'total_en_caja':  total_efectivo
+            }
+
+            return render(request, 'resultado_cuadre.html', context)
+    else:
+        form = BilletesMonedasForm()
+
+    return render(request, 'cerrar_caja.html', {'form': form})
+
+def agregar_producto(request):
+    if request.method == 'POST':
+        form = ProductoForm(request.POST, request.FILES)
+        if form.is_valid():
+            # Guarda el producto en la base de datos
+            producto = form.save()
+            # Agrega un mensaje de éxito
+            messages.success(request, 'Producto creado con éxito.')
+            # Redirige a la página de detalles del producto o a donde desees
+            return redirect('agregar_producto')  # Cambia 'agregar_producto' por la URL deseada
+    else:
+        form = ProductoForm()
+    
+    return render(request, 'agregar_producto.html', {'form': form})
+
+
+
+def imprimir(request):
+    try:
+        printer = Usb(0x1fc9, 0x2016)
+
+        # Imprimir un texto de ejemplo
+        text_to_print = "¡Hola, mundo desde Python con Xprinter XP-80C!"
+        printer.text(text_to_print)
+        printer.cut()
+
+        # Cerrar la conexión con la impresora
+        printer.close()
+
+
+        return HttpResponse("Impresión exitosa")  # Esto devuelve una respuesta HTTP con un mensaje de éxito.
+    except Exception as e:
+        return HttpResponse(f"Error al imprimir: {str(e)}", status=500)  # Esto devuelve una respuesta HTTP con un mensaje de error y un estado 500 (Error interno del servidor).
+    
+def abrir_caja(request):
+    try:
+        nombre_puerto = 'XP-80'
+
+        # Abre el puerto de impresión
+        hprinter = win32print.OpenPrinter(nombre_puerto)
+
+        # Configura las propiedades de impresión
+        printer_info = win32print.GetPrinter(hprinter, 2)
+        pdc = win32ui.CreateDC()
+        pdc.CreatePrinterDC()
+        pdc.StartDoc('Documento de impresión')
+        pdc.StartPage()
+
+        # Texto que deseas imprimir
+        texto_a_imprimir = "Hola, Se Abrio la caja.\n"
+
+        # Imprime el texto
+        pdc.TextOut(100, 100, texto_a_imprimir)
+
+        # Finaliza la página y el documento
+        pdc.EndPage()
+        pdc.EndDoc()
+
+        # Cierra el puerto de impresión
+        win32print.ClosePrinter(hprinter)
+
+
+        return HttpResponse("Impresión exitosa")  # Esto devuelve una respuesta HTTP con un mensaje de éxito.
+    except Exception as e:
+        return HttpResponse(f"Error al imprimir: {str(e)}", status=500) 

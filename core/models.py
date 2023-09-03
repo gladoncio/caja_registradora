@@ -96,9 +96,13 @@ class Configuracion(models.Model):
     )
     imprimir = models.CharField(max_length=20, choices=imprimir_opciones, default='no')
     porcentaje_iva = models.DecimalField(max_digits=5, decimal_places=2, default=0.0)
+    
+    # Agrega el campo para el tamaño de letra
+    tamano_letra = models.PositiveIntegerField(default=10)  # Ejemplo: tamaño de letra por defecto de 10 puntos
 
     def __str__(self):
         return 'Configuración de la Aplicación'
+
 
 
 
@@ -139,3 +143,38 @@ class FormaPago(models.Model):
 
     def __str__(self):
         return f'{self.tipo_pago} - Monto: {self.monto}'
+    
+
+class RegistroTransaccion(models.Model):
+    id = models.AutoField(primary_key=True)
+    fecha_ingreso = models.DateTimeField(default=timezone.now)
+    monto_total = models.DecimalField(max_digits=10, decimal_places=2)
+
+    # Detalles de los montos por tipo de pago
+    monto_efectivo = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    monto_credito = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    monto_debito = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    monto_transferencia = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    monto_retiro = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    
+
+    # Campo para el valor de la caja diaria
+    valor_caja_diaria = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+
+    def __str__(self):
+        return f'Registro #{self.id} - Fecha: {self.fecha_ingreso} - Monto Total: {self.monto_total}'
+    
+class CajaDiaria(models.Model):
+    id = models.AutoField(primary_key=True)
+    monto = models.DecimalField(max_digits=10, decimal_places=2,default=0.0)
+    retiro = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
+
+    def __str__(self):
+        return f'Caja Diaria #{self.id} - Monto: {self.monto}'
+    
+class Cuadre(models.Model):
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)
+    fecha_ingreso = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return f'Cierre de caja por {self.usuario.username} el {self.fecha_ingreso}'

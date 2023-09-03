@@ -10,6 +10,10 @@ admin.site.register(CarritoItem)
 admin.site.register(Configuracion)
 admin.site.register(Venta)
 admin.site.register(VentaProducto)
+admin.site.register(FormaPago)
+admin.site.register(RegistroTransaccion)
+admin.site.register(CajaDiaria)
+admin.site.register(Cuadre)
 
 
 

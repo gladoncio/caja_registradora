@@ -74,6 +74,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'core.global.variables_globales',
             ],
         },
     },
@@ -114,9 +115,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/3.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'es-es'  # Idioma en español para España (puedes cambiarlo según tu preferencia)
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/Santiago'  # Zona horaria de Chile
 
 USE_I18N = True
 

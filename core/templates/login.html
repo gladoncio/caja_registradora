@@ -23,12 +23,13 @@
     <meta name="description" content="EL login de una pagina Web.">
 	<link rel="stylesheet" type="text/css" href="{% static "css/login.css" %}">
     <link rel="icon" href="{% static "favicon.ico" %}" type="image/x-icon">
+    {% include 'base/tamaño_letra.html' %}
 </head>
 <body class="light-mode">
     <div class="loginBox"> <img class="user" src="{% static "img/banner.png" %}" height="100px" width="100px" alt="imagen perfil">
-        <h3>Inicia sesión Aquí</h3>
+        <h3 class="resize-text">Inicia sesión Aquí</h3>
         <form method="post">
-            <div class="inputBox"> 
+            <div class="inputBox resize-text"> 
                 {% csrf_token %}
                 {{form.username}}
                 {% csrf_token %}
@@ -41,4 +42,6 @@
     </div>
 </body>
 </html>
+
+
 
