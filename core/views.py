@@ -476,20 +476,17 @@ def update_project(new_version_directory, project_directory):
 
 
 def update(request):
-    # Obtener la ruta del directorio actual del archivo views.py
-    current_directory = os.path.dirname(os.path.abspath(__file__))
+    # Directorio donde está ubicado tu proyecto Django (la carpeta "caja_registradora")
+    project_directory = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
     # Realizar copia de seguridad del archivo views.py en una carpeta de respaldo
-    backup_directory = os.path.join(current_directory, 'backup')
+    backup_directory = os.path.join(project_directory, 'backup')
     os.makedirs(backup_directory, exist_ok=True)
     shutil.copy(os.path.abspath(__file__), os.path.join(backup_directory, 'views.py'))
 
     # Descargar la última versión desde GitHub (puedes usar tu función check_github_version)
     latest_version = check_github_version()
     new_version_directory = download_latest_version(latest_version)
-
-    # Directorio donde está ubicado tu proyecto Django (en este caso, la carpeta principal)
-    project_directory = current_directory
 
     # Actualizar el proyecto
     update_project(new_version_directory, project_directory)
