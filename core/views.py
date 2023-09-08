@@ -484,15 +484,14 @@ def abrir_caja(request):
         # Abre una conexión con la impresora a través de USB (sustituye los valores con los adecuados)
         printer = Usb(0x1fc9, 0x2016)
 
-        # Envía el comando para abrir la caja (sustituye 'COMANDO_PARA_ABRIR_CAJA' con el comando real)
-        comando_para_abrir_caja = b'\x1B\x70\x00\x19\xFA'
-        printer.write(comando_para_abrir_caja)
+        # Envía el comando para abrir la caja
+        printer.cashdraw(2)  # El número puede variar según la impresora
 
         # Cierra la conexión con la impresora
         printer.close()
 
         return HttpResponse("Caja abierta exitosamente")
-    except USBError as e:
+    except Exception as e:
         return HttpResponse(f"Error al abrir la caja: {str(e)}", status=500)
 
 def imprimir(request):
