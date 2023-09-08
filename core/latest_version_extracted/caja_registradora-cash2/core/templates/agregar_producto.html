@@ -1,0 +1,93 @@
+{% extends 'base/nav.html' %}
+
+{% block body %}
+<div class="container resize-text">
+    <h1 class="h3 mb-4 text-gray-800">Agregar Producto</h1>
+    <div class="modal fade resize-text" id="successModal">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="successModalLabel">Mensaje de Éxito</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    {% if messages %}
+                    <div class="alert alert-success">
+                        {% for message in messages %}
+                        {{ message }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        $(document).ready(function () {
+            $('#successModal').modal('show'); // Muestra el modal automáticamente al cargar la página
+        });
+    </script>
+    
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.media }}  {# Esto incluirá los archivos CSS y JS de los widgets de Django, como el widget de fecha #}
+        <div class="form-group">
+            {{ form.nombre.label_tag }}
+            {{ form.nombre }}
+        </div>
+        <div class="form-group">
+            {{ form.precio.label_tag }}
+            {{ form.precio }}
+        </div>
+        <div class="form-group">
+            {{ form.codigo_barras.label_tag }}
+            {{ form.codigo_barras }}
+        </div>
+        <div class="form-group">
+            {{ form.gramaje.label_tag }}
+            {{ form.gramaje }}
+        </div>
+        <div class="form-group">
+            {{ form.foto.label_tag }}
+            {{ form.foto }}
+        </div>
+        <div class="form-group">
+            {{ form.descripcion.label_tag }}
+            {{ form.descripcion }}
+        </div>
+        <div class="form-group">
+            {{ form.departamento.label_tag }}
+            {{ form.departamento }}
+        </div>
+        <div class="form-group">
+            {{ form.marca.label_tag }}
+            {{ form.marca }}
+        </div>
+        <div class="form-group">
+            {{ form.tipo_gramaje.label_tag }}
+            {{ form.tipo_gramaje }}
+        </div>
+        <div class="form-group">
+            {{ form.tipo_venta.label_tag }}
+            {{ form.tipo_venta }}
+        </div>
+        <button type="submit" class="btn btn-primary">Guardar Producto</button>
+    </form>
+    
+</div>
+<script>
+    // Captura el evento de pulsación de tecla en el formulario
+    $('#product-form').on('keydown', function(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault(); // Previene la acción predeterminada del Enter (enviar el formulario)
+        }
+    });
+
+</script>
+{% endblock %}

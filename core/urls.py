@@ -27,6 +27,7 @@ urlpatterns = [
     path('agregar_producto/', views.agregar_producto, name='agregar_producto'),
     path('imprimir/', views.imprimir, name='imprimir'),
     path('update/', views.update, name='update'),
+    path('abrir-caja/', views.abrir_caja, name='abrir-caja'),
 ]
 
 if settings.DEBUG:

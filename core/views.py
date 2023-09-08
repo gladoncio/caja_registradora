@@ -12,6 +12,7 @@ from decimal import Decimal
 import datetime
 from django.db.models import Sum
 from escpos.printer import Usb
+from usb.core import USBError
 from django.http import HttpResponse
 import requests
 import os
@@ -492,15 +493,22 @@ def update(request):
     update_project(new_version_directory, project_directory)
 
     # Reiniciar la aplicación (puedes adaptarlo a tu servidor web)
-    restart_application()
 
     return render(request, 'update.html')
 
-def restart_application():
-    # Comando para reiniciar Gunicorn (ajusta esto según tu configuración)
-    gunicorn_service_name = 'gunicorn'  # Reemplaza con el nombre de tu servicio Gunicorn
+def abrir_caja(request):
     try:
-        subprocess.run(['sudo', 'systemctl', 'restart', gunicorn_service_name], check=True)
-    except subprocess.CalledProcessError as e:
-        # Maneja errores aquí si el reinicio falla
-        print(f"Error al reiniciar Gunicorn: {e}")
+        # Abre una conexión con la impresora a través de USB (sustituye los valores con los adecuados)
+        printer = Usb(0x1fc9, 0x2016)
+
+        # Envía el comando para abrir la caja (sustituye 'COMANDO_PARA_ABRIR_CAJA' con el comando real)
+        comando_para_abrir_caja = b'\x1B\x70\x00\x19\xFA'
+        printer.write(comando_para_abrir_caja)
+
+        # Cierra la conexión con la impresora
+        printer.close()
+
+        return HttpResponse("Caja abierta exitosamente")
+    except USBError as e:
+        return HttpResponse(f"Error al abrir la caja: {str(e)}", status=500)
+

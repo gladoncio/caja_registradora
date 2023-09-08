@@ -1,0 +1,18 @@
+{% extends 'base/nav.html' %}
+
+{% block body %}
+  <!-- Tu contenido existente aquí -->
+  
+  <div class="container resize-text">
+    <h2>Ingrese la cantidad de billetes y monedas en efectivo</h2>
+    <form method="post">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit" class="btn btn-primary">Cuadrar</button>
+    </form>
+  </div>
+
+  <!-- Tu contenido existente aquí -->
+{% endblock %}
+
+Asegúrate de ajustar las etiquetas HTML y estilos según tus necesidades y de agregar las operaciones necesarias para procesar los datos ingresados en tu vista cerrar_caja. Con este formulario, los usuarios podrán ingresar la cantidad de billetes y monedas en efectivo que deseen.

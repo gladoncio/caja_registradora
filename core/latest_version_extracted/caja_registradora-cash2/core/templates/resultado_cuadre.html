@@ -1,0 +1,27 @@
+{% extends 'base/nav.html' %}
+
+{% block body %}
+<div class="container-fluid resize-text">
+    <h1 class="h3 mb-4 text-gray-800 resize-text">Informe de Cuadre</h1>
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow mb-4">
+                <div class="card-body resize-text">
+                    <p>Total Ventas: ${{ total|floatformat:configuracion.decimales }}</p>
+                    <p>Caja Diaria: ${{ caja_diaria|floatformat:configuracion.decimales }}</p>
+                    <p>Retiro: ${{ retiro|floatformat:configuracion.decimales }}</p>
+                    <p>Monto en Efectivo: ${{ monto_efectivo|floatformat:configuracion.decimales }}</p>
+                    <p>Monto en Crédito: ${{ monto_credito|floatformat:configuracion.decimales }}</p>
+                    <p>Monto en Débito: ${{ monto_debito|floatformat:configuracion.decimales }}</p>
+                    <p>Monto en Transferencia: ${{ monto_transferencia|floatformat:configuracion.decimales }}</p>
+                    <p>Monto que debería dar: ${{ monto_que_deberia_dar|floatformat:configuracion.decimales }}</p>
+                    <p>Total en Caja: ${{ total_en_caja|floatformat:configuracion.decimales }}</p>
+                    
+                    <!-- Agrega un botón para ir a la vista de cerrar caja -->
+                    <a href="{% url 'cerrar_caja' %}" class="btn btn-primary">Cerrar Caja</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

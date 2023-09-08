@@ -1,0 +1,386 @@
+{% extends 'base/nav.html' %}
+
+{% block body %}
+{% load static %}
+<!-- Begin Page Content -->
+
+
+<div class="container-fluid">
+
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Caja</h1>
+    </div>
+
+    <!-- Content Row -->
+    <div class="row">
+        <!-- Product Management -->
+        <div class="col-lg-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary resize-text">Gestión de Productos</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mt-4 resize-text" id="productList">
+                        <p class="h3">Total: <span id="totalAmountDisplay">${{ total|floatformat:configuracion.decimales }}</span></p>
+                        <button id="generarBoletaBtn" class="btn btn-primary" data-toggle="modal" data-target="#modalPago">Generar Boleta</button>                
+                        
+                        <br>
+                        <table class="table resize-text">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Subtotal</th>
+                                    <th>Código de Barras</th>
+                                    <th>Cantidad</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productListBody">
+                                {% for item in carrito_items %}
+                                <tr>
+                                  <td>{{ item.producto.nombre }}</td>
+                                  <td>${{ item.subtotal|floatformat:configuracion.decimales }}</td>
+                                  {% if item.producto.codigo_barras %}
+                                  <td>{{ item.producto.codigo_barras}}</td>
+                                  {% else %}
+                                  <td>No tiene codigo de Barras</td>
+                                  {% endif %}
+                                  {% if item.cantidad != 0 %}
+                                  <td>{{ item.cantidad }}</td>
+                                  {% else %}
+                                  <td>{{ item.gramaje }} Gr</td>
+                                    {% endif %}
+                                    <td>
+                                        <a href="#" class="btn btn-danger btn-sm" data-toggle="modal" data-target="#eliminarModal{{ item.producto.id_producto }}">Eliminar</a>
+                                    </td>
+                                </tr>
+                                <!-- Modal para confirmar eliminación -->
+                                <div class="modal fade resize-text" id="eliminarModal{{ item.producto.id_producto }}" tabindex="-1" role="dialog" aria-labelledby="eliminarModalLabel{{ item.producto.id_producto }}" aria-hidden="true">
+                                    <div class="modal-dialog modal-lg" role="document">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="eliminarModalLabel{{ item.producto.id_producto }}">Confirmar Eliminación</h5>
+                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                    <span aria-hidden="true">&times;</span>
+                                                </button>
+                                            </div>
+                                            <form method="post" action="{% url 'eliminar_item' item_id=item.producto.id_producto %}">
+                                                {% csrf_token %}
+                                                <div class="modal-body">
+                                                    <p>¿Estás seguro que deseas eliminar "{{ item.producto.nombre }}" del carrito?</p>
+                                                    <input type="hidden" name="item_id" value="{{ item.producto.id_producto }}">
+                                                    <input type="password" name="clave_anulacion" class="form-control" placeholder="Clave de eliminación" required>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                                                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- /.container-fluid -->
+</div>
+<div class="modal fade resize-text" id="modalPago" tabindex="-1" role="dialog" aria-labelledby="modalPagoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalPagoLabel">Seleccionar Monto de Pago</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Total de Venta: ${{ total|floatformat:configuracion.decimales }}</p>
+                <form id="paymentForm">
+                    <div class="form-check">
+                        <input class="form-check-input monto-radio" type="radio" name="paymentOption" id="radioEfectivo" value="efectivo">
+                        <label class="form-check-label" for="radioEfectivo">
+                            Efectivo
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input monto-radio" type="radio" name="paymentOption" id="radioTransferencia" value="transferencia">
+                        <label class="form-check-label" for="radioTransferencia">
+                            Transferencia
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input monto-radio" type="radio" name="paymentOption" id="radioDebito" value="debito">
+                        <label class="form-check-label" for="radioDebito">
+                            Débito
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input monto-radio" type="radio" name="paymentOption" id="radioCredito" value="credito">
+                        <label class="form-check-label" for="radioCredito">
+                            Crédito
+                        </label>
+                    </div>
+                </form>
+                <label for="montoPago">Monto a Pagar:</label>
+                <input type="number" id="montoPago" class="form-control monto-input" disabled>
+                <p>Monto Pendiente: $<span id="montoPendiente">{{ total|floatformat:configuracion.decimales }}</span></p>
+                <p>Vuelto: $<span id="vuelto">0</span></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" id="generarVentaBtn" disabled>Generar Venta</button>
+                <button type="button" class="btn btn-primary" id="generarVentaManualBtn" disabled>Generar Venta Con Restante</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para confirmar venta cuando queda monto pendiente -->
+<div class="modal fade resize-text" id="confirmarVentaModal" tabindex="-1" role="dialog" aria-labelledby="confirmarVentaModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmarVentaModalLabel">Confirmar Venta</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Aún queda un monto pendiente de $<span id="montoPendienteModal">{{ montoPendiente|floatformat:configuracion.decimales }}</span>.</p>
+                <form id="restoPaymentForm">
+                    <div class="form-check">
+                        <input class="form-check-input resto-payment" type="radio" name="restoPaymentOption" id="restoRadioTransferencia" value="transferencia">
+                        <label class="form-check-label" for="restoRadioTransferencia">
+                            Transferencia
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input resto-payment" type="radio" name="restoPaymentOption" id="restoRadioDebito" value="debito">
+                        <label class="form-check-label" for="restoRadioDebito">
+                            Débito
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input resto-payment" type="radio" name="restoPaymentOption" id="restoRadioCredito" value="credito">
+                        <label class="form-check-label" for="restoRadioCredito">
+                            Crédito
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="confirmarVentaBtn" disabled>Confirmar Venta</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Footer -->
+{% include 'base/footer.html' %}
+<!-- End of Footer -->
+
+</div>
+<!-- End of Content Wrapper -->
+{% include 'base/logout.html' %}
+</div>
+<!-- End of Page Wrapper -->
+
+<!-- Scroll to Top Button-->
+<a class="scroll-to-top rounded" href="#page-top">
+    <i class="fas fa-angle-up"></i>
+</a>
+<script>
+    const totalAmount = {{ total }};
+    let montoPendiente = totalAmount;
+    let selectedPaymentValue = "";
+    let selectedPaymentValueRest = "";
+    const montoRadios = document.querySelectorAll(".monto-radio");
+    const montoPagoInput = document.getElementById("montoPago");
+    const montoPendienteDisplay = document.getElementById("montoPendiente");
+    const vueltoDisplay = document.getElementById("vuelto");
+    const generarVentaBtn = document.getElementById("generarVentaBtn");
+    const confirmarVentaBtn = document.getElementById("confirmarVentaBtn"); // Agrega esta línea
+
+    montoRadios.forEach(function(radio) {
+    radio.addEventListener("change", function() {
+        montoPagoInput.disabled = this.value !== "efectivo";
+        montoPagoInput.value = "";
+        montoPendiente = totalAmount;
+        vueltoDisplay.textContent = 0;
+
+        if (this.checked && this.value !== "efectivo") {
+            montoPendiente = 0;
+            montoPendienteDisplay.textContent = montoPendiente;
+            generarVentaBtn.disabled = false;
+            generarVentaManualBtn.disabled = true; // Deshabilitar el botón cuando se selecciona una opción que no sea "Efectivo"
+        } else {
+            montoPendienteDisplay.textContent = montoPendiente;
+            generarVentaBtn.disabled = true;
+            generarVentaManualBtn.disabled = false; // Habilitar el botón cuando se selecciona la opción "Efectivo"
+        }
+    });
+});
+
+
+
+
+montoPagoInput.addEventListener("input", function() {
+    const montoActual = parseFloat(this.value) || 0;
+    const montoTotal = getMontosSum();
+    montoPendiente = Math.max(totalAmount - montoTotal, 0);
+
+    montoPendienteDisplay.textContent = montoPendiente;
+
+    if (montoActual >= totalAmount) {
+        const vuelto = montoActual - totalAmount;
+        vueltoDisplay.textContent = vuelto.toFixed(2);
+    } else {
+        vueltoDisplay.textContent = 0;
+    }
+    if (montoPendiente > 0) {
+        generarVentaManualBtn.disabled = false; // Habilitar el botón si el monto restante no está cubierto
+    } else {
+        generarVentaManualBtn.disabled = true;
+    }
+    
+    checkGenerarVentaBtnStatus();
+});
+
+    function getMontosSum() {
+        return parseFloat(montoPagoInput.value) || 0;
+    }
+
+function checkGenerarVentaBtnStatus() {
+    const radioEfectivo = document.querySelector("#radioEfectivo:checked");
+    const radioTransferencia = document.querySelector("#radioTransferencia:checked");
+    const radioDebito = document.querySelector("#radioDebito:checked");
+    const radioCredito = document.querySelector("#radioCredito:checked");
+
+    if (radioTransferencia || radioDebito || radioCredito) {
+        montoPendiente = 0;
+        montoPendienteDisplay.textContent = montoPendiente;
+        generarVentaBtn.disabled = false; // Habilitar el botón si se elige una opción que cubre el total
+    } else if (radioEfectivo) {
+        montoPendiente = totalAmount - getMontosSum();
+        montoPendienteDisplay.textContent = montoPendiente;
+
+        if (montoPendiente <= 0) {
+            generarVentaBtn.disabled = false; // Habilitar el botón si el monto pendiente está cubierto
+        } else {
+            generarVentaBtn.disabled = true;
+        }
+    } else {
+        generarVentaBtn.disabled = true;
+    }
+}
+
+const restoPaymentRadios = document.querySelectorAll(".resto-payment");
+restoPaymentRadios.forEach(function(radio) {
+    radio.addEventListener("change", function() {
+        confirmarVentaBtn.disabled = false; // Habilitar el botón de "Confirmar Venta" cuando se elija una opción de pago
+        if (this.value !== "efectivo") {
+            montoPendiente = totalAmount; // Restaurar el monto pendiente si no se elige "Efectivo"
+            montoPendienteDisplay.textContent = montoPendiente;
+        }
+    });
+});
+
+generarVentaBtn.addEventListener("click", function() {
+    const radioEfectivo = document.querySelector("#radioEfectivo:checked");
+    if (radioEfectivo && montoPendiente > 0) {
+        $('#confirmarVentaModal').modal('show');
+    } else {
+        // Aquí puedes agregar la lógica para finalizar la venta directamente con otras opciones de pago
+    }
+});
+
+generarVentaManualBtn.addEventListener("click", function() {
+    if (montoPendiente <= 0) {
+        // Aquí puedes agregar la lógica para notificar al usuario que el monto restante está cubierto
+        // y, si lo deseas, evitar que se genere la venta manualmente.
+        return;
+    }
+    // Actualizar el contenido del <span> con el valor de montoPendiente
+    const montoPendienteModal = document.getElementById("montoPendienteModal");
+    montoPendienteModal.textContent = montoPendiente;
+
+    $('#confirmarVentaModal').modal('show');
+});
+
+
+// Evento de cambio para los radios de opción de pago
+const paymentRadios = document.querySelectorAll(".monto-radio");
+paymentRadios.forEach(function(radio) {
+    radio.addEventListener("change", function() {
+        selectedPaymentValue = this.value;
+    });
+});
+
+// Evento de cambio para los radios de opción de pago para el resto
+const paymentRestRadios = document.querySelectorAll(".resto-payment");
+paymentRestRadios.forEach(function(radio) {
+    radio.addEventListener("change", function() {
+        selectedPaymentValueRest = this.value;
+    });
+});
+
+// Evento de click para el botón Confirmar Venta
+confirmarVentaBtn.addEventListener("click", function() {
+    checkGenerarVentaBtnStatus();
+    const parametro1 = "venta_con_restante";
+    const parametro2 = selectedPaymentValueRest; // Utilizar el valor seleccionado del radio de opción de pago para el resto
+    const parametro3 = montoPendiente; // Utilizar el valor del monto restante
+    const baseUrl = "/generar_venta/";
+    const url = `${baseUrl}${parametro1}/${parametro2}/${parametro3}`;
+    window.location.href = url;
+});
+
+// Evento de click para el botón Generar Venta
+generarVentaBtn.addEventListener("click", function() {
+    checkGenerarVentaBtnStatus();
+    const parametro1 = "venta_sin_restante";
+    const parametro2 = selectedPaymentValue; // Utilizar el valor seleccionado del radio de opción de pago normal
+    const parametro3 = montoPendiente; // Utilizar el valor del monto restante
+    const baseUrl = "/generar_venta/";
+    const url = `${baseUrl}${parametro1}/${parametro2}/${parametro3}`;
+    window.location.href = url;
+});
+
+
+
+
+
+
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{% endblock %}
+
+

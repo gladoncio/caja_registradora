@@ -1,0 +1,47 @@
+{% load static %}
+{% if messages %}
+{% for message in messages%}
+<div class="notifi">
+    {{message}}
+</div>
+{% endfor%}
+{%endif%}
+{% if form.non_field_errors %}
+        {% for error in form.non_field_errors %}
+        <div class="notifi">
+             ingreso un dato incorrecto
+        </div>
+        {% endfor %}
+      </div>
+ {% endif %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<title>Login Caja Registradora</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="EL login de una pagina Web.">
+	<link rel="stylesheet" type="text/css" href="{% static "css/login.css" %}">
+    <link rel="icon" href="{% static "favicon.ico" %}" type="image/x-icon">
+    {% include 'base/tamaño_letra.html' %}
+</head>
+<body class="light-mode">
+    <div class="loginBox"> <img class="user" src="{% static "img/banner.png" %}" height="100px" width="100px" alt="imagen perfil">
+        <h3 class="resize-text">Inicia sesión Aquí</h3>
+        <form method="post">
+            <div class="inputBox resize-text"> 
+                {% csrf_token %}
+                {{form.username}}
+                {% csrf_token %}
+                {{form.password}}
+            </div> 
+            <input type="submit" name="" value="Login">
+        </form> 
+
+        
+    </div>
+</body>
+</html>
+
+
+
