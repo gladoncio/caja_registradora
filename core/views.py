@@ -409,23 +409,6 @@ def agregar_producto(request):
     
     return render(request, 'agregar_producto.html', {'form': form})
 
-
-def imprimir(request):
-    try:
-        printer = Usb(0x1fc9, 0x2016)
-
-        # Imprimir un texto de ejemplo
-        text_to_print = "¡Hola, mundo desde Python con Xprinter XP-80C!"
-        printer.text(text_to_print)
-        printer.cut()
-
-        # Cerrar la conexión con la impresora
-        printer.close()
-
-
-        return HttpResponse("Impresión exitosa")  # Esto devuelve una respuesta HTTP con un mensaje de éxito.
-    except Exception as e:
-        return HttpResponse(f"Error al imprimir: {str(e)}", status=500)  # Esto devuelve una respuesta HTTP con un mensaje de error y un estado 500 (Error interno del servidor).
     
     
 
@@ -512,3 +495,19 @@ def abrir_caja(request):
     except USBError as e:
         return HttpResponse(f"Error al abrir la caja: {str(e)}", status=500)
 
+def imprimir(request):
+    try:
+        printer = Usb(0x1fc9, 0x2016)
+
+        # Imprimir un texto de ejemplo
+        text_to_print = "¡Hola, mundo desde Python con Xprinter XP-80C!"
+        printer.text(text_to_print)
+        printer.cut()
+
+        # Cerrar la conexión con la impresora
+        printer.close()
+
+
+        return HttpResponse("Impresión exitosa")  # Esto devuelve una respuesta HTTP con un mensaje de éxito.
+    except Exception as e:
+        return HttpResponse(f"Error al imprimir: {str(e)}", status=500)  # Esto devuelve una respuesta HTTP con un mensaje de error y un estado 500 (Error interno del servidor).
