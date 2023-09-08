@@ -75,6 +75,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'core.global.variables_globales',
+                'core.funciones.verificar_actualizacion',
             ],
         },
     },

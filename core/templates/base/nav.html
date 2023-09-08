@@ -58,7 +58,7 @@
             <li class="nav-item active">
                 <a class="nav-link" href="{% url "listar_ventas" %}">
                     <i class="fa fa-home me-2"></i>
-                    <span>Ventas</span></a>
+                    <span>Ventas  {{actualizado}}</span></a>
             </li>
             {% if request.user.permisos == 'admin' %}
             <li class="nav-item active">

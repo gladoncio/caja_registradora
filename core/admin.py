@@ -14,6 +14,7 @@ admin.site.register(FormaPago)
 admin.site.register(RegistroTransaccion)
 admin.site.register(CajaDiaria)
 admin.site.register(Cuadre)
+admin.site.register(ActualizacionModel)
 
 
 
