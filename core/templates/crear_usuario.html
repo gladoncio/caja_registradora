@@ -1,0 +1,29 @@
+{% extends 'base/nav.html' %}
+
+{% block body %}
+  <div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Crear Usuario</h1>
+
+    {% if messages %}
+      <ul class="messages">
+        {% for message in messages %}
+          <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    <div class="row">
+      <div class="col-lg-6">
+        <div class="card shadow mb-4">
+          <div class="card-body">
+            <form method="post" class="needs-validation" novalidate>
+              {% csrf_token %}
+              {{ form.as_p }}
+              <button type="submit" class="btn btn-primary">Crear Usuario</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

@@ -5,8 +5,8 @@ from django.utils import timezone
 
 
 class Usuario(AbstractUser):
-    permisos = models.CharField(max_length=40, null=True, verbose_name="Permiso", default="1")
-    rut = models.CharField(max_length=40, null=True, verbose_name="Rut", default="")
+    permisos = models.CharField(max_length=40, null=True, verbose_name="Permiso", default="Cajero")
+    rut = models.CharField(max_length=40, null=True, verbose_name="Rut", default="", blank=True)
 
 class Departamento(models.Model):
     nombre = models.CharField(max_length=50)

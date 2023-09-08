@@ -45,35 +45,55 @@
             <!-- Nav Item - Dashboard -->
             <li class="nav-item active">
                 <a class="nav-link" href="{% url "index" %}">
-                    <i class="fa fa-home me-2"></i>
-                    <span>Buscador de Precios</span></a>
+                    <i class="fas fa-search me-2"></i> <!-- Icono de búsqueda -->
+                    <span>Buscador de Precios</span>
+                </a>
             </li>
-
+            
             <li class="nav-item active">
                 <a class="nav-link" href="{% url "caja" %}">
-                    <i class="fa fa-home me-2"></i>
-                    <span>Caja</span></a>
+                    <i class="fas fa-cash-register me-2"></i> <!-- Icono de caja registradora -->
+                    <span>Caja</span>
+                </a>
             </li>
-
+            
             <li class="nav-item active">
                 <a class="nav-link" href="{% url "listar_ventas" %}">
-                    <i class="fa fa-home me-2"></i>
-                    <span>Ventas  {{actualizado}}</span></a>
+                    <i class="fas fa-shopping-cart me-2"></i> <!-- Icono de carrito de compras -->
+                    <span>Ventas  {{ actualizado }}</span>
+                </a>
             </li>
-
+            
             <li class="nav-item active">
                 <a class="nav-link" href="{% url "abrir-caja" %}">
-                    <i class="fa fa-home me-2"></i>
-                    <span>Abrir caja</span></a>
+                    <i class="fas fa-lock-open me-2"></i> <!-- Icono de abrir caja -->
+                    <span>Abrir caja</span>
+                </a>
             </li>
+            
             {% if request.user.permisos == 'admin' %}
             <li class="nav-item active">
                 <a class="nav-link" href="{% url 'admin:index' %}">
-                    <i class="fa fa-home me-2"></i>
-                    <span>Administración</span></a>
+                    <i class="fas fa-cog me-2"></i> <!-- Icono de engranaje de administración -->
+                    <span>Administración</span>
+                </a>
+            </li>
+            
+            <li class="nav-item active">
+                <a class="nav-link" href="{% url 'generate_barcode' %}">
+                    <i class="fas fa-id-card me-2"></i> <!-- Icono de tarjeta de autorización -->
+                    <span>Tarjeta de Autorización</span>
+                </a>
+            </li>
+            
+            <li class="nav-item active">
+                <a class="nav-link" href="{% url 'crear_usuario' %}">
+                    <i class="fas fa-user-plus me-2"></i> <!-- Icono de agregar usuario -->
+                    <span>Crear Usuarios</span>
+                </a>
             </li>
             {% endif %}
-
+            
             <!-- Divider -->
             <hr class="sidebar-divider">
 

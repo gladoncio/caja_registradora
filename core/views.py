@@ -21,6 +21,10 @@ import subprocess
 import zipfile
 from datetime import datetime
 from .funciones import *
+import barcode
+from barcode import generate
+from django.conf import settings  # Agrega esta importación
+from io import BytesIO
 
 
 def login(request):
@@ -377,6 +381,8 @@ def cuadrar(request):
             fecha_ingreso=timezone.now(),  # Utiliza timezone.now() para obtener la fecha y hora actual
             # Otra información que quieras guardar en el modelo Cuadre
             )
+
+            
             
             context = {
                 'total' : total_ventas_despues_ultima_fecha,
@@ -480,19 +486,34 @@ def update(request):
 
 
 def abrir_caja(request):
-    try:
-        # Abre una conexión con la impresora a través de USB (sustituye los valores con los adecuados)
-        printer = Usb(0x1fc9, 0x2016)
+    configuracion = Configuracion.objects.first()
+    if request.method == 'POST':
+        form = ContraseñaForm(request.POST)
+        if form.is_valid():
+            # Verifica si la contraseña es correcta
+            contraseña = form.cleaned_data['contraseña']
+            if contraseña == configuracion.clave_anulacion:  # Reemplaza 'tu_contraseña_correcta' con la contraseña correcta
+                try:
+                    # Abre una conexión con la impresora a través de USB (sustituye los valores con los adecuados)
+                    printer = Usb(0x1fc9, 0x2016)
 
-        # Envía el comando para abrir la caja
-        printer.cashdraw(2)  # El número puede variar según la impresora
+                    # Envía el comando para abrir la caja
+                    printer.cashdraw(2)  # El número puede variar según la impresora
 
-        # Cierra la conexión con la impresora
-        printer.close()
+                    # Cierra la conexión con la impresora
+                    printer.close()
 
-        return HttpResponse("Caja abierta exitosamente")
-    except Exception as e:
-        return HttpResponse(f"Error al abrir la caja: {str(e)}", status=500)
+                    messages.error(request, 'Caja abierta Exitosamente.')
+                except Exception as e:
+                    return HttpResponse(f"Error al abrir la caja: {str(e)}", status=500)
+            else:
+                messages.error(request, 'Contraseña incorrecta. Inténtalo de nuevo.')
+        else:
+            messages.error(request, 'Por favor, corrige los errores en el formulario.')
+    else:
+        form = ContraseñaForm()
+
+    return render(request, 'abrir_caja.html', {'form': form})
 
 def imprimir(request):
     try:
@@ -511,3 +532,48 @@ def imprimir(request):
     except Exception as e:
         return HttpResponse(f"Error al imprimir: {str(e)}", status=500)  # Esto devuelve una respuesta HTTP con un mensaje de error y un estado 500 (Error interno del servidor).
     
+def generate_barcode(request):
+    configuracion = Configuracion.objects.first()
+    barcode_image = None
+
+    if configuracion:
+        data = configuracion.clave_anulacion
+        # Crea el objeto de código de barras (en este caso, EAN-13)
+        code = barcode.get('ean13', data, writer=barcode.writer.ImageWriter())
+        # Genera el código de barras como una imagen
+        barcode_image = code.render()
+
+        # Convierte la imagen en una secuencia de bytes
+        image_bytes = BytesIO()
+        barcode_image.save(image_bytes, format='PNG')
+        image_bytes = image_bytes.getvalue()
+
+        # Guarda la imagen en la carpeta de medios
+        media_root = settings.MEDIA_ROOT
+        image_path = os.path.join(media_root, 'barcode.png')  # Cambia el nombre del archivo si lo deseas
+        with open(image_path, 'wb') as image_file:
+            image_file.write(image_bytes)
+
+        # Obtén la URL de la imagen generada en la carpeta de medios
+        image_url = os.path.join(settings.MEDIA_URL, 'barcode.png')  # Asegúrate de que coincida con la ruta de medios en tu proyecto
+
+    context = {
+        'image_url': image_url,  # Pasamos la URL de la imagen al contexto
+    }
+
+    return render(request, 'generate_barcode.html', context)
+
+
+def crear_usuario(request):
+    if request.method == 'POST':
+        form = UsuarioCreationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Usuario creado exitosamente.')  # Mensaje de éxito
+            return redirect('crear_usuario')  # Redirige a la página de éxito después de crear el usuario
+        else:
+            messages.error(request, 'Ha ocurrido un error. Por favor, revise el formulario.')  # Mensaje de error
+    else:
+        form = UsuarioCreationForm()
+
+    return render(request, 'crear_usuario.html', {'form': form})

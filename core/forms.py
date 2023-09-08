@@ -6,42 +6,15 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.forms.widgets import PasswordInput, TextInput
 
 
-class UsuarioRegisterForm(UserCreationForm):
-    password1 = forms.CharField(widget=forms.PasswordInput(
-    attrs={'class':'form-control form-control-lg resize-text','type':'password', 'name': 'password','placeholder':'Password'}),
-    label='')
-    password2 = forms.CharField(widget=forms.PasswordInput(
-    attrs={'class':'form-control form-control-lg resize-text','type':'password', 'name': 'password','placeholder':'Password'}),
-    label='',
-    error_messages = {
-        'error_messages': 'padada',
-        'invalid': 'fields format is not valid',
-        'max_length': 'max_length is 30 chars',
-        'min_length': 'password should be at least 8 Chars',
-        'password_mismatch' : 'The twdada.',
-        })
+class UsuarioCreationForm(UserCreationForm):
+    permisos = forms.ChoiceField(
+        choices=[('admin', 'Admin'), ('cajero', 'Cajero')],
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+
     class Meta:
         model = Usuario
-        fields = ['username','email','password1', 'password2']
-        widgets = {'username': forms.TextInput(attrs={'class': 'form-control form-control-lg'}),
-                    'email': forms.EmailInput(attrs={'class': 'form-control form-control-lg'}),
-                    'password1': forms.PasswordInput(attrs={'class': 'form-control form-control-lg'}),
-                    'password2': forms.PasswordInput(attrs={'class': 'form-control form-control-lg' }),
-                    }
-        error_messages_email = {
-        'required': 'Ingrese un dato',
-        'invalid': 'Formato invalido',
-        'max_length': 'max length is 40 chars',
-        }
-        error_messages = {
-        'required': 'please Fill-out this field',
-        'invalid': 'fields format is not valid',
-        'max_length': 'max_length is 30 chars',
-        'min_length': 'password should be at least 8 Chars',
-        'password_mismatch' : ("The twoadadadada."),
-        }
-
-
+        fields = ('username', 'password1', 'password2', 'permisos', 'rut')
 
         
 class MyAuthForm(AuthenticationForm):
@@ -91,3 +64,13 @@ class ProductoForm(forms.ModelForm):
         # Aplicar clases de Bootstrap a los widgets
         for field_name, field in self.fields.items():
             field.widget.attrs['class'] = 'form-control resize-text'  # Clase Bootstrap para campos de formulario
+
+
+
+class ContraseñaForm(forms.Form):
+    contraseña = forms.CharField(
+        label='Contraseña',
+        widget=forms.PasswordInput(attrs={'class': 'form-control resize-text'})
+    )
+
+

@@ -28,6 +28,8 @@ urlpatterns = [
     path('imprimir/', views.imprimir, name='imprimir'),
     path('update/', views.update, name='update'),
     path('abrir-caja/', views.abrir_caja, name='abrir-caja'),
+    path('generate_barcode/', views.generate_barcode, name='generate_barcode'),
+    path('crear_usuario/', views.crear_usuario, name='crear_usuario'),
 ]
 
 if settings.DEBUG:
