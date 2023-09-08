@@ -148,13 +148,14 @@
                     </ul>
 
                 </nav>
-
-              
+{% if actualizado == 'no' %}             
 <div id="update-notification" class="alert alert-info alert-dismissible fade show" role="alert">
     <strong>Nueva versión disponible!</strong> Hay una nueva versión de la aplicación disponible. ¿Deseas actualizar?
     <button type="button" class="btn btn-primary" onclick="promptUpdate()">Actualizar</button>
     <button type="button" class="btn btn-secondary" data-dismiss="alert">Cerrar</button>
 </div>
+{% endif %}
+
 
 <script>
 function promptUpdate() {
