@@ -60,6 +60,12 @@
                     <i class="fa fa-home me-2"></i>
                     <span>Ventas  {{actualizado}}</span></a>
             </li>
+
+            <li class="nav-item active">
+                <a class="nav-link" href="{% url "abrir-caja" %}">
+                    <i class="fa fa-home me-2"></i>
+                    <span>Abrir caja</span></a>
+            </li>
             {% if request.user.permisos == 'admin' %}
             <li class="nav-item active">
                 <a class="nav-link" href="{% url 'admin:index' %}">
