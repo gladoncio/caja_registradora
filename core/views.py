@@ -144,7 +144,7 @@ def generar_venta(request,parametro1,parametro2,parametro3):
             FormaPago.save()
 
             
-            # Redireccionar a la página de éxito o factura
+
             return redirect('caja')  # Cambiar por la página deseada
         else:
             # Manejar el caso donde el carrito del usuario está vacío
@@ -271,6 +271,7 @@ def cerrar_caja(request):
         monto_retiro = caja_diaria.retiro,
         valor_caja_diaria = caja_diaria.monto,
     )
+
 
     caja_diaria_nueva = monto_efectivo + caja_diaria.monto - caja_diaria.retiro
 
@@ -577,3 +578,56 @@ def crear_usuario(request):
         form = UsuarioCreationForm()
 
     return render(request, 'crear_usuario.html', {'form': form})
+
+
+def imprimir_boleta(request, venta_id):
+    venta = get_object_or_404(Venta, pk=venta_id)
+
+    # Genera el contenido de la boleta en formato de comandos de impresión para Xprinter XP-80C
+    content = generar_comandos_de_impresion(venta)
+
+    # Envía los comandos de impresión a la impresora USB
+    imprimir_en_xprinter(content)
+
+    # Devuelve una respuesta vacía o un mensaje de éxito
+    return HttpResponse("Boleta impresa exitosamente")
+
+def generar_comandos_de_impresion(venta):
+    # Inicializa una cadena vacía para almacenar los comandos de impresión
+    content = ""
+
+    # Encabezado de la boleta (puedes personalizarlo según tus necesidades)
+    content += "Boleta de Venta\n"
+    content += f"Fecha: {venta.fecha_hora}\n"
+    content += "--------------------------\n"
+
+    # Detalles de los productos vendidos
+    for venta_producto in venta.ventaproducto_set.all():
+        producto = venta_producto.producto
+        cantidad = venta_producto.cantidad
+        precio_unitario = producto.precio
+
+        # Agrega los detalles de cada producto a la boleta
+        content += f"Producto: {producto.nombre}\n"
+        content += f"Cantidad: {cantidad}\n"
+        content += f"Precio Unitario: {precio_unitario}\n"
+        content += "--------------------------\n"
+
+    # Total de la venta
+    total_venta = venta.total
+    content += f"Total: {total_venta}\n"
+
+    return content
+
+def imprimir_en_xprinter(content):
+    # Abre una conexión con la impresora a través de USB (sustituye los valores con los adecuados)
+    printer = Usb(0x1fc9, 0x2016)
+
+    # Envía el contenido de la boleta como comandos de impresión
+    printer.text(content)
+
+    # Realiza un corte de papel (puede variar según la impresora)
+    printer.cut()
+
+    # Cierra la conexión con la impresora
+    printer.close()

@@ -30,6 +30,7 @@ urlpatterns = [
     path('abrir-caja/', views.abrir_caja, name='abrir-caja'),
     path('generate_barcode/', views.generate_barcode, name='generate_barcode'),
     path('crear_usuario/', views.crear_usuario, name='crear_usuario'),
+    path('imprimir_boleta/<int:venta_id>/', views.imprimir_boleta, name='imprimir_boleta'),
 ]
 
 if settings.DEBUG:
