@@ -19,6 +19,8 @@ import os
 import shutil
 import subprocess
 import zipfile
+from datetime import datetime
+from .funciones import *
 
 
 def login(request):
@@ -412,12 +414,7 @@ def agregar_producto(request):
     
     
 
-def check_github_version():
-    url = "https://api.github.com/repos/gladoncio/caja_registradora/releases/latest"
-    response = requests.get(url)
-    data = response.json()
-    latest_version = data["tag_name"]
-    return latest_version
+
 
 def download_latest_version(tag_name):
     # URL del archivo ZIP de la última versión en GitHub
@@ -446,7 +443,6 @@ def download_latest_version(tag_name):
     # Regresar la ruta local donde se descomprimió la última versión
     return extracted_directory
 
-
 def update_project(new_version_directory, project_directory):
     for root, _, files in os.walk(new_version_directory):
         for file in files:
@@ -458,18 +454,21 @@ def update_project(new_version_directory, project_directory):
             os.makedirs(os.path.dirname(destination_file), exist_ok=True)
             shutil.copy2(source_file, destination_file)
 
-
 def update(request):
     # Directorio donde está ubicado tu proyecto Django (la carpeta "caja_registradora")
     project_directory = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-    # Realizar copia de seguridad del archivo views.py en una carpeta de respaldo
-    backup_directory = os.path.join(project_directory, 'backup')
-    os.makedirs(backup_directory, exist_ok=True)
-    shutil.copy(os.path.abspath(__file__), os.path.join(backup_directory, 'views.py'))
-
     # Descargar la última versión desde GitHub (puedes usar tu función check_github_version)
     latest_version = check_github_version()
+
+    fecha = get_github_latest_release_date()
+
+    fecha_actualizacion = datetime.strptime(fecha, "%Y-%m-%dT%H:%M:%SZ")
+
+    nueva_actualizacion, created = ActualizacionModel.objects.get_or_create(id=1, fecha_actualizacion=fecha_actualizacion)
+
+    nueva_actualizacion.save()
+
     new_version_directory = download_latest_version(latest_version)
 
     # Actualizar el proyecto
@@ -478,6 +477,7 @@ def update(request):
     # Reiniciar la aplicación (puedes adaptarlo a tu servidor web)
 
     return render(request, 'update.html')
+
 
 def abrir_caja(request):
     try:
@@ -510,3 +510,4 @@ def imprimir(request):
         return HttpResponse("Impresión exitosa")  # Esto devuelve una respuesta HTTP con un mensaje de éxito.
     except Exception as e:
         return HttpResponse(f"Error al imprimir: {str(e)}", status=500)  # Esto devuelve una respuesta HTTP con un mensaje de error y un estado 500 (Error interno del servidor).
+    

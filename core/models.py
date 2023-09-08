@@ -178,3 +178,9 @@ class Cuadre(models.Model):
 
     def __str__(self):
         return f'Cierre de caja por {self.usuario.username} el {self.fecha_ingreso}'
+    
+
+
+class ActualizacionModel(models.Model):
+    id = models.AutoField(primary_key=True)
+    fecha_actualizacion = models.DateTimeField()
