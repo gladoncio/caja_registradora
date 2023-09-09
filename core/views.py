@@ -622,7 +622,13 @@ def generar_comandos_de_impresion(venta):
     # Encabezado de la boleta (puedes personalizarlo según tus necesidades)
     content += "Boleta de Venta\n"
     content += f"Fecha: {venta.fecha_hora}\n"
-    content += f"Método de Pago: {venta.formapago_set.first().tipo_pago}\n"  # Agregar el método de pago aquí
+    
+    # Agregar el método de pago de esta venta
+    formas_pago = venta.formapago_set.all()
+    if formas_pago.exists():
+        metodos_pago = ", ".join([forma.tipo_pago for forma in formas_pago])
+        content += f"Método(s) de Pago: {metodos_pago}\n"
+    
     content += "--------------------------\n"
 
     # Detalles de los productos vendidos
