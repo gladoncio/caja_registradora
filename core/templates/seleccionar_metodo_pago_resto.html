@@ -1,0 +1,36 @@
+{% extends 'base/nav.html' %}
+
+{% block body %}
+<div class="container-fluid resize-text">
+    <h1>Seleccionar Método de Pago para el Restante</h1>
+    
+    <p>Restante: ${{ restante|floatformat:configuracion.decimales }}</p>
+
+    <form method="post">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <fieldset>
+                <legend>Método de Pago:</legend>
+                
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" id="transferencia" name="metodoPagoResto" value="Transferencia" required>
+                    <label class="form-check-label" for="transferencia">Transferencia</label>
+                </div>
+                
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" id="debito" name="metodoPagoResto" value="Débito" required>
+                    <label class="form-check-label" for="debito">Débito</label>
+                </div>
+                
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" id="credito" name="metodoPagoResto" value="Crédito" required>
+                    <label class="form-check-label" for="credito">Crédito</label>
+                </div>
+            </fieldset>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Continuar</button>
+    </form>
+</div>
+{% endblock %}

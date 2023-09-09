@@ -1,0 +1,42 @@
+{% extends 'base/nav.html' %}
+
+{% block body %}
+<div class="container-fluid resize-text">
+    <h1>Ingresar Monto en Efectivo</h1>
+    
+    <p>Total: ${{ total|floatformat:configuracion.decimales }}</p> <!-- Muestra el total -->
+
+    <form method="post" action="{% url 'ingresar_monto_efectivo' %}">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="monto_efectivo">Monto en Efectivo:</label>
+            <input type="number" step="0.01" min="0.01" id="monto_efectivo" name="monto_efectivo" class="form-control" required>
+        </div>
+        
+        <p>Monto Restante: $<span id="monto_restante">{{ total|floatformat:configuracion.decimales }}</span></p>
+        <p>Monto Vuelto a Entregar: $<span id="monto_vuelto">0.00</span></p> <!-- Agregado el monto vuelto -->
+
+        <button type="submit" class="btn btn-primary">Continuar</button>
+    </form>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const totalAmount = parseFloat({{ total|floatformat:configuracion.decimales }});
+    const montoEfectivoInput = document.getElementById("monto_efectivo");
+    const montoRestanteSpan = document.getElementById("monto_restante");
+    const montoVueltoSpan = document.getElementById("monto_vuelto"); // Agregado el span para el monto vuelto
+
+    montoEfectivoInput.addEventListener("input", function() {
+        const montoIngresado = parseFloat(this.value) || 0;
+        const montoRestante = Math.max(totalAmount - montoIngresado, 0);
+        const montoVuelto = Math.max(montoIngresado - totalAmount, 0); // Calcular el monto vuelto
+
+        montoRestanteSpan.textContent = montoRestante.toFixed({{ configuracion.decimales }}); // Usar configuración de decimales
+        montoVueltoSpan.textContent = montoVuelto.toFixed({{ configuracion.decimales }}); // Usar configuración de decimales
+    });
+});
+</script>
+
+{% endblock %}

@@ -25,6 +25,7 @@ import barcode
 from barcode import generate
 from django.conf import settings  # Agrega esta importación
 from io import BytesIO
+from django.urls import reverse
 
 
 def login(request):
@@ -108,7 +109,7 @@ def eliminar_item(request, item_id):
 
 
 @login_required
-def generar_venta(request,parametro1,parametro2,parametro3):
+def generar_venta(request, parametro1, parametro2, parametro3):
     try:
         carrito_items = CarritoItem.objects.filter(usuario=request.user)
         
@@ -117,14 +118,14 @@ def generar_venta(request,parametro1,parametro2,parametro3):
             nueva_venta = Venta(usuario=request.user, total=0)
             nueva_venta.save()
             
-            
             # Variable para almacenar el total de la venta
             total_venta = Decimal('0.00')
+            
             # Agregar productos al modelo VentaProducto
             for item in carrito_items:
                 subtotal = item.subtotal()
                 total_venta += subtotal
-                VentaProducto.objects.create(venta=nueva_venta,producto=item.producto,cantidad=item.cantidad,gramaje=item.gramaje,subtotal=subtotal)
+                VentaProducto.objects.create(venta=nueva_venta, producto=item.producto, cantidad=item.cantidad, gramaje=item.gramaje, subtotal=subtotal)
             nueva_venta.total = total_venta
             nueva_venta.save()
             
@@ -134,17 +135,18 @@ def generar_venta(request,parametro1,parametro2,parametro3):
             total_venta = float(nueva_venta.total)
             monto_efectivo = total_venta - parametro3
             print(monto_efectivo)
-            if parametro1=="venta_con_restante":
-                FormaPago.objects.create(venta=nueva_venta,tipo_pago=parametro2,monto=parametro3)
-                if monto_efectivo > 0:
-                    FormaPago.objects.create(venta=nueva_venta,tipo_pago="efectivo",monto=monto_efectivo)
-            elif parametro1=="venta_sin_restante":
-                FormaPago.objects.create(venta=nueva_venta,tipo_pago=parametro2,monto=total_venta)
-
-            FormaPago.save()
-
             
-
+            if parametro1 == "venta_con_restante":
+                FormaPago.objects.create(venta=nueva_venta, tipo_pago=parametro2, monto=parametro3)
+                if monto_efectivo > 0:
+                    FormaPago.objects.create(venta=nueva_venta, tipo_pago="efectivo", monto=monto_efectivo)
+            elif parametro1 == "venta_sin_restante":
+                FormaPago.objects.create(venta=nueva_venta, tipo_pago=parametro2, monto=total_venta)
+            
+            # Llama a la función para imprimir la boleta
+            content = generar_comandos_de_impresion(nueva_venta)
+            imprimir_en_xprinter(content)
+            
             return redirect('caja')  # Cambiar por la página deseada
         else:
             # Manejar el caso donde el carrito del usuario está vacío
@@ -627,7 +629,82 @@ def imprimir_en_xprinter(content):
     printer.text(content)
 
     # Realiza un corte de papel (puede variar según la impresora)
-    printer.cut()
+    #printer.cut()
 
     # Cierra la conexión con la impresora
     printer.close()
+
+def seleccionar_metodo_pago(request):
+    carrito_items = CarritoItem.objects.filter(usuario=request.user)
+    total = sum(item.subtotal() for item in carrito_items)
+    metodos_pago = ["Efectivo", "Transferencia", "Débito", "Crédito"]
+    context = {'metodos_pago': metodos_pago, 'total' : total}
+    return render(request, 'seleccionar_pago.html', context)
+
+def procesar_pago(request):
+    if request.method == 'POST':
+        metodo_pago_seleccionado = request.POST.get('metodoPago')
+        
+        if metodo_pago_seleccionado == 'Efectivo':
+            # Redirige a la vista para ingresar el monto en efectivo
+            return redirect('ingresar_monto_efectivo')
+        elif metodo_pago_seleccionado == 'Transferencia':
+            # Redirige a la vista generar_venta con los parámetros adecuados para Transferencia
+            url_generar_venta = reverse('generar_venta', args=['venta_sin_restante', 'Transferencia', '0'])
+            return redirect(url_generar_venta)
+        elif metodo_pago_seleccionado == 'Débito':
+            # Redirige a la vista generar_venta con los parámetros adecuados para Débito
+            url_generar_venta = reverse('generar_venta', args=['venta_sin_restante', 'Débito', '0'])
+            return redirect(url_generar_venta)
+        elif metodo_pago_seleccionado == 'Crédito':
+            # Redirige a la vista generar_venta con los parámetros adecuados para Crédito
+            url_generar_venta = reverse('generar_venta', args=['venta_sin_restante', 'Crédito', '0'])
+            return redirect(url_generar_venta)
+    
+    # Redirige a una vista predeterminada en caso de error o si no se seleccionó un método de pago válido
+    return redirect('caja')  # Cambiar por la página deseada
+
+
+def ingresar_monto_efectivo(request):
+    carrito_items = CarritoItem.objects.filter(usuario=request.user)
+    total = sum(item.subtotal() for item in carrito_items)
+
+    if request.method == 'POST':
+        # Obtener el monto ingresado por el usuario
+        monto_efectivo = float(request.POST.get('monto_efectivo', '0'))
+        if monto_efectivo >= total:
+            url_generar_venta = reverse('generar_venta', args=['venta_sin_restante', 'Efectivo', monto_efectivo])
+            return redirect(url_generar_venta)
+        else:
+            # Redirigir a la vista seleccionar_metodo_pago_resto
+            url_seleccionar_metodo_pago_resto = reverse('seleccionar_metodo_pago_resto', args=[total, monto_efectivo])
+            return redirect(url_seleccionar_metodo_pago_resto)
+
+    context = {'total': total}
+    return render(request, 'ingresar_monto_efectivo.html', context)
+
+
+def seleccionar_metodo_pago_resto(request, total, monto_efectivo):
+    total = float(total)
+    monto_efectivo = float(monto_efectivo)
+    # Verifica si hay un restante por pagar (restante > 0)
+    restante = total - monto_efectivo
+    context = {'total': total, 'monto_efectivo': monto_efectivo, 'restante': restante}
+    if restante <= 0:
+        # Si no hay restante, redirige a la página de éxito o la que prefieras
+        return redirect('caja')  # Cambia 'pagina_exito' por la URL deseada
+
+    if request.method == 'POST':
+        # Obtén el método de pago seleccionado por el usuario
+        metodo_pago_seleccionado = request.POST.get('metodoPagoResto')
+        
+        # Redirige a la vista para procesar el pago con los parámetros necesarios
+        return redirect('procesar_pago_restante', metodo_pago=metodo_pago_seleccionado, restante=restante)
+
+    # De lo contrario, renderiza la página de selección de método de pago
+    return render(request, 'seleccionar_metodo_pago_resto.html', context)
+
+
+def procesar_pago_restante(request, metodo_pago, restante):
+    url_generar_venta = reverse('generar_venta', args=['venta_con_restante', metodo_pago, restante])
+    return redirect(url_generar_venta)

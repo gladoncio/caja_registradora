@@ -11,9 +11,38 @@
                     <h2>Código de Barras:</h2>
                     <img src="{{ image_url }}" alt="Código de Barras GS1 (EAN-13)" class="img-fluid">
                     {% endif %}
+                    <button class="btn btn-primary" onclick="imprimirCodigoBarras()">Imprimir Código de Barras</button>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+function imprimirCodigoBarras() {
+    const nuevaVentana = window.open('', '_blank');
+    
+    // Crea un documento HTML en la nueva ventana
+    const contenido = `
+        <html>
+        <head>
+            <title>Código de Barras</title>
+        </head>
+        <body>
+            <h2>Código de Barras:</h2>
+            <img src="{{ image_url }}" alt="Código de Barras GS1 (EAN-13)" class="img-fluid">
+        </body>
+        </html>
+    `;
+    
+    nuevaVentana.document.open();
+    nuevaVentana.document.write(contenido);
+    nuevaVentana.document.close();
+    
+    // Espera a que se cargue la imagen antes de imprimir
+    nuevaVentana.addEventListener('load', function() {
+        nuevaVentana.print();
+    });
+}
+</script>
 {% endblock %}

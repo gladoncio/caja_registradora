@@ -1,0 +1,28 @@
+{% extends 'base/nav.html' %}
+
+{% block body %}
+<div class="container-fluid resize-text">
+   <div class="card">
+      <div class="card-body">
+         <!-- Tu encabezado y contenido aquí -->
+         <h1 class="card-title">Seleccionar Método de Pago</h1>
+         <p class="card-text">Total: ${{ total|floatformat:configuracion.decimales }}</p>
+         <form method="post" action="{% url 'procesar_pago' %}">
+            {% csrf_token %}
+            <div class="form-group">
+               <label for="metodoPago">Seleccione el método de pago:</label>
+               {% for metodo in metodos_pago %}
+               <div class="form-check">
+                  <input class="form-check-input" type="radio" name="metodoPago" id="{{ metodo }}" value="{{ metodo }}">
+                  <label class="form-check-label" for="{{ metodo }}">
+                     {{ metodo }}
+                  </label>
+               </div>
+               {% endfor %}
+            </div>
+            <button type="submit" class="btn btn-primary">Continuar</button>
+         </form>
+      </div>
+   </div>
+</div>
+{% endblock %}
