@@ -618,6 +618,7 @@ def imprimir_boleta(request, venta_id):
 def generar_comandos_de_impresion(venta):
     # Inicializa una cadena vacía para almacenar los comandos de impresión
     content = ""
+    content += "--------------------------\n"
 
     # Encabezado de la boleta (puedes personalizarlo según tus necesidades)
     content += "Boleta de Venta\n"
@@ -646,7 +647,7 @@ def generar_comandos_de_impresion(venta):
     # Total de la venta
     total_venta = venta.total
     content += f"Total: {total_venta}\n"
-
+    content += "--------------------------\n"
     return content
 
 
