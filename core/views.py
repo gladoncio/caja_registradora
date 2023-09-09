@@ -28,6 +28,21 @@ from io import BytesIO
 from django.urls import reverse
 
 
+def abrir_caja_impresora():
+    try:
+        # Abre una conexión con la impresora a través de USB (sustituye los valores con los adecuados)
+        printer = Usb(0x1fc9, 0x2016)
+
+        # Envía el comando para abrir la caja
+        printer.cashdraw(2)  # El número puede variar según la impresora
+
+        # Cierra la conexión con la impresora
+        printer.close()
+
+        return True  # Éxito al abrir la caja
+    except Exception as e:
+        return False  # Error al abrir la caja
+
 def login(request):
     return render(request, 'login.html')
 
@@ -143,6 +158,13 @@ def generar_venta(request, parametro1, parametro2, parametro3):
             elif parametro1 == "venta_sin_restante":
                 FormaPago.objects.create(venta=nueva_venta, tipo_pago=parametro2, monto=total_venta)
             
+            # Verifica si el método de pago es efectivo y llama a la función abrir_caja_impresora
+            if parametro2 == "efectivo":
+                if abrir_caja_impresora():
+                    messages.success(request, 'Caja abierta exitosamente.')
+                else:
+                    messages.error(request, 'Error al abrir la caja. Inténtalo de nuevo.')
+            
             # Llama a la función para imprimir la boleta
             content = generar_comandos_de_impresion(nueva_venta)
             imprimir_en_xprinter(content)
@@ -157,7 +179,6 @@ def generar_venta(request, parametro1, parametro2, parametro3):
     
     # Redireccionar a la página del carrito si ocurre algún error
     return redirect('caja')  # Cambiar por la página del carrito
-
 
 def listar_ventas(request):
     # Encuentra la fecha de cierre de la última transacción
@@ -601,6 +622,7 @@ def generar_comandos_de_impresion(venta):
     # Encabezado de la boleta (puedes personalizarlo según tus necesidades)
     content += "Boleta de Venta\n"
     content += f"Fecha: {venta.fecha_hora}\n"
+    content += f"Método de Pago: {venta.formapago_set.first().tipo_pago}\n"  # Agregar el método de pago aquí
     content += "--------------------------\n"
 
     # Detalles de los productos vendidos
@@ -620,6 +642,7 @@ def generar_comandos_de_impresion(venta):
     content += f"Total: {total_venta}\n"
 
     return content
+
 
 def imprimir_en_xprinter(content):
     # Abre una conexión con la impresora a través de USB (sustituye los valores con los adecuados)
