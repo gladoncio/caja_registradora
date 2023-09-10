@@ -15,6 +15,7 @@ admin.site.register(RegistroTransaccion)
 admin.site.register(CajaDiaria)
 admin.site.register(Cuadre)
 admin.site.register(ActualizacionModel)
+admin.site.register(VentaEliminada)
 
 
 
