@@ -184,3 +184,14 @@ class Cuadre(models.Model):
 class ActualizacionModel(models.Model):
     id = models.AutoField(primary_key=True)
     fecha_actualizacion = models.DateTimeField()
+
+class VentaEliminada(models.Model):
+    fecha_hora_eliminacion = models.DateTimeField(default=timezone.now)
+    productos_eliminados = models.TextField()  # Puedes guardar una lista de productos eliminados como texto JSON
+    total_eliminado = models.DecimalField(max_digits=10, decimal_places=2)
+    usuario_eliminador = models.ForeignKey('Usuario', on_delete=models.SET_NULL, null=True)
+
+    # Otros campos según tus necesidades, como campos para el usuario que realizó la eliminación, etc.
+
+    def __str__(self):
+        return f'Venta Eliminada - Fecha: {self.fecha_hora_eliminacion}'
