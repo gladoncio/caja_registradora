@@ -516,7 +516,7 @@ def abrir_caja(request):
         if form.is_valid():
             # Verifica si la contraseña es correcta
             contraseña = form.cleaned_data['contraseña']
-            if contraseña == configuracion.clave_anulacion:  # Reemplaza 'tu_contraseña_correcta' con la contraseña correcta
+            if contraseña == configuracion.clave_anulacion or request.user.clave_anulacion:  # Reemplaza 'tu_contraseña_correcta' con la contraseña correcta
                 try:
                     # Abre una conexión con la impresora a través de USB (sustituye los valores con los adecuados)
                     printer = Usb(0x1fc9, 0x2016)
