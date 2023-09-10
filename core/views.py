@@ -765,7 +765,7 @@ def eliminar_venta(venta_id, usuario_eliminador):
 
 def eliminar_venta_view(request, venta_id):
     # Verifica si el usuario actual tiene permiso para eliminar ventas (puedes personalizar esto según tus necesidades)
-    if request.user.permisos == "Administrador":
+    if request.user.permisos == "admin":
         usuario_eliminador = request.user
         if eliminar_venta(venta_id, usuario_eliminador):
             messages.success(request, 'Venta eliminada con éxito.')
@@ -774,4 +774,4 @@ def eliminar_venta_view(request, venta_id):
     else:
         messages.error(request, 'No tienes permiso para eliminar ventas.')
 
-    return redirect('detalle_venta', venta_id=venta_id)
+    return redirect('ventas')
