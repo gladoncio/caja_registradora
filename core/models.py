@@ -5,8 +5,25 @@ from django.utils import timezone
 
 
 class Usuario(AbstractUser):
-    permisos = models.CharField(max_length=40, null=True, verbose_name="Permiso", default="Cajero")
+    # Define las opciones de permisos como una tupla de tuplas
+    PERMISOS_CHOICES = (
+        ('cajero', 'Cajero'),
+        ('admin', 'Administrador'),
+        ('bodeguero', 'Bodeguero'),
+        # Agrega otras opciones según tus necesidades
+    )
+    
+    permisos = models.CharField(
+        max_length=40,
+        null=True,
+        verbose_name="Permiso",
+        default="Cajero",
+        choices=PERMISOS_CHOICES,  # Asigna las opciones como choices
+    )
+    
     rut = models.CharField(max_length=40, null=True, verbose_name="Rut", default="", blank=True)
+
+    # Resto de los campos y métodos de tu modelo
 
 class Departamento(models.Model):
     nombre = models.CharField(max_length=50)
