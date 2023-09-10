@@ -36,7 +36,6 @@ urlpatterns = [
     path('ingresar_monto_efectivo/', views.ingresar_monto_efectivo, name='ingresar_monto_efectivo'),
     path('seleccionar_metodo_pago_resto/<total>/<monto_efectivo>/', seleccionar_metodo_pago_resto, name='seleccionar_metodo_pago_resto'),
     path('procesar_pago_restante/<metodo_pago>/<restante>/', views.procesar_pago_restante, name='procesar_pago_restante'),
-    path('eliminar_venta/<int:venta_id>/', views.eliminar_venta_view, name='eliminar_venta'),
 ]
 
 if settings.DEBUG:

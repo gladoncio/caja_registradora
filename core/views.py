@@ -739,39 +739,3 @@ def procesar_pago_restante(request, metodo_pago, restante):
     url_generar_venta = reverse('generar_venta', args=['venta_con_restante', metodo_pago, restante])
     return redirect(url_generar_venta)
 
-def eliminar_venta(venta_id, usuario_eliminador):
-    try:
-        # Obtén la venta que deseas eliminar
-        venta = Venta.objects.get(id=venta_id)
-
-        # Crea un registro en VentaEliminada antes de eliminar la venta
-        venta_eliminada = VentaEliminada(
-            fecha_hora_eliminacion=timezone.now(),
-            productos_eliminados=venta.productos.all(),  # Puedes personalizar cómo almacenas los productos eliminados
-            total_eliminado=venta.total,
-            usuario_eliminador=usuario_eliminador,
-            # Agrega otros campos según tus necesidades
-        )
-        venta_eliminada.save()
-
-        # Elimina la venta original
-        #venta.delete()
-
-        return True  # Indica que la eliminación fue exitosa
-    except Venta.DoesNotExist:
-        return False  # Indica que la venta no se encontró y no se eliminó
-
-    
-
-def eliminar_venta_view(request, venta_id):
-    # Verifica si el usuario actual tiene permiso para eliminar ventas (puedes personalizar esto según tus necesidades)
-    if request.user.permisos == "admin":
-        usuario_eliminador = request.user
-        if eliminar_venta(venta_id, usuario_eliminador):
-            messages.success(request, 'Venta eliminada con éxito.')
-        else:
-            messages.error(request, 'La venta no se pudo encontrar o eliminar.')
-    else:
-        messages.error(request, 'No tienes permiso para eliminar ventas.')
-
-    return redirect('ventas')

@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 
 
 
@@ -204,11 +206,22 @@ class ActualizacionModel(models.Model):
 
 class VentaEliminada(models.Model):
     fecha_hora_eliminacion = models.DateTimeField(default=timezone.now)
-    productos_eliminados = models.TextField()  # Puedes guardar una lista de productos eliminados como texto JSON
+    productos_eliminados = models.TextField() 
     total_eliminado = models.DecimalField(max_digits=10, decimal_places=2)
     usuario_eliminador = models.ForeignKey('Usuario', on_delete=models.SET_NULL, null=True)
 
-    # Otros campos según tus necesidades, como campos para el usuario que realizó la eliminación, etc.
-
     def __str__(self):
         return f'Venta Eliminada - Fecha: {self.fecha_hora_eliminacion}'
+
+# Definición de funciones y señales para el manejo de la eliminación de ventas
+@receiver(post_delete, sender=Venta)
+def venta_eliminada_handler(sender, instance, **kwargs):
+    # Crear una instancia de VentaEliminada con la información relevante
+    venta_eliminada = VentaEliminada(
+        fecha_hora_eliminacion=timezone.now(),
+        productos_eliminados=instance.productos.all(),  # Puedes personalizar cómo almacenas los productos eliminados
+        total_eliminado=instance.total,
+        usuario_eliminador=instance.usuario,
+        # Agrega otros campos según tus necesidades
+    )
+    venta_eliminada.save()
