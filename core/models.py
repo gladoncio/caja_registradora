@@ -13,7 +13,6 @@ class Usuario(AbstractUser):
         ('cajero', 'Cajero'),
         ('admin', 'Administrador'),
         ('bodeguero', 'Bodeguero'),
-        # Agrega otras opciones según tus necesidades
     )
     
     permisos = models.CharField(
@@ -25,6 +24,7 @@ class Usuario(AbstractUser):
     )
     
     rut = models.CharField(max_length=40, null=True, verbose_name="Rut", default="", blank=True)
+    clave_anulacion = models.CharField(max_length=20, default="123")
 
     # Resto de los campos y métodos de tu modelo
 
@@ -137,9 +137,11 @@ class Venta(models.Model):
     def __str__(self):
         return f'Venta #{self.id} - {self.fecha_hora}'
 
+    class Meta:
+        verbose_name_plural = 'Ventas'
 
 class VentaProducto(models.Model):
-    venta = models.ForeignKey(Venta, on_delete=models.PROTECT)
+    venta = models.ForeignKey(Venta, on_delete=models.CASCADE)
     producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
     cantidad = models.PositiveIntegerField(blank=True, null=True)
     gramaje = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
@@ -205,27 +207,57 @@ class ActualizacionModel(models.Model):
     id = models.AutoField(primary_key=True)
     fecha_actualizacion = models.DateTimeField()
 
-class VentaEliminada(models.Model):
-    fecha_hora_eliminacion = models.DateTimeField(default=timezone.now)
-    productos_eliminados = models.TextField() 
-    total_eliminado = models.DecimalField(max_digits=10, decimal_places=2)
-    usuario_eliminador = models.ForeignKey('Usuario', on_delete=models.SET_NULL, null=True)
 
-    def __str__(self):
-        return f'Venta Eliminada - Fecha: {self.fecha_hora_eliminacion}'
+# Modelos de copia de seguridad
+class VentaRespaldo(models.Model):
+    venta_original_id = models.PositiveIntegerField(default=0)
+    fecha_hora = models.DateTimeField()
+    fecha_anulacion = models.DateTimeField(default=timezone.now)  # Establece un valor predeterminado
+    total = models.DecimalField(max_digits=10, decimal_places=2)
+    usuario = models.ForeignKey('Usuario', on_delete=models.CASCADE)
 
-# Definición de funciones y señales para el manejo de la eliminación de ventas
+
+class VentaProductoRespaldo(models.Model):
+    venta = models.ForeignKey(VentaRespaldo, on_delete=models.CASCADE,default=None) # Campo para almacenar la ID de la venta original
+    producto = models.ForeignKey('Producto', on_delete=models.CASCADE)
+    cantidad = models.PositiveIntegerField(blank=True, null=True)
+    gramaje = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2)
+
+class FormaPagoRespaldo(models.Model):
+    venta = models.ForeignKey(VentaRespaldo, on_delete=models.CASCADE, default=None)  # Agrega default=None
+    tipo_pago = models.CharField(max_length=20)
+    monto = models.DecimalField(max_digits=10, decimal_places=2)
+
 @receiver(pre_delete, sender=Venta)
-def venta_eliminar_handler(sender, instance, **kwargs):
-    productos_eliminados = instance.productos.all()
-    total_eliminado = instance.total
-    usuario_eliminador = instance.usuario
-    
-    venta_eliminada = VentaEliminada(
-        fecha_hora_eliminacion=timezone.now(),
-        productos_eliminados=productos_eliminados, 
-        total_eliminado=total_eliminado,
-        usuario_eliminador=usuario_eliminador,
-        # Agrega otros campos según tus necesidades
+def crear_copia_venta(sender, instance, **kwargs):
+    # Crear copia de seguridad de la venta original
+    copia_venta = VentaRespaldo(
+        venta_original_id=instance.id,  # Almacenar la ID de la venta original
+        fecha_hora=instance.fecha_hora,
+        total=instance.total,
+        usuario=instance.usuario
     )
-    venta_eliminada.save()
+    copia_venta.save()
+
+    # Crear copias de seguridad de los productos de venta originales
+    for venta_producto in instance.ventaproducto_set.all():
+        copia_producto = VentaProductoRespaldo(
+            venta=copia_venta,  # Asignar la copia de venta como venta original en copia de producto
+            producto=venta_producto.producto,
+            cantidad=venta_producto.cantidad,
+            gramaje=venta_producto.gramaje,
+            subtotal=venta_producto.subtotal
+        )
+        copia_producto.save()
+
+    # Crear copias de seguridad de las formas de pago
+    for forma_pago in instance.formapago_set.all():
+        copia_forma_pago = FormaPagoRespaldo(
+            venta=copia_venta,  # Asignar la copia de venta como venta original en copia de forma de pago
+            tipo_pago=forma_pago.tipo_pago,
+            monto=forma_pago.monto
+        )
+        copia_forma_pago.save()
+
+    # No es necesario eliminar la venta original aquí, ya que el sistema de señales se encarga de ello

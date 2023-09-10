@@ -70,6 +70,13 @@
                     <span>Abrir caja</span>
                 </a>
             </li>
+
+            <li class="nav-item active">
+                <a class="nav-link" href="{% url "listar_ventas_respaldo" %}">
+                    <i class="fas fa-lock-open me-2"></i> <!-- Icono de abrir caja -->
+                    <span>Anulaciones</span>
+                </a>
+            </li>
             
             {% if request.user.permisos == 'admin' %}
             <li class="nav-item active">

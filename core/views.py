@@ -109,7 +109,7 @@ def eliminar_item(request, item_id):
         if request.method == 'POST':
             config = Configuracion.objects.get(id=1)
             clave_ingresada = request.POST.get('clave_anulacion')
-            if clave_ingresada == config.clave_anulacion:
+            if clave_ingresada == config.clave_anulacion or clave_ingresada == request.user.clave_anulacion:
                 print(config.clave_anulacion)
                 producto = Producto.objects.get(id_producto=item_id)
                 item = CarritoItem.objects.get(producto=producto, usuario=request.user)
@@ -739,3 +739,66 @@ def procesar_pago_restante(request, metodo_pago, restante):
     url_generar_venta = reverse('generar_venta', args=['venta_con_restante', metodo_pago, restante])
     return redirect(url_generar_venta)
 
+def listar_ventas_respaldo(request):
+    # Aquí debes obtener las ventas del modelo VentaRespaldo
+    ventas_respaldo = VentaRespaldo.objects.all()  # Puedes personalizar la consulta según tus necesidades
+
+    return render(request, 'lista_ventas_respaldo.html', {'ventas_respaldo': ventas_respaldo})
+
+def listar_ventas_respaldo(request):
+    # Encuentra la fecha de cierre de la última transacción
+    ultima_fecha_cierre = RegistroTransaccion.objects.aggregate(Max('fecha_ingreso'))['fecha_ingreso__max']
+
+    if ultima_fecha_cierre:
+        # Filtra las ventas por la fecha de cierre de la última transacción
+        ventas = VentaRespaldo.objects.filter(fecha_hora__gt=ultima_fecha_cierre)
+    else:
+        # Si no hay transacciones registradas, muestra todas las ventas
+        ventas = VentaRespaldo.objects.all()
+
+    fecha = request.GET.get('fecha')
+    hora_inicio = request.GET.get('hora_inicio')
+    hora_fin = request.GET.get('hora_fin')
+
+    if fecha:
+        # Convierte la fecha de texto a un objeto de fecha
+        fecha = datetime.datetime.strptime(fecha, "%Y-%m-%d").date()
+
+        # Filtra las ventas por la fecha seleccionada
+        ventas = ventas.filter(fecha_hora__date=fecha)
+
+    if hora_inicio and hora_fin:
+        # Formatea las horas de inicio y fin en objetos de tiempo
+        hora_inicio = datetime.datetime.strptime(hora_inicio, "%H:%M").time()
+        hora_fin = datetime.datetime.strptime(hora_fin, "%H:%M").time()
+
+        # Filtra las ventas por el rango de horas
+        ventas = ventas.filter(fecha_hora__time__range=(hora_inicio, hora_fin))
+
+    return render(request, 'lista_ventas_respaldo.html', {'ventas': ventas})
+
+def detalle_venta_respaldo(request, venta_respaldo_id):
+    venta_respaldo = get_object_or_404(VentaRespaldo, id=venta_respaldo_id)
+    productos_vendidos = VentaProductoRespaldo.objects.filter(venta=venta_respaldo)
+    formas_pago = FormaPagoRespaldo.objects.filter(venta=venta_respaldo)
+    return render(request, 'detalle_venta_respaldo.html', {'venta_respaldo': venta_respaldo, 'productos_vendidos': productos_vendidos, 'formas_pago': formas_pago})
+
+def eliminar_venta(request, venta_id):
+    config = Configuracion.objects.get(id=1)
+    venta = get_object_or_404(Venta, id=venta_id)
+
+    if request.method == 'POST':
+        # Obtén la contraseña proporcionada por el usuario
+        contraseña = request.POST.get('contraseña')
+
+        # Verifica si la contraseña coincide
+        if contraseña == config.clave_anulacion or contraseña == request.user.clave_anulacion:
+            # Elimina la venta
+            venta.delete()
+            messages.success(request, 'Venta eliminada exitosamente.')
+            return redirect('listar_ventas')
+        else:
+            # Contraseña incorrecta, muestra un mensaje de error
+            messages.error(request, 'Contraseña incorrecta. La venta no se ha eliminado.')
+
+    return redirect('listar_ventas')

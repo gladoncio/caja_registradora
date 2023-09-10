@@ -1,7 +1,15 @@
 {% extends 'base/nav.html' %}
 
 {% block body %}
-
+{% if messages %}
+<div class="messages">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}" role="alert">
+        {{ message }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
 
 <div class="container-fluid">
     <h1 class="h3 mb-4 text-gray-800">Lista de Ventas</h1>
@@ -49,8 +57,32 @@
                                         <a href="{% url 'detalle_venta' venta.id %}" class="btn btn-primary btn-sm">Ver Detalle</a>
                                     </td>
                                     <td>
-                                        <a href="#" class="btn btn-primary btn-sm">Eliminar</a>                                   
+                                        <button type="button" class="btn btn-danger btn-sm" data-toggle="modal" data-target="#eliminarModal{{ venta.id }}">Eliminar</button>
                                     </td>
+                                    <div class="modal fade" id="eliminarModal{{ venta.id }}" tabindex="-1" role="dialog" aria-labelledby="eliminarModalLabel{{ venta.id }}" aria-hidden="true">
+                                        <div class="modal-dialog resize-text" role="document">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="eliminarModalLabel{{ venta.id }}">Confirmar Eliminación</h5>
+                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button>
+                                                </div>
+                                                <form method="post" action="{% url 'eliminar_venta' venta.id %}">
+                                                    {% csrf_token %}
+                                                    <div class="modal-body">
+                                                        <p>¿Estás seguro que deseas anular esta venta?</p>
+                                                        <input type="password" class="resize-text" name="contraseña" class="form-control" placeholder="Contraseña" required>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                                                        <button type="submit" class="btn btn-danger">Eliminar</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>                                    
+                                    
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -61,4 +93,6 @@
         </div>
     </div>
 </div>
+
+
 {% endblock %}

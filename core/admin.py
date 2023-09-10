@@ -15,7 +15,9 @@ admin.site.register(RegistroTransaccion)
 admin.site.register(CajaDiaria)
 admin.site.register(Cuadre)
 admin.site.register(ActualizacionModel)
-admin.site.register(VentaEliminada)
+admin.site.register(VentaRespaldo)
+#admin.site.register(VentaProductoRespaldo)
+#admin.site.register(FormaPagoRespaldo)
 
 
 

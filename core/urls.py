@@ -36,6 +36,9 @@ urlpatterns = [
     path('ingresar_monto_efectivo/', views.ingresar_monto_efectivo, name='ingresar_monto_efectivo'),
     path('seleccionar_metodo_pago_resto/<total>/<monto_efectivo>/', seleccionar_metodo_pago_resto, name='seleccionar_metodo_pago_resto'),
     path('procesar_pago_restante/<metodo_pago>/<restante>/', views.procesar_pago_restante, name='procesar_pago_restante'),
+    path('ventas-respaldo/', views.listar_ventas_respaldo, name='listar_ventas_respaldo'),
+    path('ventas-respaldo/<int:venta_respaldo_id>/', views.detalle_venta_respaldo, name='detalle_venta_respaldo'),
+    path('eliminar-venta/<int:venta_id>/', views.eliminar_venta, name='eliminar_venta'),
 ]
 
 if settings.DEBUG:

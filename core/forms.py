@@ -14,7 +14,7 @@ class UsuarioCreationForm(UserCreationForm):
 
     class Meta:
         model = Usuario
-        fields = ('username', 'password1', 'password2', 'permisos', 'rut')
+        fields = ('username', 'password1', 'password2', 'permisos', 'rut', 'clave_anulacion')
 
         
 class MyAuthForm(AuthenticationForm):

@@ -1,0 +1,56 @@
+{% extends 'base/nav.html' %}
+
+{% block body %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Lista de Ventas Anuladas</h1>
+    <form method="GET" action="{% url 'listar_ventas_respaldo' %}" class="mb-4">
+        <div class="form-row resize-text">
+            <div class="col">
+                <input type="date" name="fecha" class="form-control resize-text" placeholder="Fecha">
+            </div>
+            <div class="col">
+                <input type="time" name="hora_inicio" class="form-control resize-text" placeholder="Hora de inicio">
+            </div>
+            <div class="col">
+                <input type="time" name="hora_fin" class="form-control resize-text" placeholder="Hora de fin">
+            </div>
+            <div class="col">
+                <button type="submit" class="btn btn-primary resize-text">Buscar</button>
+            </div>
+        </div>
+    </form>
+    
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow mb-4">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered resize-text" id="dataTable" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Fecha y Hora</th>
+                                    <th>Total</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for venta in ventas %}
+                                <tr>
+                                    <td>{{ venta.id }}</td>
+                                    <td>{{ venta.fecha_anulacion }}</td>
+                                    <td>${{ venta.total|floatformat:configuracion.decimales }}</td>
+                                    <td>
+                                        <a href="{% url 'detalle_venta_respaldo' venta.id %}" class="btn btn-primary btn-sm">Ver Detalle</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
