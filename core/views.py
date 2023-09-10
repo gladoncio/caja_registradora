@@ -739,7 +739,6 @@ def procesar_pago_restante(request, metodo_pago, restante):
     url_generar_venta = reverse('generar_venta', args=['venta_con_restante', metodo_pago, restante])
     return redirect(url_generar_venta)
 
-
 def eliminar_venta(venta_id, usuario_eliminador):
     try:
         # Obtén la venta que deseas eliminar
@@ -756,11 +755,12 @@ def eliminar_venta(venta_id, usuario_eliminador):
         venta_eliminada.save()
 
         # Elimina la venta original
-        venta.delete()
+        #venta.delete()
 
         return True  # Indica que la eliminación fue exitosa
     except Venta.DoesNotExist:
         return False  # Indica que la venta no se encontró y no se eliminó
+
     
 
 def eliminar_venta_view(request, venta_id):
