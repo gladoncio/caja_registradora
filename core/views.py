@@ -703,7 +703,7 @@ def ingresar_monto_efectivo(request):
         # Obtener el monto ingresado por el usuario
         monto_efectivo = float(request.POST.get('monto_efectivo', '0'))
         if monto_efectivo >= total:
-            url_generar_venta = reverse('generar_venta', args=['venta_sin_restante', 'Efectivo', monto_efectivo])
+            url_generar_venta = reverse('generar_venta', args=['venta_sin_restante', 'efectivo', monto_efectivo])
             return redirect(url_generar_venta)
         else:
             # Redirigir a la vista seleccionar_metodo_pago_resto
