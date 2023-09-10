@@ -28,12 +28,36 @@
                     </ul>
 
                     <a href="{% url 'listar_ventas' %}" class="btn btn-secondary">Volver</a>
-                    <a href="{% url 'imprimir_boleta' venta.id %}" class="btn btn-primary">Imprimir Venta</a>
+                    <a href="#" id="imprimir-venta" class="btn btn-primary">Imprimir Venta</a>
                 </div>
             </div>
         </div>
     </div>
 </div>
-
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const imprimirVentaButton = document.getElementById("imprimir-venta");
+        const ventaId = {{ venta.id }}; // Obtén el ID de la venta desde el contexto Django
+    
+        imprimirVentaButton.addEventListener("click", function(event) {
+            event.preventDefault(); // Evita que el enlace siga su URL original
+    
+            // Realiza una petición AJAX para imprimir la venta
+            fetch(`{% url 'imprimir_boleta' venta.id %}`)
+                .then(response => {
+                    if (response.ok) {
+                        // La impresión se realizó con éxito
+                        alert("Venta impresa con éxito.");
+                    } else {
+                        // Ocurrió un error al imprimir
+                        alert("Error al imprimir la venta.");
+                    }
+                })
+                .catch(error => {
+                    console.error("Error al imprimir la venta:", error);
+                });
+        });
+    });
+</script>
 
 {% endblock %}
