@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
+from django.db.models.signals import pre_delete
 
 
 
@@ -138,7 +139,7 @@ class Venta(models.Model):
 
 
 class VentaProducto(models.Model):
-    venta = models.ForeignKey(Venta, on_delete=models.CASCADE)
+    venta = models.ForeignKey(Venta, on_delete=models.PROTECT)
     producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
     cantidad = models.PositiveIntegerField(blank=True, null=True)
     gramaje = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
@@ -214,14 +215,17 @@ class VentaEliminada(models.Model):
         return f'Venta Eliminada - Fecha: {self.fecha_hora_eliminacion}'
 
 # Definición de funciones y señales para el manejo de la eliminación de ventas
-@receiver(post_delete, sender=Venta)
-def venta_eliminada_handler(sender, instance, **kwargs):
-    # Crear una instancia de VentaEliminada con la información relevante
+@receiver(pre_delete, sender=Venta)
+def venta_eliminar_handler(sender, instance, **kwargs):
+    productos_eliminados = instance.productos.all()
+    total_eliminado = instance.total
+    usuario_eliminador = instance.usuario
+    
     venta_eliminada = VentaEliminada(
         fecha_hora_eliminacion=timezone.now(),
-        productos_eliminados=instance.productos.all(),  # Puedes personalizar cómo almacenas los productos eliminados
-        total_eliminado=instance.total,
-        usuario_eliminador=instance.usuario,
+        productos_eliminados=productos_eliminados, 
+        total_eliminado=total_eliminado,
+        usuario_eliminador=usuario_eliminador,
         # Agrega otros campos según tus necesidades
     )
     venta_eliminada.save()
