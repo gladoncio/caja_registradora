@@ -49,10 +49,7 @@
                                         <a href="{% url 'detalle_venta' venta.id %}" class="btn btn-primary btn-sm">Ver Detalle</a>
                                     </td>
                                     <td>
-                                        <form method="post" action="{% url 'eliminar_venta' venta.id %}">
-                                            {% csrf_token %}
-                                            <button type="submit" class="btn btn-danger">Eliminar Venta</button>
-                                        </form>                                        
+                                        <a href="{% url 'eliminar_venta' venta.id %}" class="btn btn-primary btn-sm">Eliminar</a>                                   
                                     </td>
                                 </tr>
                                 {% endfor %}
