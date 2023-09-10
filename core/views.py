@@ -159,7 +159,7 @@ def generar_venta(request, parametro1, parametro2, parametro3):
                 FormaPago.objects.create(venta=nueva_venta, tipo_pago=parametro2, monto=total_venta)
             
             # Verifica si el método de pago es efectivo y llama a la función abrir_caja_impresora
-            if parametro2 == "efectivo":
+            if parametro1 == "venta_con_restante" or parametro1 == "efectivo":
                 if abrir_caja_impresora():
                     messages.success(request, 'Caja abierta exitosamente.')
                 else:
