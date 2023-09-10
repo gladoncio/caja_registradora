@@ -28,6 +28,7 @@ from io import BytesIO
 from django.urls import reverse
 
 
+
 def abrir_caja_impresora():
     try:
         # Abre una conexión con la impresora a través de USB (sustituye los valores con los adecuados)
@@ -197,15 +198,15 @@ def listar_ventas(request):
 
     if fecha:
         # Convierte la fecha de texto a un objeto de fecha
-        fecha = datetime.datetime.strptime(fecha, "%Y-%m-%d").date()
+        fecha = datetime.strptime(fecha, "%Y-%m-%d").date()
 
         # Filtra las ventas por la fecha seleccionada
         ventas = ventas.filter(fecha_hora__date=fecha)
 
     if hora_inicio and hora_fin:
         # Formatea las horas de inicio y fin en objetos de tiempo
-        hora_inicio = datetime.datetime.strptime(hora_inicio, "%H:%M").time()
-        hora_fin = datetime.datetime.strptime(hora_fin, "%H:%M").time()
+        hora_inicio = datetime.strptime(hora_inicio, "%H:%M").time()
+        hora_fin = datetime.strptime(hora_fin, "%H:%M").time()
 
         # Filtra las ventas por el rango de horas
         ventas = ventas.filter(fecha_hora__time__range=(hora_inicio, hora_fin))
@@ -680,15 +681,15 @@ def procesar_pago(request):
             return redirect('ingresar_monto_efectivo')
         elif metodo_pago_seleccionado == 'Transferencia':
             # Redirige a la vista generar_venta con los parámetros adecuados para Transferencia
-            url_generar_venta = reverse('generar_venta', args=['venta_sin_restante', 'Transferencia', '0'])
+            url_generar_venta = reverse('generar_venta', args=['venta_sin_restante', 'transferencia', '0'])
             return redirect(url_generar_venta)
         elif metodo_pago_seleccionado == 'Débito':
             # Redirige a la vista generar_venta con los parámetros adecuados para Débito
-            url_generar_venta = reverse('generar_venta', args=['venta_sin_restante', 'Débito', '0'])
+            url_generar_venta = reverse('generar_venta', args=['venta_sin_restante', 'debito', '0'])
             return redirect(url_generar_venta)
         elif metodo_pago_seleccionado == 'Crédito':
             # Redirige a la vista generar_venta con los parámetros adecuados para Crédito
-            url_generar_venta = reverse('generar_venta', args=['venta_sin_restante', 'Crédito', '0'])
+            url_generar_venta = reverse('generar_venta', args=['venta_sin_restante', 'credito', '0'])
             return redirect(url_generar_venta)
     
     # Redirige a una vista predeterminada en caso de error o si no se seleccionó un método de pago válido
@@ -762,15 +763,15 @@ def listar_ventas_respaldo(request):
 
     if fecha:
         # Convierte la fecha de texto a un objeto de fecha
-        fecha = datetime.datetime.strptime(fecha, "%Y-%m-%d").date()
+        fecha = datetime.strptime(fecha, "%Y-%m-%d").date()
 
         # Filtra las ventas por la fecha seleccionada
         ventas = ventas.filter(fecha_hora__date=fecha)
 
     if hora_inicio and hora_fin:
         # Formatea las horas de inicio y fin en objetos de tiempo
-        hora_inicio = datetime.datetime.strptime(hora_inicio, "%H:%M").time()
-        hora_fin = datetime.datetime.strptime(hora_fin, "%H:%M").time()
+        hora_inicio = datetime.strptime(hora_inicio, "%H:%M").time()
+        hora_fin = datetime.strptime(hora_fin, "%H:%M").time()
 
         # Filtra las ventas por el rango de horas
         ventas = ventas.filter(fecha_hora__time__range=(hora_inicio, hora_fin))
