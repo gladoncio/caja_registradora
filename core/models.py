@@ -261,3 +261,20 @@ def crear_copia_venta(sender, instance, **kwargs):
         copia_forma_pago.save()
 
     # No es necesario eliminar la venta original aquí, ya que el sistema de señales se encarga de ello
+
+
+class RegistroGastos(models.Model):
+    nombre_persona = models.CharField(max_length=100)
+    contraseña = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.nombre_persona
+
+class GastoCaja(models.Model):
+    monto = models.DecimalField(max_digits=10, decimal_places=2)
+    descripcion = models.CharField(max_length=255)
+    fecha_hora = models.DateTimeField(auto_now_add=True)
+    registro_gastos = models.ForeignKey(RegistroGastos, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f'Gasto de ${self.monto} - {self.descripcion} - {self.fecha_hora}'

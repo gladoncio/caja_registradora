@@ -74,3 +74,9 @@ class ContraseñaForm(forms.Form):
     )
 
 
+class BarcodeForm(forms.Form):
+    barcode = forms.CharField(
+        max_length=100,
+        label='Código de Barras',
+        widget=forms.TextInput(attrs={'class': 'form-control resize-text'})
+    )

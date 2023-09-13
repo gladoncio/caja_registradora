@@ -10,7 +10,6 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import F,Q,Max
 from decimal import Decimal
 import datetime
-from django.db.models import Sum
 from escpos.printer import Usb
 from usb.core import USBError
 from django.http import HttpResponse
@@ -26,6 +25,8 @@ from barcode import generate
 from django.conf import settings  # Agrega esta importación
 from io import BytesIO
 from django.urls import reverse
+from django.db.models import Sum, F, ExpressionWrapper, DecimalField
+from django.db.models.functions import Coalesce
 
 
 
@@ -59,7 +60,39 @@ def index(request):
 def caja(request):
     carrito_items = CarritoItem.objects.filter(usuario=request.user)
     total = sum(item.subtotal() for item in carrito_items)
-    return render(request, 'caja.html', {'carrito_items': carrito_items, 'total': total})
+    if request.method == 'POST':
+        form = BarcodeForm(request.POST)
+        if form.is_valid():
+            barcode = form.cleaned_data['barcode']
+            try:
+                producto = Producto.objects.get(codigo_barras=barcode)
+                # Busca si ya existe un carrito_item con el mismo producto y usuario
+                carrito_item, created = CarritoItem.objects.get_or_create(
+                    usuario=request.user,
+                    producto=producto,
+                    defaults={'cantidad': 1}  # Cantidad predeterminada si no existe
+                )
+                if not created:
+                    # Si el carrito_item ya existe, simplemente aumenta la cantidad en 1
+                    carrito_item.cantidad += 1
+                    carrito_item.save()
+
+                # Redirige a la misma vista
+                return redirect('caja')
+            except Producto.DoesNotExist:
+                # Maneja el caso en que no se encuentre un producto con el código de barras especificado
+                # Puedes mostrar un mensaje de error al usuario o realizar otras acciones.
+                pass
+    else:
+        form = BarcodeForm()
+
+    context = {
+        'form': form,
+        'carrito_items': carrito_items,
+        'total' : total
+        # Otros datos de contexto que necesites
+    }
+    return render(request, 'caja.html', context)
 
 
 @login_required
@@ -222,41 +255,6 @@ def detalle_venta(request, venta_id):
     formas_pago = FormaPago.objects.filter(venta=venta)
     return render(request, 'detalle_venta.html', {'venta': venta, 'productos_vendidos': productos_vendidos, 'formas_pago': formas_pago})
 
-
-
-
-def informe_general(request):
-    caja_diaria, created = CajaDiaria.objects.get_or_create(id=1, defaults={'monto': 0.0, 'retiro': 0.0})
-    try:
-        # Obtener la última fecha de RegistroTransaccion si existe
-        ultima_fecha_registro = RegistroTransaccion.objects.latest('fecha_ingreso').fecha_ingreso
-    except RegistroTransaccion.DoesNotExist:
-        ultima_fecha_registro = None
-
-    # Filtrar todas las ventas después de la última fecha de RegistroTransaccion si existe, o todas las ventas si no existe
-    if ultima_fecha_registro:
-        ventas_despues_ultima_fecha = Venta.objects.filter(fecha_hora__gte=ultima_fecha_registro)
-    else:
-        ventas_despues_ultima_fecha = Venta.objects.all()
-
-    # Calcular el total de ventas
-    total_ventas_despues_ultima_fecha = ventas_despues_ultima_fecha.aggregate(Sum('total'))['total__sum'] or 0
-
-    # Calcular los montos divididos
-    monto_efectivo = FormaPago.objects.filter(venta__in=ventas_despues_ultima_fecha, tipo_pago='efectivo').aggregate(Sum('monto'))['monto__sum'] or 0
-    monto_credito = FormaPago.objects.filter(venta__in=ventas_despues_ultima_fecha, tipo_pago='credito').aggregate(Sum('monto'))['monto__sum'] or 0
-    monto_debito = FormaPago.objects.filter(venta__in=ventas_despues_ultima_fecha, tipo_pago='debito').aggregate(Sum('monto'))['monto__sum'] or 0
-    monto_transferencia = FormaPago.objects.filter(venta__in=ventas_despues_ultima_fecha, tipo_pago='transferencia').aggregate(Sum('monto'))['monto__sum'] or 0
-
-    return render(request, 'informe_general.html', {
-        'total_ventas_despues_ultima_fecha': total_ventas_despues_ultima_fecha,
-        'monto_efectivo': monto_efectivo,
-        'monto_credito': monto_credito,
-        'monto_debito': monto_debito,
-        'monto_transferencia': monto_transferencia,
-        'monto_retiro' : caja_diaria.retiro,
-        'monto_caja' : caja_diaria.monto,
-    })
 
 
 
@@ -803,3 +801,58 @@ def eliminar_venta(request, venta_id):
             messages.error(request, 'Contraseña incorrecta. La venta no se ha eliminado.')
 
     return redirect('listar_ventas')
+
+
+def informe_general(request):
+    caja_diaria, created = CajaDiaria.objects.get_or_create(id=1, defaults={'monto': 0.0, 'retiro': 0.0})
+    try:
+        # Obtener la última fecha de RegistroTransaccion si existe
+        ultima_fecha_registro = RegistroTransaccion.objects.latest('fecha_ingreso').fecha_ingreso
+    except RegistroTransaccion.DoesNotExist:
+        ultima_fecha_registro = None
+
+    # Filtrar todas las ventas después de la última fecha de RegistroTransaccion si existe, o todas las ventas si no existe
+    if ultima_fecha_registro:
+        ventas_despues_ultima_fecha = Venta.objects.filter(fecha_hora__gte=ultima_fecha_registro)
+    else:
+        ventas_despues_ultima_fecha = Venta.objects.all()
+
+    # Calcular el total de ventas
+    total_ventas_despues_ultima_fecha = ventas_despues_ultima_fecha.aggregate(Sum('total'))['total__sum'] or 0
+
+    # Calcular los montos divididos
+    monto_efectivo = FormaPago.objects.filter(venta__in=ventas_despues_ultima_fecha, tipo_pago='efectivo').aggregate(Sum('monto'))['monto__sum'] or 0
+    monto_credito = FormaPago.objects.filter(venta__in=ventas_despues_ultima_fecha, tipo_pago='credito').aggregate(Sum('monto'))['monto__sum'] or 0
+    monto_debito = FormaPago.objects.filter(venta__in=ventas_despues_ultima_fecha, tipo_pago='debito').aggregate(Sum('monto'))['monto__sum'] or 0
+    monto_transferencia = FormaPago.objects.filter(venta__in=ventas_despues_ultima_fecha, tipo_pago='transferencia').aggregate(Sum('monto'))['monto__sum'] or 0
+
+    ventas_por_departamento = Producto.objects.values('departamento__nombre').annotate(
+        total_bruto=ExpressionWrapper(
+            Sum(F('ventaproducto__cantidad') * F('precio'), output_field=DecimalField(max_digits=10, decimal_places=2)),
+            output_field=DecimalField(max_digits=10, decimal_places=2)
+        ),
+        total_neto=Sum(
+            F('ventaproducto__cantidad') * F('precio'),
+            output_field=DecimalField(max_digits=10, decimal_places=2)
+        )
+    )
+
+    total_bruto_general = VentaProducto.objects.aggregate(
+        total_bruto=ExpressionWrapper(
+            Sum(F('producto__precio') * F('cantidad'), output_field=DecimalField(max_digits=10, decimal_places=2)),
+            output_field=DecimalField(max_digits=10, decimal_places=2)
+        ),
+        total_neto=Sum(F('subtotal'), output_field=DecimalField(max_digits=10, decimal_places=2))
+    )
+
+    return render(request, 'informe_general.html', {
+        'total_ventas_despues_ultima_fecha': total_ventas_despues_ultima_fecha,
+        'monto_efectivo': monto_efectivo,
+        'monto_credito': monto_credito,
+        'monto_debito': monto_debito,
+        'monto_transferencia': monto_transferencia,
+        'monto_retiro': caja_diaria.retiro,
+        'monto_caja': caja_diaria.monto,
+        'total_bruto_general': total_bruto_general,
+        'ventas_por_departamento': ventas_por_departamento,
+    })
