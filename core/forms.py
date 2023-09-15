@@ -80,3 +80,8 @@ class BarcodeForm(forms.Form):
         label='Código de Barras',
         widget=forms.TextInput(attrs={'class': 'form-control resize-text'})
     )
+
+class GastoCajaForm(forms.ModelForm):
+    class Meta:
+        model = GastoCaja
+        fields = ['monto', 'descripcion', 'registro_gastos']

@@ -278,3 +278,18 @@ class GastoCaja(models.Model):
 
     def __str__(self):
         return f'Gasto de ${self.monto} - {self.descripcion} - {self.fecha_hora}'
+    
+def ingresar_gasto(request):
+    # Verificar si el usuario está autenticado como administrador
+    if not request.user.is_authenticated or not request.user.is_staff:
+        return redirect('login')  # O redirige a otra página de acceso no autorizado
+
+    if request.method == 'POST':
+        form = GastoCajaForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('lista_gastos')  # Redirige a la lista de gastos después de guardar
+    else:
+        form = GastoCajaForm()
+
+    return render(request, 'ingresar_gasto.html', {'form': form})
