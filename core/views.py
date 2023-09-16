@@ -925,7 +925,7 @@ def cuadrar(request):
             'total_bruto_general': total_bruto_general,
             'ventas_por_departamento': ventas_por_departamento,
             'caja_que_deberia' :  monto_que_deberia_dar,
-            'monto_en la_caja' : total_efectivo,
+            'monto_en_la_caja' : total_efectivo,
             }
 
             return render(request, 'resultado_cuadre.html', context)
