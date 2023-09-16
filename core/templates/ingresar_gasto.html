@@ -1,0 +1,25 @@
+{% extends 'base/nav.html' %}
+
+{% block body %}
+<div class="container-fluid resize-text">
+   <div class="card">
+      <div class="card-body">
+         <!-- Tu encabezado y contenido aquí -->
+         <h1 class="card-title">Ingresar Gasto</h1>
+         <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary">Guardar</button>
+         </form>
+         <a href="{% url 'lista_gastos' %}" class="btn btn-secondary">Volver a la Lista de Gastos</a>
+      </div>
+   </div>
+</div>
+
+{% include 'base/footer.html' %}
+<!-- End of Footer -->
+
+
+<!-- End of Content Wrapper -->
+{% include 'base/logout.html' %}
+{% endblock %}

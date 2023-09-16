@@ -39,6 +39,8 @@ urlpatterns = [
     path('ventas-respaldo/', views.listar_ventas_respaldo, name='listar_ventas_respaldo'),
     path('ventas-respaldo/<int:venta_respaldo_id>/', views.detalle_venta_respaldo, name='detalle_venta_respaldo'),
     path('eliminar-venta/<int:venta_id>/', views.eliminar_venta, name='eliminar_venta'),
+    path('ingresar-gasto/', views.ingresar_gasto, name='ingresar_gasto'),
+    path('gastos/', views.lista_gastos, name='lista_gastos'),
 ]
 
 if settings.DEBUG:

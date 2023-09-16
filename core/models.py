@@ -3,8 +3,8 @@ from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
-from django.db.models.signals import pre_delete
-
+from django.db.models.signals import pre_delete,post_migrate
+from django.db.utils import IntegrityError
 
 
 class Usuario(AbstractUser):
@@ -24,7 +24,22 @@ class Usuario(AbstractUser):
     )
     
     rut = models.CharField(max_length=40, null=True, verbose_name="Rut", default="", blank=True)
-    clave_anulacion = models.CharField(max_length=20, default="123")
+    clave_anulacion = models.CharField(max_length=20, default="", unique=True)  # Hacer la clave única
+
+
+
+# Define la función para crear el usuario admin
+# Define la función para crear el usuario admin
+# Define la función para crear el usuario admin
+def crear_usuario_admin(**kwargs):
+    if not Usuario.objects.filter(username='admin').exists():
+        Usuario.objects.create_superuser(username='admin', password='123', clave_anulacion='123', permisos='admin')
+        print("Usuario administrador creado exitosamente.")
+
+# Registra la función con la señal post_migrate
+@receiver(post_migrate)
+def post_migrate_callback(sender, **kwargs):
+    crear_usuario_admin(**kwargs)
 
     # Resto de los campos y métodos de tu modelo
 
@@ -123,7 +138,16 @@ class Configuracion(models.Model):
     def __str__(self):
         return 'Configuración de la Aplicación'
 
-
+@receiver(post_migrate)
+def crear_configuracion(sender, **kwargs):  # Reemplaza 'tu_app_nombre' con el nombre de tu aplicación
+        configuracion, created = Configuracion.objects.get_or_create(
+            decimales=0,
+            clave_anulacion = '5901234123457',
+            idioma='es',
+            imprimir='sin_corte',
+            porcentaje_iva=0.0,
+            tamano_letra=30,
+        )
 
 
 class Venta(models.Model):
@@ -263,33 +287,13 @@ def crear_copia_venta(sender, instance, **kwargs):
     # No es necesario eliminar la venta original aquí, ya que el sistema de señales se encarga de ello
 
 
-class RegistroGastos(models.Model):
-    nombre_persona = models.CharField(max_length=100)
-    contraseña = models.CharField(max_length=100)
-
-    def __str__(self):
-        return self.nombre_persona
-
 class GastoCaja(models.Model):
     monto = models.DecimalField(max_digits=10, decimal_places=2)
     descripcion = models.CharField(max_length=255)
     fecha_hora = models.DateTimeField(auto_now_add=True)
-    registro_gastos = models.ForeignKey(RegistroGastos, on_delete=models.CASCADE)
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, default=1)# Asigna un valor predeterminado (por ejemplo, 1)
 
     def __str__(self):
         return f'Gasto de ${self.monto} - {self.descripcion} - {self.fecha_hora}'
-    
-def ingresar_gasto(request):
-    # Verificar si el usuario está autenticado como administrador
-    if not request.user.is_authenticated or not request.user.is_staff:
-        return redirect('login')  # O redirige a otra página de acceso no autorizado
 
-    if request.method == 'POST':
-        form = GastoCajaForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('lista_gastos')  # Redirige a la lista de gastos después de guardar
-    else:
-        form = GastoCajaForm()
 
-    return render(request, 'ingresar_gasto.html', {'form': form})

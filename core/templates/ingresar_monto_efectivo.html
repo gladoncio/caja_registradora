@@ -21,6 +21,12 @@
     </form>
 </div>
 
+{% include 'base/footer.html' %}
+<!-- End of Footer -->
+
+
+<!-- End of Content Wrapper -->
+{% include 'base/logout.html' %}
 <script>
 document.addEventListener("DOMContentLoaded", function() {
     const totalAmount = parseFloat({{ total|floatformat:configuracion.decimales }});

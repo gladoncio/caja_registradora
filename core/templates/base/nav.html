@@ -99,6 +99,19 @@
                     <span>Crear Usuarios</span>
                 </a>
             </li>
+            <li class="nav-item active">
+                <a class="nav-link" href="{% url "lista_gastos" %}">
+                    <i class="fas fa-user-plus me-2"></i> <!-- Icono de agregar usuario -->
+                    <span>Gastos</span>
+                </a>
+            </li>
+            <li class="nav-item active">
+                <a class="nav-link" href="{% url "editar_caja_diaria" %}">
+                    <i class="fas fa-user-plus me-2"></i> <!-- Icono de agregar usuario -->
+                    <span>Caja diaria y Retiros</span>
+                </a>
+            </li>
+
             {% endif %}
             
             <!-- Divider -->
@@ -117,9 +130,6 @@
                     <div class="bg-white py-2 collapse-inner rounded">
                         <h6 class="collapse-header">Caja:</h6>
                         <a class="collapse-item" href="{% url "informe_general" %}">Informe de Caja</a>
-                        {% if request.user.permisos == 'admin' %}
-                        <a class="collapse-item" href="{% url "editar_caja_diaria" %}">Caja diaria</a>
-                        {% endif %}
                         <a class="collapse-item" href="{% url "cuadrar" %}">Cuadrar Caja</a>
                     </div>
                 </div>

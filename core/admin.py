@@ -18,6 +18,7 @@ admin.site.register(ActualizacionModel)
 admin.site.register(VentaRespaldo)
 #admin.site.register(VentaProductoRespaldo)
 #admin.site.register(FormaPagoRespaldo)
+admin.site.register(GastoCaja)
 
 
 

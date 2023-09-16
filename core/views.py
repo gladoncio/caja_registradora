@@ -357,73 +357,8 @@ def editar_monto_caja_diaria(request):
 
     return render(request, 'editar_caja_diaria.html', {'form': form})
 
-def cuadrar(request):
-    caja_diaria, created = CajaDiaria.objects.get_or_create(id=1, defaults={'monto': 0.0, 'retiro': 0.0})
-    if request.method == 'POST':
-        form = BilletesMonedasForm(request.POST)
-        if form.is_valid():
-            # Procesa los datos ingresados en el formulario
-            monedas_10 = form.cleaned_data['monedas_10']
-            monedas_50 = form.cleaned_data['monedas_50']
-            monedas_100 = form.cleaned_data['monedas_100']
-            monedas_500 = form.cleaned_data['monedas_500']
-            billetes_1000 = form.cleaned_data['billetes_1000']
-            billetes_2000 = form.cleaned_data['billetes_2000']
-            billetes_5000 = form.cleaned_data['billetes_5000']
-            billetes_10000 = form.cleaned_data['billetes_10000']
-            billetes_20000 = form.cleaned_data['billetes_20000']
-            
-            total_efectivo = (monedas_10 * 10) + (monedas_50 * 50) + (monedas_100 * 100) + (monedas_500 * 500) + (billetes_1000 * 1000) + (billetes_2000 * 2000) + (billetes_5000 * 5000) + (billetes_10000 * 10000) + (billetes_20000 * 20000)
 
-            try:
-                ultima_fecha_registro = RegistroTransaccion.objects.latest('fecha_ingreso').fecha_ingreso
-            except RegistroTransaccion.DoesNotExist:
-                ultima_fecha_registro = None
 
-            if ultima_fecha_registro:
-                ventas_despues_ultima_fecha = Venta.objects.filter(fecha_hora__gte=ultima_fecha_registro)
-            else:
-                ventas_despues_ultima_fecha = Venta.objects.all()
-
-            # Calcular el total de ventas
-            total_ventas_despues_ultima_fecha = ventas_despues_ultima_fecha.aggregate(Sum('total'))['total__sum']
-
-            if total_ventas_despues_ultima_fecha is None:
-                total_ventas_despues_ultima_fecha = 0
-
-            # Calcular los montos divididos
-            monto_efectivo = FormaPago.objects.filter(venta__in=ventas_despues_ultima_fecha, tipo_pago='efectivo').aggregate(Sum('monto'))['monto__sum'] or 0
-            monto_credito = FormaPago.objects.filter(venta__in=ventas_despues_ultima_fecha, tipo_pago='credito').aggregate(Sum('monto'))['monto__sum'] or 0
-            monto_debito = FormaPago.objects.filter(venta__in=ventas_despues_ultima_fecha, tipo_pago='debito').aggregate(Sum('monto'))['monto__sum'] or 0
-            monto_transferencia = FormaPago.objects.filter(venta__in=ventas_despues_ultima_fecha, tipo_pago='transferencia').aggregate(Sum('monto'))['monto__sum'] or 0
-
-            monto_que_deberia_dar = monto_efectivo + caja_diaria.monto - caja_diaria.retiro
-            
-            cuadre = Cuadre.objects.create(
-            usuario=request.user,  # Supongo que quieres asociar al usuario actual
-            fecha_ingreso=timezone.now(),  # Utiliza timezone.now() para obtener la fecha y hora actual
-            # Otra información que quieras guardar en el modelo Cuadre
-            )
-
-            
-            
-            context = {
-                'total' : total_ventas_despues_ultima_fecha,
-                'caja_diaria': caja_diaria.monto,
-                'retiro' : caja_diaria.retiro,
-                'monto_efectivo': monto_efectivo,
-                'monto_credito': monto_credito,
-                'monto_debito': monto_debito,
-                'monto_transferencia': monto_transferencia,
-                'monto_que_deberia_dar': monto_que_deberia_dar,
-                'total_en_caja':  total_efectivo
-            }
-
-            return render(request, 'resultado_cuadre.html', context)
-    else:
-        form = BilletesMonedasForm()
-
-    return render(request, 'cerrar_caja.html', {'form': form})
 
 def agregar_producto(request):
     if request.method == 'POST':
@@ -503,7 +438,6 @@ def update(request):
     # Actualizar el proyecto
     update_project(new_version_directory, project_directory)
 
-    # Reiniciar la aplicación (puedes adaptarlo a tu servidor web)
 
     return render(request, 'update.html')
 
@@ -515,7 +449,7 @@ def abrir_caja(request):
         if form.is_valid():
             # Verifica si la contraseña es correcta
             contraseña = form.cleaned_data['contraseña']
-            if contraseña == configuracion.clave_anulacion or request.user.clave_anulacion:  # Reemplaza 'tu_contraseña_correcta' con la contraseña correcta
+            if contraseña == configuracion.clave_anulacion or request.user.clave_anulacion:
                 try:
                     # Abre una conexión con la impresora a través de USB (sustituye los valores con los adecuados)
                     printer = Usb(0x1fc9, 0x2016)
@@ -660,7 +594,6 @@ def imprimir_en_xprinter(content):
     # Realiza un corte de papel (puede variar según la impresora)
     #printer.cut()
 
-    # Cierra la conexión con la impresora
     printer.close()
 
 def seleccionar_metodo_pago(request):
@@ -826,7 +759,16 @@ def informe_general(request):
     monto_debito = FormaPago.objects.filter(venta__in=ventas_despues_ultima_fecha, tipo_pago='debito').aggregate(Sum('monto'))['monto__sum'] or 0
     monto_transferencia = FormaPago.objects.filter(venta__in=ventas_despues_ultima_fecha, tipo_pago='transferencia').aggregate(Sum('monto'))['monto__sum'] or 0
 
-    ventas_por_departamento = Producto.objects.values('departamento__nombre').annotate(
+    # Filtrar los gastos después de la última fecha de RegistroTransaccion
+    if ultima_fecha_registro:
+        gastos_despues_ultima_fecha = GastoCaja.objects.filter(fecha_hora__gte=ultima_fecha_registro)
+    else:
+        gastos_despues_ultima_fecha = GastoCaja.objects.all()
+
+    # Calcular el total de gastos
+    total_gastos_despues_ultima_fecha = gastos_despues_ultima_fecha.aggregate(Sum('monto'))['monto__sum'] or 0
+
+    ventas_por_departamento = Producto.objects.filter(ventaproducto__venta__in=ventas_despues_ultima_fecha).values('departamento__nombre').annotate(
         total_bruto=ExpressionWrapper(
             Sum(F('ventaproducto__cantidad') * F('precio'), output_field=DecimalField(max_digits=10, decimal_places=2)),
             output_field=DecimalField(max_digits=10, decimal_places=2)
@@ -837,7 +779,8 @@ def informe_general(request):
         )
     )
 
-    total_bruto_general = VentaProducto.objects.aggregate(
+    # Calcular el total bruto general después de la fecha
+    total_bruto_general = VentaProducto.objects.filter(venta__in=ventas_despues_ultima_fecha).aggregate(
         total_bruto=ExpressionWrapper(
             Sum(F('producto__precio') * F('cantidad'), output_field=DecimalField(max_digits=10, decimal_places=2)),
             output_field=DecimalField(max_digits=10, decimal_places=2)
@@ -855,20 +798,152 @@ def informe_general(request):
         'monto_caja': caja_diaria.monto,
         'total_bruto_general': total_bruto_general,
         'ventas_por_departamento': ventas_por_departamento,
+        'gastos' : total_gastos_despues_ultima_fecha,
     })
 
 
 def ingresar_gasto(request):
-    # Verificar si el usuario está autenticado como administrador
-    if not request.user.is_authenticated or not request.user.is_staff:
+    # Verificar si el usuario está autenticado
+    if not request.user.is_authenticated:
         return redirect('login')  # O redirige a otra página de acceso no autorizado
 
     if request.method == 'POST':
         form = GastoCajaForm(request.POST)
         if form.is_valid():
-            form.save()
-            return redirect('lista_gastos')  # Redirige a la lista de gastos después de guardar
+            # Realiza la autenticación adicional aquí
+            clave_anulacion = request.POST.get('clave_anulacion', '')  # Obtener la clave ingresada en el formulario
+            
+            try:
+                # Intenta buscar un usuario con la misma clave de anulación
+                usuario_con_clave_anulacion = Usuario.objects.get(clave_anulacion=clave_anulacion)
+
+                gasto = form.save(commit=False)  # No guardes inmediatamente en la base de datos
+                gasto.usuario = usuario_con_clave_anulacion # Asigna el usuario autenticado al gasto
+                gasto.save()  # Guarda el gasto en la base de datos
+                return redirect('ingresar_gasto')  # Redirige a la lista de gastos después de guardar
+            except Usuario.DoesNotExist:
+                # No se encontró un usuario con la clave de anulación proporcionada
+                # Puedes manejar esto de acuerdo a tus requerimientos
+                # Por ejemplo, mostrar un mensaje de error
+                messages.error(request, 'Usuario no encontrado para la clave de anulación proporcionada.')
     else:
         form = GastoCajaForm()
 
     return render(request, 'ingresar_gasto.html', {'form': form})
+
+
+def cuadrar(request):
+    caja_diaria, created = CajaDiaria.objects.get_or_create(id=1, defaults={'monto': 0.0, 'retiro': 0.0})
+    
+    if request.method == 'POST':
+        form = BilletesMonedasForm(request.POST)
+        if form.is_valid():
+            # Procesa los datos ingresados en el formulario
+            monedas_10 = form.cleaned_data['monedas_10']
+            monedas_50 = form.cleaned_data['monedas_50']
+            monedas_100 = form.cleaned_data['monedas_100']
+            monedas_500 = form.cleaned_data['monedas_500']
+            billetes_1000 = form.cleaned_data['billetes_1000']
+            billetes_2000 = form.cleaned_data['billetes_2000']
+            billetes_5000 = form.cleaned_data['billetes_5000']
+            billetes_10000 = form.cleaned_data['billetes_10000']
+            billetes_20000 = form.cleaned_data['billetes_20000']
+            maquinas_debito = form.cleaned_data['maquinas_debito']
+            
+            total_efectivo = (
+                monedas_10 + monedas_50 + monedas_100 + monedas_500 +
+                billetes_1000 + billetes_2000 + billetes_5000 +
+                billetes_10000 + billetes_20000
+            )
+
+            try:
+                ultima_fecha_registro = RegistroTransaccion.objects.latest('fecha_ingreso').fecha_ingreso
+            except RegistroTransaccion.DoesNotExist:
+                ultima_fecha_registro = None
+
+            if ultima_fecha_registro:
+                ventas_despues_ultima_fecha = Venta.objects.filter(fecha_hora__gte=ultima_fecha_registro)
+            else:
+                ventas_despues_ultima_fecha = Venta.objects.all()
+
+            # Calcular el total de ventas
+            total_ventas_despues_ultima_fecha = ventas_despues_ultima_fecha.aggregate(Sum('total'))['total__sum']
+
+            if total_ventas_despues_ultima_fecha is None:
+                total_ventas_despues_ultima_fecha = 0
+
+            # Calcular los montos divididos
+            monto_efectivo = FormaPago.objects.filter(venta__in=ventas_despues_ultima_fecha, tipo_pago='efectivo').aggregate(Sum('monto'))['monto__sum'] or 0
+            monto_credito = FormaPago.objects.filter(venta__in=ventas_despues_ultima_fecha, tipo_pago='credito').aggregate(Sum('monto'))['monto__sum'] or 0
+            monto_debito = FormaPago.objects.filter(venta__in=ventas_despues_ultima_fecha, tipo_pago='debito').aggregate(Sum('monto'))['monto__sum'] or 0
+            monto_transferencia = FormaPago.objects.filter(venta__in=ventas_despues_ultima_fecha, tipo_pago='transferencia').aggregate(Sum('monto'))['monto__sum'] or 0
+                # Filtrar los gastos después de la última fecha de RegistroTransaccion
+            if ultima_fecha_registro:
+                gastos_despues_ultima_fecha = GastoCaja.objects.filter(fecha_hora__gte=ultima_fecha_registro)
+            else:
+                gastos_despues_ultima_fecha = GastoCaja.objects.all()
+
+            # Calcular el total de gastos
+            total_gastos_despues_ultima_fecha = gastos_despues_ultima_fecha.aggregate(Sum('monto'))['monto__sum'] or 0
+
+            monto_que_deberia_dar = monto_efectivo + caja_diaria.monto - caja_diaria.retiro
+            
+            cuadre = Cuadre.objects.create(
+                usuario=request.user,
+                fecha_ingreso=timezone.now(),
+                # Otra información que quieras guardar en el modelo Cuadre
+            )
+
+            ventas_por_departamento = Producto.objects.values('departamento__nombre').annotate(
+                total_bruto=ExpressionWrapper(
+                    Sum(F('ventaproducto__cantidad') * F('precio'), output_field=DecimalField(max_digits=10, decimal_places=2)),
+                    output_field=DecimalField(max_digits=10, decimal_places=2)
+                ),
+                total_neto=Sum(
+                    F('ventaproducto__cantidad') * F('precio'),
+                    output_field=DecimalField(max_digits=10, decimal_places=2)
+                )
+            )
+
+            total_bruto_general = VentaProducto.objects.aggregate(
+                total_bruto=ExpressionWrapper(
+                    Sum(F('producto__precio') * F('cantidad'), output_field=DecimalField(max_digits=10, decimal_places=2)),
+                    output_field=DecimalField(max_digits=10, decimal_places=2)
+                ),
+                total_neto=Sum(F('subtotal'), output_field=DecimalField(max_digits=10, decimal_places=2))
+            )
+
+
+            context = {
+            'total_ventas_despues_ultima_fecha': total_ventas_despues_ultima_fecha,
+            'monto_efectivo': monto_efectivo,
+            'monto_credito': monto_credito,
+            'monto_debito': monto_debito,
+            'monto_transferencia': monto_transferencia,
+            'monto_retiro': caja_diaria.retiro,
+            'monto_caja': caja_diaria.monto,
+            'total_bruto_general': total_bruto_general,
+            'ventas_por_departamento': ventas_por_departamento,
+            }
+
+            return render(request, 'resultado_cuadre.html', context)
+    else:
+        form = BilletesMonedasForm()
+
+    return render(request, 'cerrar_caja.html', {'form': form})
+
+
+def lista_gastos(request):
+    try:
+        # Obtener la última fecha de RegistroTransaccion si existe
+        ultima_fecha_registro = RegistroTransaccion.objects.latest('fecha_ingreso').fecha_ingreso
+    except RegistroTransaccion.DoesNotExist:
+        ultima_fecha_registro = None
+
+    # Filtrar los gastos que ocurrieron después de la última fecha de RegistroTransaccion si existe
+    gastos_post_ultima_transaccion = GastoCaja.objects.filter(fecha_hora__gte=ultima_fecha_registro) if ultima_fecha_registro else None
+
+    # Filtrar las ventas que ocurrieron después de la última fecha de RegistroTransaccion si existe
+    ventas_post_ultima_transaccion = Venta.objects.filter(fecha_hora__gte=ultima_fecha_registro) if ultima_fecha_registro else None
+
+    return render(request, 'lista_gastos.html', {'gastos_post_ultima_transaccion': gastos_post_ultima_transaccion, 'ventas_post_ultima_transaccion': ventas_post_ultima_transaccion})
