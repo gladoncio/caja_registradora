@@ -944,7 +944,7 @@ def cuadrar(request):
                 content += "--------------------------\n"
 
                 # Datos de ventas y montos
-                content += "Ventas después de la última fecha de RegistroTransaccion:\n"
+                content += "Ventas del dia:\n"
                 content += "Total en Efectivo: ${}\n".format(context['monto_efectivo'])
                 content += "Total en Crédito: ${}\n".format(context['monto_credito'])
                 content += "Total en Débito: ${}\n".format(context['monto_debito'])
@@ -968,7 +968,7 @@ def cuadrar(request):
 
                 return content
             
-            
+
             content = generar_comandos_de_impresion(context)
             
             imprimir_en_xprinter(content)
