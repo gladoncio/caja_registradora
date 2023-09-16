@@ -41,6 +41,7 @@ urlpatterns = [
     path('eliminar-venta/<int:venta_id>/', views.eliminar_venta, name='eliminar_venta'),
     path('ingresar-gasto/', views.ingresar_gasto, name='ingresar_gasto'),
     path('gastos/', views.lista_gastos, name='lista_gastos'),
+    
 ]
 
 if settings.DEBUG:

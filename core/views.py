@@ -935,6 +935,45 @@ def cuadrar(request):
             'monto_faltante_maquinas' : maquina_faltante,
             }
 
+            def generar_comandos_de_impresion(context):
+                # Inicializa una cadena vacía para almacenar los comandos de impresión
+                content = ""
+                content += "--------------------------\n"
+                content += "Informe de Cierre de Caja\n"
+                content += "Fecha: {}\n".format(timezone.now().strftime('%Y-%m-%d %H:%M:%S'))
+                content += "--------------------------\n"
+
+                # Datos de ventas y montos
+                content += "Ventas después de la última fecha de RegistroTransaccion:\n"
+                content += "Total en Efectivo: ${}\n".format(context['monto_efectivo'])
+                content += "Total en Crédito: ${}\n".format(context['monto_credito'])
+                content += "Total en Débito: ${}\n".format(context['monto_debito'])
+                content += "Total en Transferencia: ${}\n".format(context['monto_transferencia'])
+                content += "Total de Retiro: ${}\n".format(context['monto_retiro'])
+                content += "Total en Caja: ${}\n".format(context['monto_caja'])
+                content += "Total Bruto General: ${}\n".format(context['total_bruto_general']['total_bruto'])
+                content += "Total Neto General: ${}\n".format(context['total_bruto_general']['total_neto'])
+                content += "Total de Ventas por Departamento:\n"
+                
+                for venta_por_departamento in context['ventas_por_departamento']:
+                    content += "{}:\n".format(venta_por_departamento['departamento__nombre'])
+                    content += "Total Bruto: ${}\n".format(venta_por_departamento['total_bruto'])
+                    content += "Total Neto: ${}\n".format(venta_por_departamento['total_neto'])
+
+                content += "Efectivo que Debería Haber en Caja: ${}\n".format(context['caja_que_deberia'])
+                content += "Efectivo en la Caja: ${}\n".format(context['monto_en_la_caja'])
+                content += "Efectivo Faltante: ${}\n".format(context['efectivo_faltante'])
+                content += "Débito Faltante en Máquinas: ${}\n".format(context['monto_faltante_maquinas'])
+                content += "--------------------------\n"
+
+                return content
+            
+            
+            content = generar_comandos_de_impresion(context)
+            
+            imprimir_en_xprinter(content)
+
+
             return render(request, 'resultado_cuadre.html', context)
     else:
         form = BilletesMonedasForm()
@@ -956,3 +995,4 @@ def lista_gastos(request):
     ventas_post_ultima_transaccion = Venta.objects.filter(fecha_hora__gte=ultima_fecha_registro) if ultima_fecha_registro else None
 
     return render(request, 'lista_gastos.html', {'gastos_post_ultima_transaccion': gastos_post_ultima_transaccion, 'ventas_post_ultima_transaccion': ventas_post_ultima_transaccion})
+
