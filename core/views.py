@@ -916,7 +916,8 @@ def cuadrar(request):
                 ),
                 total_neto=Sum(F('subtotal'), output_field=DecimalField(max_digits=10, decimal_places=2))
             )
-
+            monto_faltante_efectivo = abs(monto_que_deberia_dar - total_efectivo)
+            maquina_faltante = abs(monto_debito - maquinas_debito)
 
             context = {
             'total_ventas_despues_ultima_fecha': total_gastos_despues_ultima_fecha,
@@ -930,6 +931,8 @@ def cuadrar(request):
             'ventas_por_departamento': ventas_por_departamento,
             'caja_que_deberia' :  monto_que_deberia_dar,
             'monto_en_la_caja' : total_efectivo,
+            'efectivo_faltante' : monto_faltante_efectivo,
+            'monto_faltante_maquinas' : maquina_faltante,
             }
 
             return render(request, 'resultado_cuadre.html', context)
