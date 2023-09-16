@@ -866,8 +866,14 @@ def cuadrar(request):
             else:
                 ventas_despues_ultima_fecha = Venta.objects.all()
 
-            # Calcular el total de ventas
-            total_ventas_despues_ultima_fecha = ventas_despues_ultima_fecha.aggregate(Sum('total'))['total__sum']
+                # Filtrar los gastos después de la última fecha de RegistroTransaccion
+            if ultima_fecha_registro:
+                gastos_despues_ultima_fecha = GastoCaja.objects.filter(fecha_hora__gte=ultima_fecha_registro)
+            else:
+                gastos_despues_ultima_fecha = GastoCaja.objects.all()
+
+            # Calcular el total de gastos
+            total_gastos_despues_ultima_fecha = gastos_despues_ultima_fecha.aggregate(Sum('monto'))['monto__sum'] or 0
 
             if total_ventas_despues_ultima_fecha is None:
                 total_ventas_despues_ultima_fecha = 0
