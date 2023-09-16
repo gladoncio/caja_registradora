@@ -886,7 +886,7 @@ def cuadrar(request):
             # Calcular el total de gastos
             total_gastos_despues_ultima_fecha = gastos_despues_ultima_fecha.aggregate(Sum('monto'))['monto__sum'] or 0
 
-            monto_que_deberia_dar = monto_efectivo + caja_diaria.monto - caja_diaria.retiro
+            monto_que_deberia_dar = monto_efectivo + caja_diaria.monto - caja_diaria.retiro - total_gastos_despues_ultima_fecha
             
             cuadre = Cuadre.objects.create(
                 usuario=request.user,
@@ -924,6 +924,8 @@ def cuadrar(request):
             'monto_caja': caja_diaria.monto,
             'total_bruto_general': total_bruto_general,
             'ventas_por_departamento': ventas_por_departamento,
+            'caja_que_deberia' :  monto_que_deberia_dar,
+            'monto_en la_caja' : total_efectivo,
             }
 
             return render(request, 'resultado_cuadre.html', context)
