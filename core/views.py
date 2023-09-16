@@ -919,7 +919,7 @@ def cuadrar(request):
 
 
             context = {
-            'total_ventas_despues_ultima_fecha': total_ventas_despues_ultima_fecha,
+            'total_ventas_despues_ultima_fecha': total_gastos_despues_ultima_fecha,
             'monto_efectivo': monto_efectivo,
             'monto_credito': monto_credito,
             'monto_debito': monto_debito,
