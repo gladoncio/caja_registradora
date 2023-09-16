@@ -875,8 +875,6 @@ def cuadrar(request):
             # Calcular el total de gastos
             total_gastos_despues_ultima_fecha = gastos_despues_ultima_fecha.aggregate(Sum('monto'))['monto__sum'] or 0
 
-            if total_ventas_despues_ultima_fecha is None:
-                total_ventas_despues_ultima_fecha = 0
 
             # Calcular los montos divididos
             monto_efectivo = FormaPago.objects.filter(venta__in=ventas_despues_ultima_fecha, tipo_pago='efectivo').aggregate(Sum('monto'))['monto__sum'] or 0
