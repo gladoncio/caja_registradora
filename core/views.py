@@ -1082,27 +1082,32 @@ def generar_codigo_ean13(request):
 
     return response
 
-def generar_y_imprimir_codigo_ean13(request):
+def generar_y_imprimir_codigo_code128(request):
     try:
-        # Genera un número aleatorio de 12 dígitos para el código de barras
-        datos_gs1_128 = '1234567890'  # Reemplaza esto con tus datos
-        codigo_gs1_128 = generate('Code128', datos_gs1_128, writer=ImageWriter())
-        imprimir_codigo_gs1_128(codigo_gs1_128)
-        return redirect('caja') 
+        # Genera una cadena de datos para el código de barras Code 128 (por ejemplo, un número de lote)
+        datos_code128 = '1234567890'  # Reemplaza esto con tus datos
+
+        # Genera el código de barras Code 128
+        codigo_code128 = generate('Code128', datos_code128, writer=ImageWriter())
+
+        # Imprimir el código de barras Code 128
+        try:
+            # Configura la impresora
+            printer = Usb(0x1fc9, 0x2016)
+
+            # Imprime el código de barras Code 128
+            printer.barcode(codigo_code128, 'CODE128', width=2, height=100)
+
+            # Cierra la conexión con la impresora
+            printer.close()
+        except Exception as e:
+            return HttpResponse(f"Error al imprimir el código de barras: {str(e)}", status=500)
+
+        # Devolver la imagen del código como respuesta HTTP (opcional)
+        response = HttpResponse(content_type='image/png')
+        codigo_code128.save(response, 'PNG')
+        return response
 
     except Exception as e:
-        return HttpResponse(f"Error al generar el código e imprimir: {str(e)}", status=500)
-    
-def imprimir_codigo_gs1_128(codigo_gs1_128):
-    try:
-        # Configura la impresora
-        printer = Usb(0x1fc9, 0x2016)
-
-        # Imprime el código GS1-128
-        printer.barcode(codigo_gs1_128, 'CODE128', width=2, height=100)
-
-        # Cierra la conexión con la impresora
-        printer.close()
-    except Exception as e:
-        print(f"Error al imprimir: {str(e)}")
+        return HttpResponse(f"Error al generar el código de barras: {str(e)}", status=500)
 
