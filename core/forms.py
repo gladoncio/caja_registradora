@@ -195,7 +195,8 @@ class BarcodeForm(forms.Form):
     )
 
 class GastoCajaForm(forms.ModelForm):
-    clave_anulacion = forms.CharField(max_length=20, required=True, label="Clave de anulación")
+    clave_anulacion = forms.CharField(max_length=20, required=True, label="Clave Personal", widget=forms.HiddenInput())
+
 
     class Meta:
         model = GastoCaja
