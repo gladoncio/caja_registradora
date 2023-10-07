@@ -1083,35 +1083,34 @@ def generar_codigo_ean13(request):
     return response
 
 
-def generar_y_imprimir_codigo_code128(request):
+def generar_y_imprimir_codigo_ean13(request):
     try:
-        # Genera una cadena de datos para el código de barras Code 128 (por ejemplo, un número de lote)
-        datos_code128 = generar_datos_code128()
+        # Genera un número aleatorio de 12 dígitos para el código de barras EAN-13
+        codigo_de_barras = ''.join([str(random.randint(0, 9)) for _ in range(12)])
 
-        # Genera el código de barras Code 128
-        codigo_code128 = generate('Code128', datos_code128, writer=ImageWriter())
+        # Crea el objeto EAN-13
+        ean = EAN13(codigo_de_barras, writer=ImageWriter())
 
-        # Imprimir el código de barras Code 128
-        try:
-            # Configura la impresora (ajusta los valores según tu impresora)
-            printer = Usb(0x1fc9, 0x2016)
+        # Genera el código de barras como una imagen PNG
+        barcode_image = ean.render()
 
-            # Imprime el código de barras Code 128
-            printer.barcode(codigo_code128, 'CODE128', width=2, height=100)
+        # Configura la impresora
+        printer = Usb(0x1fc9, 0x2016)
 
-            # Cierra la conexión con la impresora
-            printer.close()
-        except Exception as e:
-            return HttpResponse(f"Error al imprimir el código de barras: {str(e)}", status=500)
+        # Imprime el código de barras en la impresora
+        printer.image(barcode_image)
 
-        # Devolver la imagen del código como respuesta HTTP (opcional)
+        # Corta el papel (si es necesario)
+        printer.cut()
+
+        # Cierra la conexión con la impresora
+        printer.close()
+
+        # Devuelve la imagen como respuesta HTTP (opcional)
         response = HttpResponse(content_type='image/png')
-        codigo_code128.save(response, 'PNG')
+        barcode_image.save(response, 'PNG')
+
         return response
 
     except Exception as e:
-        return HttpResponse(f"Error al generar el código de barras: {str(e)}", status=500)
-
-def generar_datos_code128():
-    # Genera un número aleatorio de 10 dígitos
-    return ''.join([str(random.randint(0, 9)) for _ in range(10)])
+        return HttpResponse(f"Error al generar e imprimir el código de barras: {str(e)}", status=500)
