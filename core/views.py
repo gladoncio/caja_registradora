@@ -1080,3 +1080,35 @@ def generar_codigo_ean13(request):
     barcode_image.save(response, 'PNG')
 
     return response
+
+def generar_y_imprimir_codigo_ean13(request):
+    try:
+        # Genera un número aleatorio de 12 dígitos para el código de barras
+        codigo_de_barras = ''.join([str(random.randint(0, 9)) for _ in range(12)])
+
+        # Agrega el dígito de verificación del código EAN-13
+        codigo_ean13 = codigo_de_barras + str(EAN13(codigo_de_barras).calculate_checksum())
+
+        # Crea el objeto EAN-13
+        ean = EAN13(codigo_ean13, writer=ImageWriter())
+
+        # Genera el código de barras como una imagen PNG
+        barcode_image = ean.render()
+
+        # Imprimir el código de barras
+        printer = Usb(0x1fc9, 0x2016)
+        printer.barcode(codigo_ean13, 'EAN13', width=2, height=100, pos='BOTTOM', font='B')
+
+        # Imprimir un texto de ejemplo
+        printer.cut()
+
+        # Cerrar la conexión con la impresora
+        printer.close()
+
+        # Devolver la imagen como respuesta HTTP (opcional)
+        response = HttpResponse(content_type='image/png')
+        barcode_image.save(response, 'PNG')
+        return response
+
+    except Exception as e:
+        return HttpResponse(f"Error al generar el código e imprimir: {str(e)}", status=500)
