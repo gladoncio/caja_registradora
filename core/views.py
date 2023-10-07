@@ -1100,7 +1100,7 @@ def generar_y_imprimir_codigo_ean13(request):
 
         # Ajustar el tamaño del código de barras
         # width y height definen el tamaño del código de barras en milímetros
-        printer.barcode(codigo_ean13, 'EAN13', width=4, height=50, pos='BOTTOM', font='B')
+        printer.barcode(codigo_ean13, 'EAN13', width=3, height=80, pos='BOTTOM', font='B')
 
         # Imprimir un texto de ejemplo
         printer.cut()
