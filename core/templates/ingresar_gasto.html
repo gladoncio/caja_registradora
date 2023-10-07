@@ -1,7 +1,17 @@
 {% extends 'base/nav.html' %}
 
 {% block body %}
+
 <div class="container-fluid resize-text">
+   {% if messages %}
+   <div class="alert alert-dismissible fade show" role="alert">
+       {% for message in messages %}
+           <div class="alert alert-{{ message.tags }}">
+               {{ message }}
+           </div>
+       {% endfor %}
+   </div>
+{% endif %}
    <div class="card">
       <div class="card-body">
          <!-- Tu encabezado y contenido aquí -->
