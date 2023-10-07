@@ -1,0 +1,64 @@
+{% extends 'base/nav.html' %}
+
+{% block body %}
+<div class="container-fluid resize-text">
+   <div class="row">
+      <div class="col-md-12">
+         <h1 class="my-4">Lista de Usuarios</h1>
+         <a href="{% url 'crear_usuario' %}" class="btn btn-success mb-3">Crear Usuario</a>
+         {% if messages %}
+             <div class="alert alert-dismissible fade show" role="alert">
+                 {% for message in messages %}
+                     <div class="alert alert-{{ message.tags }}">
+                         {{ message }}
+                     </div>
+                 {% endfor %}
+             </div>
+         {% endif %}
+         <table class="table table-bordered">
+            <thead>
+               <tr>
+                  <th>Nombre de Usuario</th>
+                  <th>Acciones</th>
+               </tr>
+            </thead>
+            <tbody>
+               {% for usuario in usuarios %}
+               <tr>
+                  <td>{{ usuario.username }}</td>
+                  <td>
+                     <a href="{% url 'cambiar_clave_usuario' user_id=usuario.id %}" class="btn btn-primary">Cambiar Clave</a>
+                     <button type="button" class="btn btn-danger eliminar-usuario" data-toggle="modal" data-target="#eliminarModal{{ usuario.id }}">Eliminar Usuario</button>
+                  </td>
+               </tr>
+               <!-- Modal para eliminar usuario -->
+               <div class="modal fade" id="eliminarModal{{ usuario.id }}" tabindex="-1" role="dialog" aria-labelledby="eliminarModalLabel{{ usuario.id }}" aria-hidden="true">
+                  <div class="modal-dialog" role="document">
+                     <div class="modal-content">
+                        <div class="modal-header">
+                           <h5 class="modal-title" id="eliminarModalLabel{{ usuario.id }}">Confirmar Eliminación</h5>
+                           <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                              <span aria-hidden="true">&times;</span>
+                           </button>
+                        </div>
+                        <div class="modal-body">
+                           ¿Estás seguro de que deseas eliminar al usuario "{{ usuario.username }}"?
+                        </div>
+                        <div class="modal-footer">
+                           <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                           <a href="{% url 'eliminar_usuario' user_id=usuario.id %}" class="btn btn-danger">Eliminar</a>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+               {% endfor %}
+            </tbody>
+         </table>
+      </div>
+   </div>
+</div>
+
+{% include 'base/footer.html' %}
+{% include 'base/logout.html' %}
+
+{% endblock %}

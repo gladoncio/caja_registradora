@@ -7,6 +7,7 @@ from django.db.models.signals import pre_delete,post_migrate
 from django.db.utils import IntegrityError
 
 
+
 class Usuario(AbstractUser):
     # Define las opciones de permisos como una tupla de tuplas
     PERMISOS_CHOICES = (
@@ -28,8 +29,6 @@ class Usuario(AbstractUser):
 
 
 
-# Define la función para crear el usuario admin
-# Define la función para crear el usuario admin
 # Define la función para crear el usuario admin
 def crear_usuario_admin(**kwargs):
     if not Usuario.objects.filter(username='admin').exists():
@@ -129,7 +128,13 @@ class Configuracion(models.Model):
         ('con_corte', 'Imprimir con corte'),
         ('sin_corte', 'Imprimir sin corte'),
     )
+    tipo_de_venta = (
+        ('1', 'No registrar Stock'),
+        ('2', 'Registrar Stock con Descuento'),
+        ('3', 'Registrar el stock de las ventas'),
+    )
     imprimir = models.CharField(max_length=20, choices=imprimir_opciones, default='no')
+    tipo_venta = models.CharField(max_length=20, choices=tipo_de_venta, default='1')
     porcentaje_iva = models.DecimalField(max_digits=5, decimal_places=2, default=0.0)
     
     # Agrega el campo para el tamaño de letra
@@ -141,12 +146,13 @@ class Configuracion(models.Model):
 @receiver(post_migrate)
 def crear_configuracion(sender, **kwargs):  # Reemplaza 'tu_app_nombre' con el nombre de tu aplicación
         configuracion, created = Configuracion.objects.get_or_create(
-            decimales=0,
+            decimales = 0,
             clave_anulacion = '5901234123457',
-            idioma='es',
-            imprimir='sin_corte',
-            porcentaje_iva=0.0,
-            tamano_letra=30,
+            idioma = 'es',
+            imprimir = 'sin_corte',
+            porcentaje_iva = 0.0,
+            tipo_venta = '1',
+            tamano_letra = 30,
         )
 
 

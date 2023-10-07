@@ -41,6 +41,11 @@ urlpatterns = [
     path('eliminar-venta/<int:venta_id>/', views.eliminar_venta, name='eliminar_venta'),
     path('ingresar-gasto/', views.ingresar_gasto, name='ingresar_gasto'),
     path('gastos/', views.lista_gastos, name='lista_gastos'),
+    path('configuracion/edit/', ConfiguracionUpdateView.as_view(), name='config'),
+    path('cambiar_clave/<int:user_id>/', views.cambiar_clave_usuario, name='cambiar_clave_usuario'),
+    path('usuarios/', views.lista_usuarios, name='lista_usuarios'),
+    path('usuarios/eliminar/<int:user_id>/', views.eliminar_usuario, name='eliminar_usuario'),
+    path('generar_codigo_ean13/', views.generar_codigo_ean13, name='generar_codigo_ean13'),
     
 ]
 

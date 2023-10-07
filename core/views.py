@@ -27,6 +27,14 @@ from io import BytesIO
 from django.urls import reverse
 from django.db.models import Sum, F, ExpressionWrapper, DecimalField
 from django.db.models.functions import Coalesce
+from django.views.generic.edit import UpdateView
+from django.urls import reverse_lazy
+from django.contrib.auth import update_session_auth_hash
+from django.core.exceptions import ObjectDoesNotExist  # Importa la excepción ObjectDoesNotExist
+from barcode.writer import ImageWriter
+from barcode import generate
+import random
+from barcode import EAN13
 
 
 
@@ -58,6 +66,7 @@ def index(request):
     return render(request, 'index.html')
 
 def caja(request):
+    config = Configuracion.objects.get(id=1)
     carrito_items = CarritoItem.objects.filter(usuario=request.user)
     total = sum(item.subtotal() for item in carrito_items)
     if request.method == 'POST':
@@ -66,6 +75,14 @@ def caja(request):
             barcode = form.cleaned_data['barcode']
             try:
                 producto = Producto.objects.get(codigo_barras=barcode)
+                if config.tipo_venta == '2':
+                    try:
+                        stock = producto.stock
+                        print(stock)
+                    except ObjectDoesNotExist:
+                    # Si el objeto Stock no existe, maneja la situación aquí
+                        messages.success(request, 'El producto no tiene Stock.')
+                        return redirect(caja)
                 # Busca si ya existe un carrito_item con el mismo producto y usuario
                 carrito_item, created = CarritoItem.objects.get_or_create(
                     usuario=request.user,
@@ -97,6 +114,7 @@ def caja(request):
 
 @login_required
 def agregar_al_carrito(request, producto_id):
+    config = Configuracion.objects.get(id=1)
     producto = get_object_or_404(Producto, id_producto=producto_id)
     if request.method == 'POST':
         opcion = request.POST.get('opcion')
@@ -132,6 +150,7 @@ def agregar_al_carrito(request, producto_id):
                 carrito_item.cantidad = cantidad
                 carrito_item.gramaje = None  # Reiniciamos el gramaje si se agrega por cantidad
                 carrito_item.save()
+
             # Restar el stock si es necesario
     
     return redirect('caja')
@@ -159,6 +178,7 @@ def eliminar_item(request, item_id):
 
 @login_required
 def generar_venta(request, parametro1, parametro2, parametro3):
+    config = Configuracion.objects.get(id=1)
     try:
         carrito_items = CarritoItem.objects.filter(usuario=request.user)
         
@@ -175,6 +195,7 @@ def generar_venta(request, parametro1, parametro2, parametro3):
                 subtotal = item.subtotal()
                 total_venta += subtotal
                 VentaProducto.objects.create(venta=nueva_venta, producto=item.producto, cantidad=item.cantidad, gramaje=item.gramaje, subtotal=subtotal)
+                print(item.producto)
             nueva_venta.total = total_venta
             nueva_venta.save()
             
@@ -199,9 +220,9 @@ def generar_venta(request, parametro1, parametro2, parametro3):
                 else:
                     messages.error(request, 'Error al abrir la caja. Inténtalo de nuevo.')
             
-            # Llama a la función para imprimir la boleta
-            content = generar_comandos_de_impresion(nueva_venta)
-            imprimir_en_xprinter(content)
+            if config.imprimir_opciones != 'no':
+                content = generar_comandos_de_impresion(nueva_venta)
+                imprimir_en_xprinter(content)
             
             return redirect('caja')  # Cambiar por la página deseada
         else:
@@ -585,16 +606,17 @@ def generar_comandos_de_impresion(venta):
 
 
 def imprimir_en_xprinter(content):
+    config = Configuracion.objects.get(id=1)
     # Abre una conexión con la impresora a través de USB (sustituye los valores con los adecuados)
     printer = Usb(0x1fc9, 0x2016)
 
     # Envía el contenido de la boleta como comandos de impresión
     printer.text(content)
 
-    # Realiza un corte de papel (puede variar según la impresora)
-    #printer.cut()
+    if config.imprimir_opciones == 'con_corte':
+        printer.cut()
 
-    printer.close()
+    printer.close() 
 
 def seleccionar_metodo_pago(request):
     carrito_items = CarritoItem.objects.filter(usuario=request.user)
@@ -996,3 +1018,65 @@ def lista_gastos(request):
 
     return render(request, 'lista_gastos.html', {'gastos_post_ultima_transaccion': gastos_post_ultima_transaccion, 'ventas_post_ultima_transaccion': ventas_post_ultima_transaccion})
 
+class ConfiguracionUpdateView(UpdateView):
+    model = Configuracion
+    fields = ['decimales', 'clave_anulacion', 'idioma', 'imprimir', 'tipo_venta', 'porcentaje_iva', 'tamano_letra']
+    template_name ='edit_configuracion.html'  # Crea un archivo de plantilla para la edición
+
+    def get_object(self, queryset=None):
+        # Retorna el objeto Configuracion con ID=1
+        return Configuracion.objects.get(pk=1)
+
+    def get_success_url(self):
+        # Después de editar con éxito, redirige a alguna página
+        return reverse_lazy('config')  # Cambia 'nombre_de_la_vista' al nombre de la vista que desees
+
+def cambiar_clave_usuario(request, user_id):
+    user = get_object_or_404(Usuario, id=user_id)
+
+    if request.method == 'POST':
+        form = CambiarClaveForm(request.POST)
+        if form.is_valid():
+            nueva_clave = form.cleaned_data['nueva_clave']
+            user.set_password(nueva_clave)
+            user.save()
+            update_session_auth_hash(request, user)  # Actualiza la sesión de autenticación
+            messages.success(request, 'La clave se cambió con éxito.')
+            return redirect('cambiar_clave_usuario', user_id=user.id)
+    else:
+        form = CambiarClaveForm()
+
+    return render(request, 'cambiar_clave.html', {'form': form, 'user': user}) 
+
+
+def lista_usuarios(request):
+    usuarios = Usuario.objects.all()
+    return render(request, 'lista_usuarios.html', {'usuarios': usuarios})
+
+def eliminar_usuario(request, user_id):
+    usuario = get_object_or_404(Usuario, id=user_id)
+    
+    usuario.delete()
+        
+    messages.success(request, f'El usuario {usuario.username} ha sido eliminado.')
+    
+    return redirect('lista_usuarios')  # Siempre redirige a la vista de lista de usuarios, incluso si no se elimina el usuario.
+
+def generar_codigo_ean13(request):
+    # Genera un número aleatorio de 12 dígitos para el código de barras
+    codigo_de_barras = ''.join([str(random.randint(0, 9)) for _ in range(12)])
+
+    # Agrega el dígito de verificación del código EAN-13
+    codigo_ean13 = codigo_de_barras + str(EAN13(codigo_de_barras).calculate_checksum())
+
+    # Crea el objeto EAN-13
+    ean = EAN13(codigo_ean13, writer=ImageWriter())
+
+    # Genera el código de barras como una imagen PNG
+    barcode_image = ean.render()
+
+    # Devuelve la imagen como respuesta HTTP
+    response = HttpResponse(content_type='image/png')
+    barcode_image.save(response, 'PNG')
+
+    return response

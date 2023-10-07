@@ -8,7 +8,6 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 
-
 class UsuarioCreationForm(UserCreationForm):
     permisos = forms.ChoiceField(
         choices=[('admin', 'Admin'), ('cajero', 'Cajero')],
@@ -18,6 +17,16 @@ class UsuarioCreationForm(UserCreationForm):
     class Meta:
         model = Usuario
         fields = ('username', 'password1', 'password2', 'permisos', 'rut', 'clave_anulacion')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Agregar clases de Bootstrap a los campos
+        self.fields['username'].widget.attrs.update({'class': 'form-control'})
+        self.fields['password1'].widget.attrs.update({'class': 'form-control'})
+        self.fields['password2'].widget.attrs.update({'class': 'form-control'})
+        self.fields['rut'].widget.attrs.update({'class': 'form-control'})
+        self.fields['clave_anulacion'].widget.attrs.update({'class': 'form-control'})
+
 
         
 class MyAuthForm(AuthenticationForm):
@@ -197,5 +206,20 @@ class GastoCajaForm(forms.ModelForm):
         clave_anulacion = cleaned_data.get('clave_anulacion')
         
         # Realiza cualquier validación adicional que necesites para la clave de anulación aquí
+
+        return cleaned_data
+    
+class CambiarClaveForm(forms.Form):
+    nueva_clave = forms.CharField(label='Nueva Clave', widget=forms.PasswordInput)
+    confirmar_clave = forms.CharField(label='Confirmar Clave', widget=forms.PasswordInput)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        nueva_clave = cleaned_data.get('nueva_clave')
+        confirmar_clave = cleaned_data.get('confirmar_clave')
+
+        if nueva_clave and confirmar_clave:
+            if nueva_clave != confirmar_clave:
+                raise forms.ValidationError('Las claves no coinciden.')
 
         return cleaned_data
