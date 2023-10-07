@@ -1095,9 +1095,12 @@ def generar_y_imprimir_codigo_ean13(request):
         # Genera el código de barras como una imagen PNG
         barcode_image = ean.render()
 
-        # Imprimir el código de barras
+        # Imprimir el código de barras con un tamaño adecuado
         printer = Usb(0x1fc9, 0x2016)
-        printer.barcode(codigo_ean13, 'EAN13', width=2, height=100, pos='BOTTOM', font='B')
+
+        # Ajustar el tamaño del código de barras
+        # width y height definen el tamaño del código de barras en milímetros
+        printer.barcode(codigo_ean13, 'EAN13', width=2, height=60, pos='BOTTOM', font='B')
 
         # Imprimir un texto de ejemplo
         printer.cut()
