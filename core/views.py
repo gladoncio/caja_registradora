@@ -828,8 +828,7 @@ def ingresar_gasto(request):
         form = GastoCajaForm(request.POST)
         if form.is_valid():
             # Realiza la autenticación adicional aquí
-            clave_anulacion = request.POST.get('clave_anulacion', '')  # Obtener la clave ingresada en el formulario
-            print(clave_anulacion)
+            clave_anulacion = request.POST.get('clave_anulacion', '')  # Obtener la clave ingresada en el formulari
             try:
                 # Intenta buscar un usuario con la misma clave de anulación
                 usuario_con_clave_anulacion = Usuario.objects.get(clave_anulacion=clave_anulacion)
@@ -1006,6 +1005,7 @@ def lista_gastos(request):
         ultima_fecha_registro = RegistroTransaccion.objects.latest('fecha_ingreso').fecha_ingreso
     except RegistroTransaccion.DoesNotExist:
         ultima_fecha_registro = None
+        gastos_post_ultima_transaccion = GastoCaja.objects.all()
 
     # Filtrar los gastos que ocurrieron después de la última fecha de RegistroTransaccion si existe
     gastos_post_ultima_transaccion = GastoCaja.objects.filter(fecha_hora__gte=ultima_fecha_registro) if ultima_fecha_registro else None
