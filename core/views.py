@@ -829,7 +829,7 @@ def ingresar_gasto(request):
         if form.is_valid():
             # Realiza la autenticación adicional aquí
             clave_anulacion = request.POST.get('clave_anulacion', '')  # Obtener la clave ingresada en el formulario
-            
+            print(clave_anulacion)
             try:
                 # Intenta buscar un usuario con la misma clave de anulación
                 usuario_con_clave_anulacion = Usuario.objects.get(clave_anulacion=clave_anulacion)
@@ -837,7 +837,9 @@ def ingresar_gasto(request):
                 gasto = form.save(commit=False)  # No guardes inmediatamente en la base de datos
                 gasto.usuario = usuario_con_clave_anulacion # Asigna el usuario autenticado al gasto
                 gasto.save()  # Guarda el gasto en la base de datos
+                messages.error(request, 'Gasto ingresado.')
                 return redirect('ingresar_gasto')  # Redirige a la lista de gastos después de guardar
+        
             except Usuario.DoesNotExist:
                 # No se encontró un usuario con la clave de anulación proporcionada
                 # Puedes manejar esto de acuerdo a tus requerimientos
