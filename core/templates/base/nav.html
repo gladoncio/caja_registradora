@@ -77,6 +77,18 @@
                     <span>Anulaciones</span>
                 </a>
             </li>
+            <li class="nav-item active">
+                <a class="nav-link" href="{% url "lista_gastos" %}">
+                    <i class="fas fa-user-plus me-2"></i> <!-- Icono de agregar usuario -->
+                    <span>Gastos</span>
+                </a>
+            </li>
+            <li class="nav-item active">
+                <a class="nav-link" href="{% url "editar_caja_diaria" %}">
+                    <i class="fas fa-user-plus me-2"></i> <!-- Icono de agregar usuario -->
+                    <span>Caja diaria y Retiros</span>
+                </a>
+            </li>
             
             {% if request.user.permisos == 'admin' %}
             <li class="nav-item active">
@@ -97,18 +109,6 @@
                 <a class="nav-link" href="{% url 'lista_usuarios' %}">
                     <i class="fas fa-user-plus me-2"></i> <!-- Icono de agregar usuario -->
                     <span>Administrar Usuarios</span>
-                </a>
-            </li>
-            <li class="nav-item active">
-                <a class="nav-link" href="{% url "lista_gastos" %}">
-                    <i class="fas fa-user-plus me-2"></i> <!-- Icono de agregar usuario -->
-                    <span>Gastos</span>
-                </a>
-            </li>
-            <li class="nav-item active">
-                <a class="nav-link" href="{% url "editar_caja_diaria" %}">
-                    <i class="fas fa-user-plus me-2"></i> <!-- Icono de agregar usuario -->
-                    <span>Caja diaria y Retiros</span>
                 </a>
             </li>
             <li class="nav-item active">
