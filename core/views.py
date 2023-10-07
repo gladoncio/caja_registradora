@@ -160,17 +160,11 @@ def agregar_al_carrito(request, producto_id):
 @login_required
 def eliminar_item(request, item_id):
     try:
-        if request.method == 'POST':
-            config = Configuracion.objects.get(id=1)
-            clave_ingresada = request.POST.get('clave_anulacion')
-            if clave_ingresada == config.clave_anulacion or clave_ingresada == request.user.clave_anulacion:
-                print(config.clave_anulacion)
-                producto = Producto.objects.get(id_producto=item_id)
-                item = CarritoItem.objects.get(producto=producto, usuario=request.user)
-                item.delete()
-                print("Eliminado con éxito")
-            else:
-                print("clave invalida")
+        config = Configuracion.objects.get(id=1)
+        producto = Producto.objects.get(id_producto=item_id)
+        item = CarritoItem.objects.get(producto=producto, usuario=request.user)
+        item.delete()
+        print("Eliminado con éxito")
     except CarritoItem.DoesNotExist:
         print("El ítem no existe")
 
