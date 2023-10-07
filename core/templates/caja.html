@@ -110,6 +110,16 @@
     <i class="fas fa-angle-up"></i>
 </a>
 <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Obtiene el input por su ID o nombre, asegúrate de ajustarlo según tu formulario.
+        var barcodeInput = document.getElementById("id_barcode");
+
+        // Enfoca automáticamente en el input cuando se carga la página.
+        barcodeInput.focus();
+    });
+</script>
+
+<script>
     function redirectToSeleccionarMetodoPago() {
         window.location.href = "{% url 'seleccionar_metodo_pago' %}";
     }
