@@ -76,34 +76,11 @@
                                   <td>{{ item.gramaje }} Gr</td>
                                     {% endif %}
                                     <td>
-                                        <a href="#" class="btn btn-danger btn-sm" data-toggle="modal" data-target="#eliminarModal{{ item.producto.id_producto }}">Eliminar</a>
+                                        <a href="{% url 'eliminar_item' item_id=item.producto.id_producto %}" class="btn btn-danger btn-sm" data-toggle="modal">Eliminar</a>
                                     </td>
                                 </tr>
                                 <!-- Modal para confirmar eliminación -->
-                                <div class="modal fade resize-text" id="eliminarModal{{ item.producto.id_producto }}" tabindex="-1" role="dialog" aria-labelledby="eliminarModalLabel{{ item.producto.id_producto }}" aria-hidden="true">
-                                    <div class="modal-dialog modal-lg" role="document">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title" id="eliminarModalLabel{{ item.producto.id_producto }}">Confirmar Eliminación</h5>
-                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                    <span aria-hidden="true">&times;</span>
-                                                </button>
-                                            </div>
-                                            <form method="post" action="{% url 'eliminar_item' item_id=item.producto.id_producto %}">
-                                                {% csrf_token %}
-                                                <div class="modal-body">
-                                                    <p>¿Estás seguro que deseas eliminar "{{ item.producto.nombre }}" del carrito?</p>
-                                                    <input type="hidden" name="item_id" value="{{ item.producto.id_producto }}">
-                                                    <input type="password" name="clave_anulacion" class="form-control" placeholder="Clave de eliminación" required>
-                                                </div>
-                                                <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                                                    <button type="submit" class="btn btn-danger">Eliminar</button>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
+            
                                 {% endfor %}
                             </tbody>
                         </table>
