@@ -1083,10 +1083,6 @@ def generar_codigo_ean13(request):
     return response
 
 
-def generar_datos_code128():
-    # Genera un número aleatorio de 10 dígitos
-    return ''.join([str(random.randint(0, 9)) for _ in range(10)])
-
 def generar_y_imprimir_codigo_code128(request):
     try:
         # Genera una cadena de datos para el código de barras Code 128 (por ejemplo, un número de lote)
@@ -1097,7 +1093,7 @@ def generar_y_imprimir_codigo_code128(request):
 
         # Imprimir el código de barras Code 128
         try:
-            # Configura la impresora
+            # Configura la impresora (ajusta los valores según tu impresora)
             printer = Usb(0x1fc9, 0x2016)
 
             # Imprime el código de barras Code 128
@@ -1116,3 +1112,6 @@ def generar_y_imprimir_codigo_code128(request):
     except Exception as e:
         return HttpResponse(f"Error al generar el código de barras: {str(e)}", status=500)
 
+def generar_datos_code128():
+    # Genera un número aleatorio de 10 dígitos
+    return ''.join([str(random.randint(0, 9)) for _ in range(10)])
