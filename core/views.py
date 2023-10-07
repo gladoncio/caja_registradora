@@ -1,4 +1,5 @@
 from multiprocessing import context
+import re
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from .forms import *
@@ -1084,34 +1085,24 @@ def generar_codigo_ean13(request):
 def generar_y_imprimir_codigo_ean13(request):
     try:
         # Genera un número aleatorio de 12 dígitos para el código de barras
-        codigo_de_barras = ''.join([str(random.randint(0, 9)) for _ in range(12)])
-
-        # Agrega el dígito de verificación del código EAN-13
-        codigo_ean13 = codigo_de_barras + str(EAN13(codigo_de_barras).calculate_checksum())
-
-        # Crea el objeto EAN-13
-        ean = EAN13(codigo_ean13, writer=ImageWriter())
-
-        # Genera el código de barras como una imagen PNG
-        barcode_image = ean.render()
-
-        # Imprimir el código de barras con un tamaño adecuado
-        printer = Usb(0x1fc9, 0x2016)
-
-        # Ajustar el tamaño del código de barras
-        # width y height definen el tamaño del código de barras en milímetros
-        printer.barcode(codigo_ean13, 'EAN13', width=3, height=90, pos='BOTTOM', font='B')
-
-        # Imprimir un texto de ejemplo
-        printer.cut()
-
-        # Cerrar la conexión con la impresora
-        printer.close()
-
-        # Devolver la imagen como respuesta HTTP (opcional)
-        response = HttpResponse(content_type='image/png')
-        barcode_image.save(response, 'PNG')
-        return response
+        datos_gs1_128 = '1234567890'  # Reemplaza esto con tus datos
+        codigo_gs1_128 = generate('Code128', datos_gs1_128, writer=ImageWriter())
+        imprimir_codigo_gs1_128(codigo_gs1_128)
+        return redirect('caja') 
 
     except Exception as e:
         return HttpResponse(f"Error al generar el código e imprimir: {str(e)}", status=500)
+    
+def imprimir_codigo_gs1_128(codigo_gs1_128):
+    try:
+        # Configura la impresora
+        printer = Usb(0x1fc9, 0x2016)
+
+        # Imprime el código GS1-128
+        printer.barcode(codigo_gs1_128, 'CODE128', width=2, height=100)
+
+        # Cierra la conexión con la impresora
+        printer.close()
+    except Exception as e:
+        print(f"Error al imprimir: {str(e)}")
+
