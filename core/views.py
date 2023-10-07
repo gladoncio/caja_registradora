@@ -1008,8 +1008,12 @@ def lista_gastos(request):
         gastos_post_ultima_transaccion = GastoCaja.objects.all()
 
     # Filtrar los gastos que ocurrieron después de la última fecha de RegistroTransaccion si existe
-    gastos_post_ultima_transaccion = GastoCaja.objects.filter(fecha_hora__gte=ultima_fecha_registro) if ultima_fecha_registro else None
-
+    gastos_post_ultima_transaccion = GastoCaja.objects.filter(fecha_hora__gte=ultima_fecha_registro) 
+    if ultima_fecha_registro:
+        print("si")
+    else:
+        gastos_post_ultima_transaccion = GastoCaja.objects.all()
+    
     # Filtrar las ventas que ocurrieron después de la última fecha de RegistroTransaccion si existe
     ventas_post_ultima_transaccion = Venta.objects.filter(fecha_hora__gte=ultima_fecha_registro) if ultima_fecha_registro else None
 
