@@ -14,7 +14,13 @@
                     <h3>Productos Vendidos:</h3>
                     <ul>
                         {% for producto_vendido in productos_vendidos %}
-                            <li>{{ producto_vendido.producto.nombre }} - Cantidad: {{ producto_vendido.cantidad }}</li>
+                            {% if producto_vendido.cantidad != 0 %}
+                            <li>{{ producto_vendido.producto.nombre }} - Cantidad: {{ producto_vendido.cantidad }}
+                            <br>Subtotal: {{ producto_vendido.subtotal|floatformat:configuracion.decimales }}</li>
+                            {% else %}
+                            <li>{{ producto_vendido.producto.nombre }} - Cantidad: {{ producto_vendido.gramaje|floatformat:configuracion.decimales }} Gramos
+                            <br>Subtotal: {{ producto_vendido.subtotal|floatformat:configuracion.decimales }}</li>
+                            {% endif %}
                             <!-- Puedes agregar más detalles del producto vendido si es necesario -->
                         {% endfor %}
                     </ul>

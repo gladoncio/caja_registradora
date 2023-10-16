@@ -46,6 +46,7 @@ urlpatterns = [
     path('usuarios/', views.lista_usuarios, name='lista_usuarios'),
     path('usuarios/eliminar/<int:user_id>/', views.eliminar_usuario, name='eliminar_usuario'),
     path('generar_codigo_ean13/', views.generar_y_imprimir_codigo_ean13, name='generar_codigo_ean13'),
+    path('boleta_venta_texto/<int:venta_id>/', views.vista_boleta_venta_texto, name='vista_boleta_venta_texto'),
     
 ]
 

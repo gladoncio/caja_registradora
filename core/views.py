@@ -565,39 +565,46 @@ def imprimir_boleta(request, venta_id):
     return HttpResponse("Boleta impresa exitosamente")
 
 def generar_comandos_de_impresion(venta):
+    config = Configuracion.objects.get(id=1)
+    decimales = config.decimales
+
     # Inicializa una cadena vacía para almacenar los comandos de impresión
     content = ""
     content += "--------------------------\n"
 
     # Encabezado de la boleta (puedes personalizarlo según tus necesidades)
     content += "Boleta de Venta\n"
-    content += f"Fecha: {venta.fecha_hora}\n"
-    
+    content += f"Fecha: {venta.fecha_hora} \n"
+
     # Agregar el método de pago de esta venta
     formas_pago = venta.formapago_set.all()
     if formas_pago.exists():
         metodos_pago = ", ".join([forma.tipo_pago for forma in formas_pago])
         content += f"Método(s) de Pago: {metodos_pago}\n"
-    
+
     content += "--------------------------\n"
 
     # Detalles de los productos vendidos
     for venta_producto in venta.ventaproducto_set.all():
         producto = venta_producto.producto
         cantidad = venta_producto.cantidad
-        precio_unitario = producto.precio
-
+        gramaje = venta_producto.gramaje
+        precio_unitario = round(venta_producto.subtotal, decimales)  # Formatea el precio unitario
         # Agrega los detalles de cada producto a la boleta
         content += f"Producto: {producto.nombre}\n"
-        content += f"Cantidad: {cantidad}\n"
-        content += f"Precio Unitario: {precio_unitario}\n"
+        if cantidad != 0:
+            content += f"Cantidad: {cantidad}\n"
+        else:
+            content += f"Cantidad: {gramaje} gramos\n"
+        content += f"Subtotal: {precio_unitario}\n"
         content += "--------------------------\n"
 
     # Total de la venta
-    total_venta = venta.total
+    total_venta = round(venta.total, decimales)  # Formatea el total de la venta
     content += f"Total: {total_venta}\n"
     content += "--------------------------\n"
     return content
+
 
 
 def imprimir_en_xprinter(content):
@@ -851,6 +858,8 @@ def ingresar_gasto(request):
 
 
 def cuadrar(request):
+    config = Configuracion.objects.get(id=1)
+    decimales = config.decimales
     caja_diaria, created = CajaDiaria.objects.get_or_create(id=1, defaults={'monto': 0.0, 'retiro': 0.0})
     
     if request.method == 'POST':
@@ -953,7 +962,7 @@ def cuadrar(request):
             'monto_faltante_maquinas' : maquina_faltante,
             }
 
-            def generar_comandos_de_impresion(context):
+            def generar_comandos_de_impresion(context, decimales):
                 # Inicializa una cadena vacía para almacenar los comandos de impresión
                 content = ""
                 content += "--------------------------\n"
@@ -962,32 +971,33 @@ def cuadrar(request):
                 content += "--------------------------\n"
 
                 # Datos de ventas y montos
-                content += "Ventas del dia:\n"
-                content += "Total en Efectivo: ${}\n".format(context['monto_efectivo'])
-                content += "Total en Crédito: ${}\n".format(context['monto_credito'])
-                content += "Total en Débito: ${}\n".format(context['monto_debito'])
-                content += "Total en Transferencia: ${}\n".format(context['monto_transferencia'])
-                content += "Total de Retiro: ${}\n".format(context['monto_retiro'])
-                content += "Total en Caja: ${}\n".format(context['monto_caja'])
-                content += "Total Bruto General: ${}\n".format(context['total_bruto_general']['total_bruto'])
-                content += "Total Neto General: ${}\n".format(context['total_bruto_general']['total_neto'])
+                content += "Ventas del día.\n"
+                content += "Total en Efectivo: ${:.{}f}\n".format(context['monto_efectivo'] if context['monto_efectivo'] is not None else 0, decimales)
+                content += "Total en Crédito: ${:.{}f}\n".format(context['monto_credito'] if context['monto_credito'] is not None else 0, decimales)
+                content += "Total en Débito: ${:.{}f}\n".format(context['monto_debito'] if context['monto_debito'] is not None else 0, decimales)
+                content += "Total en Transferencia: ${:.{}f}\n".format(context['monto_transferencia'] if context['monto_transferencia'] is not None else 0, decimales)
+                content += "Total de Retiro: ${:.{}f}\n".format(context['monto_retiro'] if context['monto_retiro'] is not None else 0, decimales)
+                content += "Total en Caja: ${:.{}f}\n".format(context['monto_caja'] if context['monto_caja'] is not None else 0, decimales)
+                content += "Total Bruto General: ${:.{}f}\n".format(context['total_bruto_general']['total_bruto'] if context['total_bruto_general']['total_bruto'] is not None else 0, decimales)
+                content += "Total Neto General: ${:.{}f}\n".format(context['total_bruto_general']['total_neto'] if context['total_bruto_general']['total_neto'] is not None else 0, decimales)
                 content += "Total de Ventas por Departamento:\n"
-                
-                for venta_por_departamento in context['ventas_por_departamento']:
-                    content += "{}:\n".format(venta_por_departamento['departamento__nombre'])
-                    content += "Total Bruto: ${}\n".format(venta_por_departamento['total_bruto'])
-                    content += "Total Neto: ${}\n".format(venta_por_departamento['total_neto'])
 
-                content += "Efectivo que Debería Haber en Caja: ${}\n".format(context['caja_que_deberia'])
-                content += "Efectivo en la Caja: ${}\n".format(context['monto_en_la_caja'])
-                content += "Efectivo Faltante: ${}\n".format(context['efectivo_faltante'])
-                content += "Débito Faltante en Máquinas: ${}\n".format(context['monto_faltante_maquinas'])
+                for venta_por_departamento in context['ventas_por_departamento']:
+                    content += "{}:\n".format(venta_por_departamento['departamento__nombre'] if venta_por_departamento['departamento__nombre'] is not None else "sin departamento")
+                    content += "Total Bruto: ${:.{}f}\n".format(venta_por_departamento['total_bruto'] if venta_por_departamento['total_bruto'] is not None else 0, decimales)
+                    content += "Total Neto: ${:.{}f}\n".format(venta_por_departamento['total_neto'] if venta_por_departamento['total_neto'] is not None else 0, decimales)
+
+                content += "Efectivo que Debería Haber en Caja: ${:.{}f}\n".format(context['caja_que_deberia'] if context['caja_que_deberia'] is not None else 0, decimales)
+                content += "Efectivo en la Caja: ${:.{}f}\n".format(context['monto_en_la_caja'] if context.get('monto_en_la_caja') is not None else 0, decimales)
+
+                content += "Efectivo Faltante: ${:.{}f}\n".format(context['efectivo_faltante'] if context['efectivo_faltante'] is not None else 0, decimales)
+                content += "Débito Faltante en Máquinas: ${:.{}f}\n".format(context['monto_faltante_maquinas'] if context['monto_faltante_maquinas'] is not None else 0, decimales)
                 content += "--------------------------\n"
 
                 return content
-            
 
-            content = generar_comandos_de_impresion(context)
+        
+            content = generar_comandos_de_impresion(context, decimales)
             
             imprimir_en_xprinter(content)
 
@@ -1114,3 +1124,14 @@ def generar_y_imprimir_codigo_ean13(request):
 
     except Exception as e:
         return HttpResponse(f"Error al generar e imprimir el código de barras: {str(e)}", status=500)
+    
+def vista_boleta_venta_texto(request, venta_id):
+    # Obtén el objeto Venta
+    venta = Venta.objects.get(id=venta_id)
+
+    # Llama a la función para generar el contenido
+    content = generar_comandos_de_impresion(venta)
+
+    # Devuelve el contenido en texto plano
+    response = HttpResponse(content, content_type='text/plain')
+    return response
