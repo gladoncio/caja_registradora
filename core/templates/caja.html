@@ -48,7 +48,8 @@
                     <div class="mt-4 resize-text" id="productList">
                         <p class="h3">Total: <span id="totalAmountDisplay">${{ total|floatformat:configuracion.decimales }}</span></p>
                         <button id="generarBoletaBtn" class="btn btn-primary" onclick="redirectToSeleccionarMetodoPago()" {% if total <= 0 %}disabled{% endif %}>Generar Boleta</button>
-                        <form method="post" action="{% url 'vaciar_carrito' %}">
+                        
+                        <form method="post" action="{% url 'vaciar_carrito' %}" class="pd-3">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-danger">Vaciar Carrito</button>
                         </form>

@@ -341,11 +341,13 @@ def editar_monto_caja_diaria(request):
         operacion = request.POST.get('operacion', None)
 
         if operacion == 'sumar':
+            abrir_caja_impresora()
             # Sumar al monto existente
             monto_a_sumar = Decimal(request.POST.get('monto', 0))
             caja_diaria.monto += monto_a_sumar
+            
         elif operacion == 'restar':
-            # Restar al monto existente si es posible
+            abrir_caja_impresora()
             monto_a_restar = Decimal(request.POST.get('monto', 0))
             if monto_a_restar <= caja_diaria.monto:
                 caja_diaria.monto -= monto_a_restar
@@ -355,10 +357,12 @@ def editar_monto_caja_diaria(request):
 
 
         if operacion == 'sumar_retiro':
+            abrir_caja_impresora()
             # Sumar al retiro existente
             retiro_a_sumar = Decimal(request.POST.get('retiro', 0))
             caja_diaria.retiro += retiro_a_sumar
         elif operacion == 'restar_retiro':
+            abrir_caja_impresora()
             # Restar al retiro existente si es posible
             retiro_a_restar = Decimal(request.POST.get('retiro', 0))
             if retiro_a_restar <= caja_diaria.retiro:
@@ -854,6 +858,7 @@ def ingresar_gasto(request):
                 gasto.usuario = usuario_con_clave_anulacion # Asigna el usuario autenticado al gasto
                 gasto.save()  # Guarda el gasto en la base de datos
                 messages.error(request, 'Gasto ingresado.')
+                abrir_caja_impresora()
                 return redirect('ingresar_gasto')  # Redirige a la lista de gastos después de guardar
         
             except Usuario.DoesNotExist:
@@ -871,6 +876,7 @@ def cuadrar(request):
     config = Configuracion.objects.get(id=1)
     decimales = config.decimales
     caja_diaria, created = CajaDiaria.objects.get_or_create(id=1, defaults={'monto': 0.0, 'retiro': 0.0})
+    abrir_caja_impresora()
     
     if request.method == 'POST':
         form = BilletesMonedasForm(request.POST)
