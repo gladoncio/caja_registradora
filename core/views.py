@@ -164,6 +164,7 @@ def caja(request):
     else:
         form = BarcodeForm()
 
+    total = round(total)
     context = {
         'form': form,
         'carrito_items': carrito_items,
@@ -251,13 +252,22 @@ def eliminar_item(request, item_id):
     try:
         config = Configuracion.objects.get(id=1)
         producto = Producto.objects.get(id_producto=item_id)
-        item = CarritoItem.objects.get(producto=producto, usuario=request.user)
-        item.delete()
+        carrito_item = CarritoItem.objects.get(producto=producto, usuario=request.user)
+
+        if carrito_item.cantidad > 1:
+            # Si la cantidad es mayor que 1, simplemente disminuye en 1 la cantidad
+            carrito_item.cantidad -= 1
+            carrito_item.save()
+        else:
+            # Si la cantidad es 1 o menos, elimina el artículo del carrito
+            carrito_item.delete()
+        
         print("Eliminado con éxito")
     except CarritoItem.DoesNotExist:
         print("El ítem no existe")
 
     return redirect('caja')
+
 
 
 
