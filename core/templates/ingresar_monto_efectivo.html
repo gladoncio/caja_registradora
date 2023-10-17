@@ -48,6 +48,11 @@
         });
     });
     </script>
-    
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const montoEfectivoInput = document.getElementById("monto_efectivo");
+            montoEfectivoInput.focus(); // Enfocar el input al cargar la página
+        });
+    </script>
 
 {% endblock %}
