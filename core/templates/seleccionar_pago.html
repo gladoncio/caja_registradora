@@ -15,7 +15,7 @@
                <div class="form-check">
                   <input class="form-check-input" type="radio" name="metodoPago" id="{{ metodo }}" value="{{ metodo }}">
                   <label class="form-check-label" for="{{ metodo }}">
-                     {{ metodo }}
+                     {{ forloop.counter }} - {{ metodo }}
                   </label>
                </div>
                {% endfor %}
@@ -32,4 +32,34 @@
 
 <!-- End of Content Wrapper -->
 {% include 'base/logout.html' %}
+
+
+
+<script>
+   document.addEventListener("keydown", function(event) {
+       var methodValue;
+       if (event.key === "1") {
+           methodValue = "Efectivo Justo";
+       } else if (event.key === "2") {
+           methodValue = "Efectivo";
+       } else if (event.key === "3") {
+           methodValue = "Transferencia";
+       } else if (event.key === "4") {
+           methodValue = "Debito";
+       }
+
+       if (methodValue) {
+           // Redirigir directamente a la vista procesar_pago con el valor seleccionado
+           window.location.href = "{% url 'procesar_pago' %}?metodoPago=" + methodValue;
+       }
+   });
+</script>
+
+
+
 {% endblock %}
+
+
+
+
+   
