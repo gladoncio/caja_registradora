@@ -47,6 +47,7 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                {% if ventas %}
                                 {% for venta in ventas %}
                                 <tr>
                                     <td>{{ venta.id }}</td>
@@ -85,6 +86,7 @@
                                     
                                 </tr>
                                 {% endfor %}
+                                {% endif %}
                             </tbody>
                         </table>
                     </div>

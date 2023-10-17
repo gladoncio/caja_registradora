@@ -28,21 +28,26 @@
 <!-- End of Content Wrapper -->
 {% include 'base/logout.html' %}
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-    const totalAmount = parseFloat({{ total|floatformat:configuracion.decimales }});
-    const montoEfectivoInput = document.getElementById("monto_efectivo");
-    const montoRestanteSpan = document.getElementById("monto_restante");
-    const montoVueltoSpan = document.getElementById("monto_vuelto"); // Agregado el span para el monto vuelto
-
-    montoEfectivoInput.addEventListener("input", function() {
-        const montoIngresado = parseFloat(this.value) || 0;
-        const montoRestante = Math.max(totalAmount - montoIngresado, 0);
-        const montoVuelto = Math.max(montoIngresado - totalAmount, 0); // Calcular el monto vuelto
-
-        montoRestanteSpan.textContent = montoRestante.toFixed({{ configuracion.decimales }}); // Usar configuración de decimales
-        montoVueltoSpan.textContent = montoVuelto.toFixed({{ configuracion.decimales }}); // Usar configuración de decimales
+    document.addEventListener("DOMContentLoaded", function() {
+        const totalAmount = parseFloat({{ total|floatformat:configuracion.decimales }});
+        const montoEfectivoInput = document.getElementById("monto_efectivo");
+        const montoRestanteSpan = document.getElementById("monto_restante");
+        const montoVueltoSpan = document.getElementById("monto_vuelto");
+        const montoVueltoInput = document.getElementById("monto_vuelto_input"); // Campo oculto para el monto vuelto
+    
+        montoEfectivoInput.addEventListener("input", function() {
+            const montoIngresado = parseFloat(this.value) || 0;
+            const montoRestante = Math.max(totalAmount - montoIngresado, 0);
+            const montoVuelto = Math.max(montoIngresado - totalAmount, 0);
+    
+            montoRestanteSpan.textContent = montoRestante.toFixed({{ configuracion.decimales }});
+            montoVueltoSpan.textContent = montoVuelto.toFixed({{ configuracion.decimales }});
+    
+            // Actualiza el campo oculto con el monto vuelto
+            montoVueltoInput.value = montoVuelto.toFixed({{ configuracion.decimales }});
+        });
     });
-});
-</script>
+    </script>
+    
 
 {% endblock %}

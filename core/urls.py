@@ -17,7 +17,6 @@ urlpatterns = [
     path('cerrar_sesion/', views.cerrar_sesion, name='cerrar_sesion'),
     path('agregar_al_carrito/<int:producto_id>/', views.agregar_al_carrito, name='agregar_al_carrito'),
     path('eliminar/<int:item_id>/', views.eliminar_item, name='eliminar_item'),
-    path('generar_venta/<parametro1>/<parametro2>/<parametro3>', views.generar_venta, name='generar_venta'),
     path('ventas/', views.listar_ventas, name='listar_ventas'),  # Agrega esta línea
     path('venta/<int:venta_id>/', views.detalle_venta, name='detalle_venta'),
     path('informe-general/', views.informe_general, name='informe_general'),
@@ -46,7 +45,7 @@ urlpatterns = [
     path('usuarios/', views.lista_usuarios, name='lista_usuarios'),
     path('usuarios/eliminar/<int:user_id>/', views.eliminar_usuario, name='eliminar_usuario'),
     path('generar_codigo_ean13/', views.generar_y_imprimir_codigo_ean13, name='generar_codigo_ean13'),
-    path('boleta_venta_texto/<int:venta_id>/', views.vista_boleta_venta_texto, name='vista_boleta_venta_texto'),
+    path('generar_venta/<parametro1>/<parametro2>/<parametro3>/<parametro4>', views.generar_venta, name='generar_venta'),
     
 ]
 

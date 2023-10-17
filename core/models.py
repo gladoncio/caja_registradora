@@ -161,6 +161,7 @@ class Venta(models.Model):
     fecha_hora = models.DateTimeField(default=timezone.now)
     productos = models.ManyToManyField(Producto, through='VentaProducto')
     total = models.DecimalField(max_digits=10, decimal_places=2)
+    vuelto = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)
     # Otros campos según tus necesidades
 

@@ -9,6 +9,7 @@
                 <div class="card-body resize-text">
                     <h5>ID de Venta: {{ venta.id }}</h5>
                     <p>Fecha y Hora: {{ venta.fecha_hora }}</p>
+                    <p>Vuelto: {{ venta.vuelto|floatformat:configuracion.decimales }}</p>
                     <p>Total: ${{ venta.total|floatformat:configuracion.decimales  }}</p>
 
                     <h3>Productos Vendidos:</h3>

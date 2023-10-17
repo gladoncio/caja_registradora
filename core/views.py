@@ -172,18 +172,20 @@ def eliminar_item(request, item_id):
 
 
 @login_required
-def generar_venta(request, parametro1, parametro2, parametro3):
+def generar_venta(request, parametro1, parametro2, parametro3, parametro4):
     config = Configuracion.objects.get(id=1)
+
     try:
         carrito_items = CarritoItem.objects.filter(usuario=request.user)
         
         if carrito_items.exists():
             # Crear una nueva venta
-            nueva_venta = Venta(usuario=request.user, total=0)
+            nueva_venta = Venta(usuario=request.user, total=0, vuelto=parametro4)
             nueva_venta.save()
             
             # Variable para almacenar el total de la venta
             total_venta = Decimal('0.00')
+
             
             # Agregar productos al modelo VentaProducto
             for item in carrito_items:
@@ -192,6 +194,7 @@ def generar_venta(request, parametro1, parametro2, parametro3):
                 VentaProducto.objects.create(venta=nueva_venta, producto=item.producto, cantidad=item.cantidad, gramaje=item.gramaje, subtotal=subtotal)
                 print(item.producto)
             nueva_venta.total = total_venta
+            print(f"este es el parametro {parametro4}")
             nueva_venta.save()
             
             # Vaciar el carrito del usuario
@@ -199,7 +202,11 @@ def generar_venta(request, parametro1, parametro2, parametro3):
             parametro3 = float(parametro3)
             total_venta = float(nueva_venta.total)
             monto_efectivo = total_venta - parametro3
-            print(monto_efectivo)
+            monto_efectivo = abs(float(monto_efectivo))
+            if parametro2 == "efectivo":
+                nueva_venta.vuelto=monto_efectivo
+                nueva_venta.save()
+
             
             if parametro1 == "venta_con_restante":
                 FormaPago.objects.create(venta=nueva_venta, tipo_pago=parametro2, monto=parametro3)
@@ -600,7 +607,9 @@ def generar_comandos_de_impresion(venta):
         content += "--------------------------\n"
 
     # Total de la venta
-    total_venta = round(venta.total, decimales)  # Formatea el total de la venta
+    total_venta = round(venta.total, decimales)  
+    vuelto = round(venta.vuelto, decimales)# Formatea el total de la venta
+    content += f"vuelto: {vuelto}\n"
     content += f"Total: {total_venta}\n"
     content += "--------------------------\n"
     return content
@@ -636,15 +645,15 @@ def procesar_pago(request):
             return redirect('ingresar_monto_efectivo')
         elif metodo_pago_seleccionado == 'Transferencia':
             # Redirige a la vista generar_venta con los parámetros adecuados para Transferencia
-            url_generar_venta = reverse('generar_venta', args=['venta_sin_restante', 'transferencia', '0'])
+            url_generar_venta = reverse('generar_venta', args=['venta_sin_restante', 'transferencia', '0', '0'])
             return redirect(url_generar_venta)
         elif metodo_pago_seleccionado == 'Débito':
             # Redirige a la vista generar_venta con los parámetros adecuados para Débito
-            url_generar_venta = reverse('generar_venta', args=['venta_sin_restante', 'debito', '0'])
+            url_generar_venta = reverse('generar_venta', args=['venta_sin_restante', 'debito', '0', '0'])
             return redirect(url_generar_venta)
         elif metodo_pago_seleccionado == 'Crédito':
             # Redirige a la vista generar_venta con los parámetros adecuados para Crédito
-            url_generar_venta = reverse('generar_venta', args=['venta_sin_restante', 'credito', '0'])
+            url_generar_venta = reverse('generar_venta', args=['venta_sin_restante', 'credito', '0', '0'])
             return redirect(url_generar_venta)
     
     # Redirige a una vista predeterminada en caso de error o si no se seleccionó un método de pago válido
@@ -656,10 +665,11 @@ def ingresar_monto_efectivo(request):
     total = sum(item.subtotal() for item in carrito_items)
 
     if request.method == 'POST':
+        monto_vuelto = request.POST.get('monto_vuelto', '0.00')
         # Obtener el monto ingresado por el usuario
         monto_efectivo = float(request.POST.get('monto_efectivo', '0'))
         if monto_efectivo >= total:
-            url_generar_venta = reverse('generar_venta', args=['venta_sin_restante', 'efectivo', monto_efectivo])
+            url_generar_venta = reverse('generar_venta', args=['venta_sin_restante', 'efectivo', monto_efectivo , monto_vuelto])
             return redirect(url_generar_venta)
         else:
             # Redirigir a la vista seleccionar_metodo_pago_resto
@@ -692,7 +702,7 @@ def seleccionar_metodo_pago_resto(request, total, monto_efectivo):
 
 
 def procesar_pago_restante(request, metodo_pago, restante):
-    url_generar_venta = reverse('generar_venta', args=['venta_con_restante', metodo_pago, restante])
+    url_generar_venta = reverse('generar_venta', args=['venta_con_restante', metodo_pago, restante,'0'])
     return redirect(url_generar_venta)
 
 def listar_ventas_respaldo(request):
