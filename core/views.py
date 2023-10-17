@@ -341,16 +341,18 @@ def editar_monto_caja_diaria(request):
         operacion = request.POST.get('operacion', None)
 
         if operacion == 'sumar':
-            # Sumar al monto existente
+            
             monto_a_sumar = Decimal(request.POST.get('monto', 0.0))
-            abrir_caja_impresora()
+            if monto_a_sumar != 0:
+                abrir_caja_impresora()
             caja_diaria.monto += monto_a_sumar
             
         elif operacion == 'restar':
             
             monto_a_restar = Decimal(request.POST.get('monto', 0.0))
             if monto_a_restar <= caja_diaria.monto:
-                abrir_caja_impresora()
+                if monto_a_restar != 0:
+                    abrir_caja_impresora()
                 caja_diaria.monto -= monto_a_restar
             else:
                 # Muestra un mensaje de error si se intenta restar más de lo disponible
@@ -360,14 +362,16 @@ def editar_monto_caja_diaria(request):
         if operacion == 'sumar_retiro':
             # Sumar al retiro existente
             retiro_a_sumar = Decimal(request.POST.get('retiro', 0.0))
-            abrir_caja_impresora()
+            if retiro_a_sumar !=0:
+                abrir_caja_impresora()
             caja_diaria.retiro += retiro_a_sumar
         elif operacion == 'restar_retiro':
             
             # Restar al retiro existente si es posible
             retiro_a_restar = Decimal(request.POST.get('retiro', 0.0))
             if retiro_a_restar <= caja_diaria.retiro:
-                abrir_caja_impresora()
+                if retiro_a_restar != 0:
+                    abrir_caja_impresora()
                 caja_diaria.retiro -= retiro_a_restar
             else:
                 messages.error(request, 'No puedes restar más de lo que tienes disponible en el retiro.')
