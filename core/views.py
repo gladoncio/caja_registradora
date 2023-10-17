@@ -221,7 +221,7 @@ def generar_venta(request, parametro1, parametro2, parametro3, parametro4):
                     messages.success(request, 'Caja abierta exitosamente.')
                 else:
                     messages.error(request, 'Error al abrir la caja. Inténtalo de nuevo.')
-            
+            print(config.imprimir_opciones)
             if config.imprimir_opciones != 'no':
                 content = generar_comandos_de_impresion(nueva_venta)
                 imprimir_en_xprinter(content)
@@ -326,69 +326,6 @@ def cerrar_caja(request):
 
     # Redirigir a la página de informe general
     return redirect('informe_general')
-
-
-def editar_monto_caja_diaria(request):
-    # Intenta recuperar el objeto CajaDiaria con ID 1 o crea uno nuevo si no existe
-    caja_diaria, created = CajaDiaria.objects.get_or_create(id=1, defaults={'monto': 0.0, 'retiro': 0.0})
-
-    if request.method == 'POST':
-        # Obtén el valor actual del monto y el retiro antes de guardar
-        monto_anterior = caja_diaria.monto
-        retiro_anterior = caja_diaria.retiro
-
-        # Verifica si se envió una operación de suma o resta
-        operacion = request.POST.get('operacion', None)
-
-        if operacion == 'sumar':
-            
-            monto_a_sumar = Decimal(request.POST.get('monto', 0.0))
-            if monto_a_sumar != 0:
-                abrir_caja_impresora()
-            caja_diaria.monto += monto_a_sumar
-            
-        elif operacion == 'restar':
-            
-            monto_a_restar = Decimal(request.POST.get('monto', 0.0))
-            if monto_a_restar <= caja_diaria.monto:
-                if monto_a_restar != 0:
-                    abrir_caja_impresora()
-                caja_diaria.monto -= monto_a_restar
-            else:
-                # Muestra un mensaje de error si se intenta restar más de lo disponible
-                messages.error(request, 'No puedes restar más de lo que tienes disponible en la caja.')
-
-
-        if operacion == 'sumar_retiro':
-            # Sumar al retiro existente
-            retiro_a_sumar = Decimal(request.POST.get('retiro', 0.0))
-            if retiro_a_sumar !=0:
-                abrir_caja_impresora()
-            caja_diaria.retiro += retiro_a_sumar
-        elif operacion == 'restar_retiro':
-            
-            # Restar al retiro existente si es posible
-            retiro_a_restar = Decimal(request.POST.get('retiro', 0.0))
-            if retiro_a_restar <= caja_diaria.retiro:
-                if retiro_a_restar != 0:
-                    abrir_caja_impresora()
-                caja_diaria.retiro -= retiro_a_restar
-            else:
-                messages.error(request, 'No puedes restar más de lo que tienes disponible en el retiro.')
-
-        # Asegúrate de que el retiro nunca sea menor que cero
-        if caja_diaria.retiro < 0:
-            caja_diaria.retiro = 0
-
-
-        caja_diaria.save()
-
-        return redirect('editar_caja_diaria')  # Reemplaza 'nombre_de_la_vista' con el nombre de la vista a la que deseas redirigir después de la edición.
-
-    else:
-        form = CajaDiariaForm(instance=caja_diaria)
-
-    return render(request, 'editar_caja_diaria.html', {'form': form})
 
 
 
@@ -846,36 +783,6 @@ def informe_general(request):
     })
 
 
-def ingresar_gasto(request):
-    # Verificar si el usuario está autenticado
-    if not request.user.is_authenticated:
-        return redirect('login')  # O redirige a otra página de acceso no autorizado
-
-    if request.method == 'POST':
-        form = GastoCajaForm(request.POST)
-        if form.is_valid():
-            # Realiza la autenticación adicional aquí
-            clave_anulacion = request.POST.get('clave_anulacion', '')  # Obtener la clave ingresada en el formulari
-            try:
-                # Intenta buscar un usuario con la misma clave de anulación
-                usuario_con_clave_anulacion = Usuario.objects.get(clave_anulacion=clave_anulacion)
-
-                gasto = form.save(commit=False)  # No guardes inmediatamente en la base de datos
-                gasto.usuario = usuario_con_clave_anulacion # Asigna el usuario autenticado al gasto
-                gasto.save()  # Guarda el gasto en la base de datos
-                messages.error(request, 'Gasto ingresado.')
-                abrir_caja_impresora()
-                return redirect('ingresar_gasto')  # Redirige a la lista de gastos después de guardar
-        
-            except Usuario.DoesNotExist:
-                # No se encontró un usuario con la clave de anulación proporcionada
-                # Puedes manejar esto de acuerdo a tus requerimientos
-                # Por ejemplo, mostrar un mensaje de error
-                messages.error(request, 'Usuario no encontrado para la clave de anulación proporcionada.')
-    else:
-        form = GastoCajaForm()
-
-    return render(request, 'ingresar_gasto.html', {'form': form})
 
 
 def cuadrar(request):
@@ -1166,3 +1073,99 @@ def vaciar_carrito(request):
 
     # Redirige de nuevo a la página del carrito (o a donde desees).
     return redirect('caja')  # Ajusta 'nombre_de_la_vista_del_carrito'.
+
+def editar_monto_caja_diaria(request):
+    # Intenta recuperar el objeto CajaDiaria con ID 1 o crea uno nuevo si no existe
+    caja_diaria, created = CajaDiaria.objects.get_or_create(id=1, defaults={'monto': 0.0, 'retiro': 0.0})
+
+    if request.method == 'POST':
+        # Obtén el valor actual del monto y el retiro antes de guardar
+        monto_anterior = caja_diaria.monto
+        retiro_anterior = caja_diaria.retiro
+        
+
+        # Verifica si se envió una operación de suma o resta
+        operacion = request.POST.get('operacion', None)
+
+        if operacion == 'sumar':
+            
+            monto_a_sumar = Decimal(request.POST.get('monto', 0.0))
+            if monto_a_sumar != 0:
+                abrir_caja_impresora()
+            caja_diaria.monto += monto_a_sumar
+            
+        elif operacion == 'restar':
+            
+            monto_a_restar = Decimal(request.POST.get('monto', 0.0))
+            if monto_a_restar <= caja_diaria.monto:
+                if monto_a_restar != 0:
+                    abrir_caja_impresora()
+                caja_diaria.monto -= monto_a_restar
+            else:
+                # Muestra un mensaje de error si se intenta restar más de lo disponible
+                messages.error(request, 'No puedes restar más de lo que tienes disponible en la caja.')
+
+
+        if operacion == 'sumar_retiro':
+            # Sumar al retiro existente
+            retiro_a_sumar = Decimal(request.POST.get('retiro', 0.0))
+            if retiro_a_sumar !=0:
+                abrir_caja_impresora()
+            caja_diaria.retiro += retiro_a_sumar
+        elif operacion == 'restar_retiro':
+            
+            # Restar al retiro existente si es posible
+            retiro_a_restar = Decimal(request.POST.get('retiro', 0.0))
+            if retiro_a_restar <= caja_diaria.retiro:
+                if retiro_a_restar != 0:
+                    abrir_caja_impresora()
+                caja_diaria.retiro -= retiro_a_restar
+            else:
+                messages.error(request, 'No puedes restar más de lo que tienes disponible en el retiro.')
+
+        # Asegúrate de que el retiro nunca sea menor que cero
+        if caja_diaria.retiro < 0:
+            caja_diaria.retiro = 0
+
+
+        caja_diaria.save()
+
+        return redirect('editar_caja_diaria')  # Reemplaza 'nombre_de_la_vista' con el nombre de la vista a la que deseas redirigir después de la edición.
+
+    else:
+        form = CajaDiariaForm(instance=caja_diaria)
+
+    return render(request, 'editar_caja_diaria.html', {'form': form})
+
+
+def ingresar_gasto(request):
+    # Verificar si el usuario está autenticado
+    if not request.user.is_authenticated:
+        return redirect('login')  # O redirige a otra página de acceso no autorizado
+
+    if request.method == 'POST':
+        form = GastoCajaForm(request.POST)
+        if form.is_valid():
+            # Realiza la autenticación adicional aquí
+            clave_anulacion = request.POST.get('clave_anulacion', '')  # Obtener la clave ingresada en el formulari
+            try:
+                # Intenta buscar un usuario con la misma clave de anulación
+                usuario_con_clave_anulacion = Usuario.objects.get(clave_anulacion=clave_anulacion)
+
+                gasto = form.save(commit=False)  # No guardes inmediatamente en la base de datos
+                gasto.usuario = usuario_con_clave_anulacion # Asigna el usuario autenticado al gasto
+                gasto.save()  # Guarda el gasto en la base de datos
+                messages.error(request, 'Gasto ingresado.')
+                abrir_caja_impresora()
+                return redirect('ingresar_gasto')  # Redirige a la lista de gastos después de guardar
+        
+            except Usuario.DoesNotExist:
+                # No se encontró un usuario con la clave de anulación proporcionada
+                # Puedes manejar esto de acuerdo a tus requerimientos
+                # Por ejemplo, mostrar un mensaje de error
+                messages.error(request, 'Usuario no encontrado para la clave de anulación proporcionada.')
+    else:
+        form = GastoCajaForm()
+
+    return render(request, 'ingresar_gasto.html', {'form': form})
+
