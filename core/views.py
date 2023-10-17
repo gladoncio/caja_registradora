@@ -387,6 +387,9 @@ def listar_ventas(request):
         # Filtra las ventas por el rango de horas
         ventas = ventas.filter(fecha_hora__time__range=(hora_inicio, hora_fin))
 
+    # Ordena las ventas en orden descendente por fecha_hora
+    ventas = ventas.order_by('-fecha_hora')
+
     return render(request, 'lista_ventas.html', {'ventas': ventas})
 
 
@@ -546,28 +549,28 @@ def update_project(new_version_directory, project_directory):
             os.makedirs(os.path.dirname(destination_file), exist_ok=True)
             shutil.copy2(source_file, destination_file)
 
-def update(request):
-    # Directorio donde está ubicado tu proyecto Django (la carpeta "caja_registradora")
-    project_directory = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# def update(request):
+#     # Directorio donde está ubicado tu proyecto Django (la carpeta "caja_registradora")
+#     project_directory = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-    # Descargar la última versión desde GitHub (puedes usar tu función check_github_version)
-    latest_version = check_github_version()
+#     # Descargar la última versión desde GitHub (puedes usar tu función check_github_version)
+#     latest_version = check_github_version()
 
-    fecha = get_github_latest_release_date()
+#     fecha = get_github_latest_release_date()
 
-    fecha_actualizacion = datetime.strptime(fecha, "%Y-%m-%dT%H:%M:%SZ")
+#     fecha_actualizacion = datetime.strptime(fecha, "%Y-%m-%dT%H:%M:%SZ")
 
-    nueva_actualizacion, created = ActualizacionModel.objects.get_or_create(id=1, fecha_actualizacion=fecha_actualizacion)
+#     nueva_actualizacion, created = ActualizacionModel.objects.get_or_create(id=1, fecha_actualizacion=fecha_actualizacion)
 
-    nueva_actualizacion.save()
+#     nueva_actualizacion.save()
 
-    new_version_directory = download_latest_version(latest_version)
+#     new_version_directory = download_latest_version(latest_version)
 
-    # Actualizar el proyecto
-    update_project(new_version_directory, project_directory)
+#     # Actualizar el proyecto
+#     update_project(new_version_directory, project_directory)
 
 
-    return render(request, 'update.html')
+#     return render(request, 'update.html')
 
 
 
