@@ -224,7 +224,24 @@ class CajaDiaria(models.Model):
 
     def __str__(self):
         return f'Caja Diaria #{self.id} - Monto: {self.monto}'
-    
+
+
+@receiver(post_migrate)
+def crear_caja_iaria(sender, **kwargs):
+    caja_diaria = [
+    {
+        'monto': 0.0,
+        'retiro' : 0.0,
+    },
+    ]
+    if CajaDiaria.objects.count() == 0:
+        print(" Ingresando datos iniciales ...")
+        for caja in caja_diaria:
+            CajaDiaria.objects.get_or_create(**caja)
+
+        print(" Datos iniciales creados correctamente")
+
+
 class Cuadre(models.Model):
     usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)
     fecha_ingreso = models.DateTimeField(default=timezone.now)

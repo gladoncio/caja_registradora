@@ -20,5 +20,5 @@ from django.conf.urls import include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('core.urls')),
-    path('api/', include('api.urls')),
+    path('api/', include('api.urls')), # Reemplaza 'myapp' con el nombre de tu aplicación
 ]

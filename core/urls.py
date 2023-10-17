@@ -11,10 +11,10 @@ from .views import *
 
 urlpatterns = [
     path('login', LoginView.as_view(template_name='login.html', authentication_form=MyAuthForm,redirect_authenticated_user=True), name='login'),
+    path('cerrar_sesion/', cerrar_sesion, name='cerrar_sesion'),
     path("robots.txt",TemplateView.as_view(template_name="robots.txt", content_type="text/plain")),
     path('', views.index, name='index'),
     path('caja/', views.caja, name='caja'),
-    path('cerrar_sesion/', views.cerrar_sesion, name='cerrar_sesion'),
     path('agregar_al_carrito/<int:producto_id>/', views.agregar_al_carrito, name='agregar_al_carrito'),
     path('eliminar/<int:item_id>/', views.eliminar_item, name='eliminar_item'),
     path('ventas/', views.listar_ventas, name='listar_ventas'),  # Agrega esta línea
