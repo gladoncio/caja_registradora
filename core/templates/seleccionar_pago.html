@@ -45,15 +45,43 @@
        } else if (event.key === "3") {
            methodValue = "Transferencia";
        } else if (event.key === "4") {
-           methodValue = "Debito";
+           methodValue = "Débito";
        }
 
        if (methodValue) {
-           // Redirigir directamente a la vista procesar_pago con el valor seleccionado
-           window.location.href = "{% url 'procesar_pago' %}?metodoPago=" + methodValue;
+           // Crear un formulario oculto
+           var form = document.createElement("form");
+           form.setAttribute("method", "post");
+           form.setAttribute("action", "{% url 'procesar_pago' %}");
+
+           // Obtener el token CSRF de las cookies
+           var csrfToken = document.cookie.match(/csrftoken=([^;]+)/)[1];
+
+           // Crear un campo oculto para el token CSRF
+           var csrfInput = document.createElement("input");
+           csrfInput.setAttribute("type", "hidden");
+           csrfInput.setAttribute("name", "csrfmiddlewaretoken");
+           csrfInput.setAttribute("value", csrfToken);
+
+           // Crear un campo oculto para el valor de método de pago
+           var metodoPagoInput = document.createElement("input");
+           metodoPagoInput.setAttribute("type", "hidden");
+           metodoPagoInput.setAttribute("name", "metodoPago");
+           metodoPagoInput.setAttribute("value", methodValue);
+
+           // Agregar los campos ocultos al formulario
+           form.appendChild(csrfInput);
+           form.appendChild(metodoPagoInput);
+
+           // Agregar el formulario al cuerpo del documento
+           document.body.appendChild(form);
+
+           // Enviar el formulario
+           form.submit();
        }
    });
 </script>
+
 
 
 

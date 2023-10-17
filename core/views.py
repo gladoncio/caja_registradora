@@ -298,7 +298,7 @@ def generar_venta(request, parametro1, parametro2, parametro3, parametro4):
                 VentaProducto.objects.create(venta=nueva_venta, producto=item.producto, cantidad=item.cantidad, gramaje=item.gramaje, subtotal=subtotal)
                 print(item.producto)
             nueva_venta.total = total_venta
-            print(f"este es el parametro {parametro4}")
+            messages.success(request, 'VENTA INGRESADA CORRECTAMENTE.')
             nueva_venta.save()
             
             # Vaciar el carrito del usuario
@@ -326,6 +326,7 @@ def generar_venta(request, parametro1, parametro2, parametro3, parametro4):
                 else:
                     messages.error(request, 'Error al abrir la caja. Inténtalo de nuevo.')
             print(config.imprimir)
+            
 
 
             if config.imprimir != 'no':
