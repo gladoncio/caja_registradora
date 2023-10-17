@@ -22,7 +22,6 @@ from datetime import datetime
 #         # Maneja cualquier error de solicitud aquí
 #         return None  # En caso de error, devuelve None o una fecha predeterminada
     
-
 # def verificar_actualizacion(request):
 #     context = {'actualizado' : "si"}
 #     actualizacion = ActualizacionModel.objects.first()

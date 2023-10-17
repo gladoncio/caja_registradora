@@ -26,6 +26,7 @@
     </div>
 
 
+
         <!-- Messages -->
         {% if messages %}
         <div class="alert alert-dismissible fade show" role="alert">
@@ -53,8 +54,6 @@
                             {% csrf_token %}
                             <button type="submit" class="btn btn-danger">Vaciar Carrito</button>
                         </form>
-                        
-        
                         
                         <br>
                         <table class="table resize-text">
@@ -130,6 +129,21 @@
         window.location.href = "{% url 'seleccionar_metodo_pago' %}";
     }
 </script>
+<script>
+    function redirectToGenerarVenta() {
+        window.location.href = "{% url 'seleccionar_metodo_pago' %}";  // Reemplaza 'generar_venta' con la URL de tu vista.
+    }
+</script>
+
+
+<script>
+    document.addEventListener("keydown", function(event) {
+        if (event.key === "+") {
+            redirectToGenerarVenta();
+        }
+    });
+</script>
+
     
 
 

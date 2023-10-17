@@ -791,7 +791,10 @@ def generar_comandos_de_impresion(venta):
 def seleccionar_metodo_pago(request):
     carrito_items = CarritoItem.objects.filter(usuario=request.user)
     total = sum(item.subtotal() for item in carrito_items)
-    metodos_pago = ["Efectivo", "Transferencia", "Débito", "Crédito"]
+    metodos_pago = ["Efectivo Justo", "Efectivo", "Transferencia", "Débito"]
+    if not carrito_items:
+        messages.error(request, 'No hay artículos en el carrito.')
+        return redirect('caja')  # Reemplaza 'nombre_de_la_vista_caja' con la URL de la vista "caja".
     context = {'metodos_pago': metodos_pago, 'total' : total}
     return render(request, 'seleccionar_pago.html', context)
 
@@ -813,9 +816,9 @@ def procesar_pago(request):
             # Redirige a la vista generar_venta con los parámetros adecuados para Débito
             url_generar_venta = reverse('generar_venta', args=['venta_sin_restante', 'debito', '0', '0'])
             return redirect(url_generar_venta)
-        elif metodo_pago_seleccionado == 'Crédito':
+        elif metodo_pago_seleccionado == 'Efectivo Justo':
             # Redirige a la vista generar_venta con los parámetros adecuados para Crédito
-            url_generar_venta = reverse('generar_venta', args=['venta_sin_restante', 'credito', '0', '0'])
+            url_generar_venta = reverse('generar_venta', args=['venta_sin_restante', 'efectivo', '0', '0'])
             return redirect(url_generar_venta)
     
     # Redirige a una vista predeterminada en caso de error o si no se seleccionó un método de pago válido
@@ -901,7 +904,7 @@ def seleccionar_metodo_pago_resto(request, total, monto_efectivo):
 
 
 def procesar_pago_restante(request, metodo_pago, restante):
-    url_generar_venta = reverse('generar_venta', args=['venta_con_restante', metodo_pago, restante,'0'])
+    url_generar_venta = reverse('generar_venta', args=['venta_con_restante', metodo_pago, restante ,'0'])
     return redirect(url_generar_venta)
 
 

@@ -11,7 +11,7 @@
         
         <div class="form-group">
             <label for="monto_efectivo">Monto en Efectivo:</label>
-            <input type="number" step="0.01" min="0.01" id="monto_efectivo" name="monto_efectivo" class="form-control" required value="{{total|floatformat:configuracion.decimales}}">
+            <input type="number" step="0.01" min="0.01" id="monto_efectivo" name="monto_efectivo" class="form-control" required>
         </div>
         
         <p>Monto Restante: $<span id="monto_restante">{{ total|floatformat:configuracion.decimales }}</span></p>
