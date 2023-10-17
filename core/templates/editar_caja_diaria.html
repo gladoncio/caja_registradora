@@ -23,7 +23,7 @@
                         <div class="form-group resize-text">
                             <label for="monto">Agregar o Restar Monto:</label>
                             <div class="input-group">
-                                <input type="number" id="monto" name="monto" class="form-control" min="0" step="0.01">
+                                <input type="number" id="monto" name="monto" class="form-control" min="0" step="0.01" value="0">
                                 <div class="input-group-append">
                                     <button type="submit" name="operacion" value="sumar" class="btn btn-success">Sumar</button>
                                     <button type="submit" name="operacion" value="restar" class="btn btn-danger">Restar</button>
@@ -36,7 +36,7 @@
                         <div class="form-group resize-text">
                             <label for="retiro">Agregar o Restar Retiro:</label>
                             <div class="input-group">
-                                <input type="number" id="retiro" name="retiro" class="form-control" min="0" step="0.01">
+                                <input type="number" id="retiro" name="retiro" class="form-control" min="0" step="0.01" value="0">
                                 <div class="input-group-append">
                                     <button type="submit" name="operacion" value="sumar_retiro" class="btn btn-success">Sumar a Retiro</button>
                                     <button type="submit" name="operacion" value="restar_retiro" class="btn btn-danger">Restar de Retiro</button>
@@ -44,6 +44,7 @@
                             </div>
                         </div>
                     </form>
+                    
                     {% if form.errors %}
                     <div class="alert alert-danger mt-3">
                         Por favor, asegúrate de que la operación sea válida.
