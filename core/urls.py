@@ -46,8 +46,10 @@ urlpatterns = [
     path('usuarios/eliminar/<int:user_id>/', views.eliminar_usuario, name='eliminar_usuario'),
     path('generar_codigo_ean13/', views.generar_y_imprimir_codigo_ean13, name='generar_codigo_ean13'),
     path('generar_venta/<parametro1>/<parametro2>/<parametro3>/<parametro4>', views.generar_venta, name='generar_venta'),
-    
+    path('vaciar_carrito/', views.vaciar_carrito, name='vaciar_carrito'),
 ]
+    
+
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

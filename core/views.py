@@ -68,7 +68,7 @@ def index(request):
 
 def caja(request):
     config = Configuracion.objects.get(id=1)
-    carrito_items = CarritoItem.objects.filter(usuario=request.user)
+    carrito_items = CarritoItem.objects.filter(usuario=request.user).order_by('-fecha_agregado')
     total = sum(item.subtotal() for item in carrito_items)
     if request.method == 'POST':
         form = BarcodeForm(request.POST)
@@ -1145,3 +1145,12 @@ def vista_boleta_venta_texto(request, venta_id):
     # Devuelve el contenido en texto plano
     response = HttpResponse(content, content_type='text/plain')
     return response
+
+def vaciar_carrito(request):
+    carrito_items = CarritoItem.objects.filter(usuario=request.user)
+
+    for item in carrito_items:
+        item.delete()
+
+    # Redirige de nuevo a la página del carrito (o a donde desees).
+    return redirect('caja')  # Ajusta 'nombre_de_la_vista_del_carrito'.
