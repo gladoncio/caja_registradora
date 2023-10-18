@@ -15,17 +15,17 @@
                 
                 <div class="form-check">
                     <input class="form-check-input" type="radio" id="transferencia" name="metodoPagoResto" value="transferencia" required>
-                    <label class="form-check-label" for="transferencia">Transferencia</label>
+                    <label class="form-check-label" for="transferencia">1 - Transferencia</label>
                 </div>
                 
                 <div class="form-check">
                     <input class="form-check-input" type="radio" id="debito" name="metodoPagoResto" value="debito" required>
-                    <label class="form-check-label" for="debito">Débito</label>
+                    <label class="form-check-label" for="debito">2 - Débito</label>
                 </div>
                 
                 <div class="form-check">
-                    <input class="form-check-input" type="radio" id="credito" name="metodoPagoResto" value="credito" required>
-                    <label class="form-check-label" for="credito">Crédito</label>
+                    <input class="form-check-input" type="radio" id="credito" name="metodoPagoResto" value="volver" required>
+                    <label class="form-check-label" for="credito">3 - Volver</label>
                 </div>
             </fieldset>
         </div>
@@ -33,6 +33,52 @@
         <button type="submit" class="btn btn-primary">Continuar</button>
     </form>
 </div>
+
+<script>
+    document.addEventListener("keydown", function(event) {
+        var metodoPagoResto;
+        if (event.key === "1") {
+            metodoPagoResto = "transferencia";
+        } else if (event.key === "2") {
+            metodoPagoResto = "debito";
+        } else if (event.key === "3") {
+            metodoPagoResto = "volver";
+        }
+ 
+        if (metodoPagoResto) {
+            // Crear un formulario oculto
+            var form = document.createElement("form");
+            form.setAttribute("method", "post");
+            form.setAttribute("action", `{% url 'seleccionar_metodo_pago_resto' total monto_efectivo %}`); // Agrega los valores total y monto_efectivo
+ 
+            // Obtener el token CSRF de las cookies
+            var csrfToken = document.cookie.match(/csrftoken=([^;]+)/)[1];
+ 
+            // Crear un campo oculto para el token CSRF
+            var csrfInput = document.createElement("input");
+            csrfInput.setAttribute("type", "hidden");
+            csrfInput.setAttribute("name", "csrfmiddlewaretoken");
+            csrfInput.setAttribute("value", csrfToken);
+ 
+            // Crear un campo oculto para el valor de método de pago (corregido)
+            var metodoPagoRestoInput = document.createElement("input");
+            metodoPagoRestoInput.setAttribute("type", "hidden");
+            metodoPagoRestoInput.setAttribute("name", "metodoPagoResto");
+            metodoPagoRestoInput.setAttribute("value", metodoPagoResto); // Corregido aquí
+ 
+            // Agregar los campos ocultos al formulario
+            form.appendChild(csrfInput);
+            form.appendChild(metodoPagoRestoInput);
+ 
+            // Agregar el formulario al cuerpo del documento
+            document.body.appendChild(form);
+ 
+            // Enviar el formulario
+            form.submit();
+        }
+    });
+ </script>
+
 
 {% include 'base/footer.html' %}
 <!-- End of Footer -->

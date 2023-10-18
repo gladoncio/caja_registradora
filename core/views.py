@@ -913,6 +913,11 @@ def seleccionar_metodo_pago_resto(request, total, monto_efectivo):
     if request.method == 'POST':
         # Obtén el método de pago seleccionado por el usuario
         metodo_pago_seleccionado = request.POST.get('metodoPagoResto')
+        print(metodo_pago_seleccionado)
+        if metodo_pago_seleccionado == 'volver':
+            return redirect('seleccionar_metodo_pago')
+
+
         
         # Redirige a la vista para procesar el pago con los parámetros necesarios
         return redirect('procesar_pago_restante', metodo_pago=metodo_pago_seleccionado, restante=restante)
