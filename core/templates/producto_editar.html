@@ -1,0 +1,13 @@
+{% extends 'base/nav.html' %}
+
+{% block body %}
+  <div class="container">
+    <h1>Editar Producto</h1>
+
+    <form method="post">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+    </form>
+  </div>
+{% endblock %}

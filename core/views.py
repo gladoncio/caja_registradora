@@ -36,6 +36,9 @@ from barcode.writer import ImageWriter
 from barcode import generate
 import random
 from barcode import EAN13
+from django.core.paginator import Paginator
+from django.views.generic import ListView
+from math import ceil
 
 
 # ██╗░░░░░░█████╗░░██████╗░██╗███╗░░██╗  ██╗░░░██╗██╗███████╗░██╗░░░░░░░██╗░██████╗
@@ -136,31 +139,37 @@ def caja(request):
             barcode = form.cleaned_data['barcode']
             try:
                 producto = Producto.objects.get(codigo_barras=barcode)
-                if config.tipo_venta == '2':
-                    try:
-                        stock = producto.stock
-                        print(stock)
-                    except ObjectDoesNotExist:
-                    # Si el objeto Stock no existe, maneja la situación aquí
-                        messages.success(request, 'El producto no tiene Stock.')
-                        return redirect(caja)
-                # Busca si ya existe un carrito_item con el mismo producto y usuario
-                carrito_item, created = CarritoItem.objects.get_or_create(
-                    usuario=request.user,
-                    producto=producto,
-                    defaults={'cantidad': 1}  # Cantidad predeterminada si no existe
-                )
-                if not created:
-                    # Si el carrito_item ya existe, simplemente aumenta la cantidad en 1
-                    carrito_item.cantidad += 1
-                    carrito_item.save()
-
-                # Redirige a la misma vista
-                return redirect('caja')
+                if producto.tipo_venta != 'gramaje':
+                    if config.tipo_venta == '2':
+                        try:
+                            stock = producto.stock
+                            print(stock)
+                        except ObjectDoesNotExist:
+                        # Si el objeto Stock no existe, maneja la situación aquí
+                            messages.success(request, 'El producto no tiene Stock.')
+                            return redirect(caja)
+                    # Busca si ya existe un carrito_item con el mismo producto y usuario
+                    carrito_item, created = CarritoItem.objects.get_or_create(
+                        usuario=request.user,
+                        producto=producto,
+                        defaults={'cantidad': 1}  # Cantidad predeterminada si no existe
+                    )
+                    if not created:
+                        # Si el carrito_item ya existe, simplemente aumenta la cantidad en 1
+                        carrito_item.cantidad += 1
+                        carrito_item.save()
+                    # Redirige a la misma vista
+                    return redirect('caja')
+                else:
+                    messages.success(request, 'El producto es por gramaje.')
+                    return redirect('caja')
             except Producto.DoesNotExist:
                 productos_similares = Producto.objects.filter(nombre__icontains=barcode)
-                return render(request, 'caja.html', {'form': form, 'carrito_items': carrito_items, 'total': total, 'productos_similares': productos_similares})
-                pass
+                if productos_similares.exists():
+                    return render(request, 'caja.html', {'form': form, 'carrito_items': carrito_items, 'total': total, 'productos_similares': productos_similares})
+                    pass
+                else:
+                    print("no confidencias ni existencias")
     else:
         form = BarcodeForm()
 
@@ -1049,6 +1058,8 @@ def eliminar_venta(request, venta_id):
 
 def informe_general(request):
     caja_diaria = CajaDiaria.objects.get(id=1)
+    config = Configuracion.objects.get(id=1)
+    decimales = config.decimales
     try:
         # Obtener la última fecha de RegistroTransaccion si existe
         ultima_fecha_registro = RegistroTransaccion.objects.latest('fecha_ingreso').fecha_ingreso
@@ -1079,18 +1090,12 @@ def informe_general(request):
     # Calcular el total de gastos
     total_gastos_despues_ultima_fecha = gastos_despues_ultima_fecha.aggregate(Sum('monto'))['monto__sum'] or 0
 
-    ventas_por_departamento = Producto.objects.filter(ventaproducto__venta__in=ventas_despues_ultima_fecha).values('departamento__nombre').annotate(
-        total_bruto=ExpressionWrapper(
-            Sum(F('ventaproducto__cantidad') * F('precio'), output_field=DecimalField(max_digits=10, decimal_places=2)),
-            output_field=DecimalField(max_digits=10, decimal_places=2)
-        ),
-        total_neto=Sum(
-            F('ventaproducto__cantidad') * F('precio'),
-            output_field=DecimalField(max_digits=10, decimal_places=2)
-        )
+    ventas_por_departamento = VentaProducto.objects.filter(venta__in=ventas_despues_ultima_fecha).values('producto__departamento__nombre').annotate(
+        departamento=F('producto__departamento__nombre'),  # Copia el nombre del departamento
+        total_ventas=Sum('subtotal')
     )
 
-    # Calcular el total bruto general después de la fecha
+    # Luego, calcula el total bruto general solo para estas ventas filtradas
     total_bruto_general = VentaProducto.objects.filter(venta__in=ventas_despues_ultima_fecha).aggregate(
         total_bruto=ExpressionWrapper(
             Sum(F('producto__precio') * F('cantidad'), output_field=DecimalField(max_digits=10, decimal_places=2)),
@@ -1098,8 +1103,10 @@ def informe_general(request):
         ),
         total_neto=Sum(F('subtotal'), output_field=DecimalField(max_digits=10, decimal_places=2))
     )
+    
+    monto_que_deberia_dar = monto_efectivo + caja_diaria.monto - caja_diaria.retiro - total_gastos_despues_ultima_fecha
 
-    return render(request, 'informe_general.html', {
+    context = {
         'total_ventas_despues_ultima_fecha': total_ventas_despues_ultima_fecha,
         'monto_efectivo': monto_efectivo,
         'monto_credito': monto_credito,
@@ -1110,7 +1117,46 @@ def informe_general(request):
         'total_bruto_general': total_bruto_general,
         'ventas_por_departamento': ventas_por_departamento,
         'gastos' : total_gastos_despues_ultima_fecha,
-    })
+        'caja_que_deberia' :  monto_que_deberia_dar,
+    }
+
+    def generar_comandos_de_impresion(context, decimales):
+        # Inicializa una cadena vacía para almacenar los comandos de impresión
+        content = ""
+        content += "--------------------------\n"
+        content += "Reporte\n"
+        content += "Fecha: {}\n".format(timezone.now().strftime('%Y-%m-%d %H:%M:%S'))
+        content += "--------------------------\n"
+        
+        content += "Ventas del día.\n"
+        content += "Total en Efectivo: ${:.{}f}\n".format(context['monto_efectivo'] if context['monto_efectivo'] is not None else 0, decimales)
+        content += "Total en Débito: ${:.{}f}\n".format(context['monto_debito'] if context['monto_debito'] is not None else 0, decimales)
+        content += "Total en Transferencia: ${:.{}f}\n".format(context['monto_transferencia'] if context['monto_transferencia'] is not None else 0, decimales)
+        content += "Total de Retiro: ${:.{}f}\n".format(context['monto_retiro'] if context['monto_retiro'] is not None else 0, decimales)
+        content += "Total de gastos: ${:.{}f}\n".format(context['gastos'] if context['gastos'] is not None else 0, decimales)
+        content += "Caja Diaria: ${:.{}f}\n".format(context['monto_caja'] if context['monto_caja'] is not None else 0, decimales)
+        content += "Total Neto General: ${:.{}f}\n".format(context['total_bruto_general']['total_neto'] if context['total_bruto_general']['total_neto'] is not None else 0, decimales)
+      
+        content += "Total de Ventas por Departamento:\n"
+        for venta_por_departamento in ventas_por_departamento:
+            content += "{}:\n".format(venta_por_departamento['departamento'] if venta_por_departamento['departamento'] is not None else "sin departamento")
+            content += "    ${:.2f}\n".format(venta_por_departamento['total_ventas'] if venta_por_departamento['total_ventas'] is not None else 0.00)
+        content += "Total efectivo (restando gastos y retiros): ${:.{}f}\n".format(context['caja_que_deberia'] if context['caja_que_deberia'] is not None else 0, decimales)
+      
+        content += "--------------------------\n"
+        return content
+    
+    content = generar_comandos_de_impresion(context, decimales)
+    # response = HttpResponse(content, content_type='text/plain')
+    # return response
+    if request.method == 'POST':
+        print("imprimiendo reporte")
+        try:
+            imprimir_en_xprinter(content)
+        except:
+            pass
+
+    return render(request, 'informe_general.html', context)
 
 
 # ░█████╗░██╗░░░██╗░█████╗░██████╗░██████╗░░█████╗░██████╗░
@@ -1191,32 +1237,35 @@ def cuadrar(request):
                 # Otra información que quieras guardar en el modelo Cuadre
             )
 
-            ventas_por_departamento = Producto.objects.values('departamento__nombre').annotate(
-                total_bruto=ExpressionWrapper(
-                    Sum(F('ventaproducto__cantidad') * F('precio'), output_field=DecimalField(max_digits=10, decimal_places=2)),
-                    output_field=DecimalField(max_digits=10, decimal_places=2)
-                ),
-                total_neto=Sum(
-                    F('ventaproducto__cantidad') * F('precio'),
-                    output_field=DecimalField(max_digits=10, decimal_places=2)
-                )
+            ventas_por_departamento = VentaProducto.objects.filter(venta__in=ventas_despues_ultima_fecha).values('producto__departamento__nombre').annotate(
+                departamento=F('producto__departamento__nombre'),  # Copia el nombre del departamento
+                total_ventas=Sum('subtotal')
             )
 
-            total_bruto_general = VentaProducto.objects.aggregate(
+
+            # Luego, calcula el total bruto general solo para estas ventas filtradas
+            total_bruto_general = VentaProducto.objects.filter(venta__in=ventas_despues_ultima_fecha).aggregate(
                 total_bruto=ExpressionWrapper(
                     Sum(F('producto__precio') * F('cantidad'), output_field=DecimalField(max_digits=10, decimal_places=2)),
                     output_field=DecimalField(max_digits=10, decimal_places=2)
                 ),
                 total_neto=Sum(F('subtotal'), output_field=DecimalField(max_digits=10, decimal_places=2))
             )
-            monto_faltante_efectivo = abs(monto_que_deberia_dar - total_efectivo)
-            maquina_faltante = abs(monto_debito - maquinas_debito)
+
+
+            monto_faltante_efectivo = (monto_que_deberia_dar - total_efectivo)
+            estado = "faltante"
+            if (monto_faltante_efectivo < 0 ):
+                estado = "sobrante"
+
+            maquina_faltante = (monto_debito - maquinas_debito)
 
             context = {
                 'total_ventas_despues_ultima_fecha': total_gastos_despues_ultima_fecha,
                 'monto_efectivo': monto_efectivo,
                 'monto_credito': monto_credito,
                 'monto_debito': monto_debito,
+                'estado' : estado,
                 'monto_transferencia': monto_transferencia,
                 'monto_retiro': caja_diaria.retiro,
                 'monto_caja': caja_diaria.monto,
@@ -1270,19 +1319,24 @@ def cuadrar(request):
                 content += "Total en Transferencia: ${:.{}f}\n".format(context['monto_transferencia'] if context['monto_transferencia'] is not None else 0, decimales)
                 content += "Total de Retiro: ${:.{}f}\n".format(context['monto_retiro'] if context['monto_retiro'] is not None else 0, decimales)
                 content += "Total de gastos: ${:.{}f}\n".format(context['total_gastos_despues_ultima_fecha'] if context['total_gastos_despues_ultima_fecha'] is not None else 0, decimales)
-                content += "Total en Caja: ${:.{}f}\n".format(context['monto_caja'] if context['monto_caja'] is not None else 0, decimales)
+                content += "Caja Diaria: ${:.{}f}\n".format(context['monto_caja'] if context['monto_caja'] is not None else 0, decimales)
                 content += "Total Neto General: ${:.{}f}\n".format(context['total_bruto_general']['total_neto'] if context['total_bruto_general']['total_neto'] is not None else 0, decimales)
+              
                 content += "Total de Ventas por Departamento:\n"
 
-                for venta_por_departamento in context['ventas_por_departamento']:
-                    content += "{}:\n".format(venta_por_departamento['departamento__nombre'] if venta_por_departamento['departamento__nombre'] is not None else "sin departamento")
-                    content += "Total Bruto: ${:.{}f}\n".format(venta_por_departamento['total_bruto'] if venta_por_departamento['total_bruto'] is not None else 0, decimales)
-                    content += "Total Neto: ${:.{}f}\n".format(venta_por_departamento['total_neto'] if venta_por_departamento['total_neto'] is not None else 0, decimales)
+                for venta_por_departamento in ventas_por_departamento:
+                    content += "{}:\n".format(venta_por_departamento['departamento'] if venta_por_departamento['departamento'] is not None else "sin departamento")
+                    content += "    ${:.2f}\n".format(venta_por_departamento['total_ventas'] if venta_por_departamento['total_ventas'] is not None else 0.00)
 
-                content += "Efectivo que Debería Haber en Caja: ${:.{}f}\n".format(context['caja_que_deberia'] if context['caja_que_deberia'] is not None else 0, decimales)
+                content += "Total efectivo (restando gastos y retiros): ${:.{}f}\n".format(context['caja_que_deberia'] if context['caja_que_deberia'] is not None else 0, decimales)
                 content += "Efectivo en la Caja: ${:.{}f}\n".format(context['monto_en_la_caja'] if context.get('monto_en_la_caja') is not None else 0, decimales)
-
-                content += "Efectivo Faltante: ${:.{}f}\n".format(context['efectivo_faltante'] if context['efectivo_faltante'] is not None else 0, decimales)
+                if context['efectivo_faltante'] == 0:
+                    content += "El monto cuadra con las ventas ingresadas.\n"
+                elif context['efectivo_faltante']>0:
+                    content += "Efectivo Faltante: ${:.{}f}\n".format(context['efectivo_faltante'] if context['efectivo_faltante'] is not None else 0, decimales)
+                else:
+                    context['efectivo_faltante'] = abs(context['efectivo_faltante'])
+                    content += "Efectivo Sobrante: ${:.{}f}\n".format(context['efectivo_faltante'] if context['efectivo_faltante'] is not None else 0, decimales)
                 content += "Débito Faltante en Máquinas: ${:.{}f}\n".format(context['monto_faltante_maquinas'] if context['monto_faltante_maquinas'] is not None else 0, decimales)
                 content += "--------------------------\n"
 
@@ -1290,8 +1344,13 @@ def cuadrar(request):
 
         
             content = generar_comandos_de_impresion(context, decimales)
-            
-            imprimir_en_xprinter(content)
+
+            # response = HttpResponse(content, content_type='text/plain')
+            # return response
+            try:
+                imprimir_en_xprinter(content)
+            except:
+                pass
 
 
             return render(request, 'resultado_cuadre.html', context)
@@ -1641,3 +1700,23 @@ def ingresar_gasto(request):
 
     return render(request, 'ingresar_gasto.html', {'form': form})
 
+class ProductoListView(ListView):
+    model = Producto  # Modelo a utilizar
+    template_name = 'producto_list.html'  # Nombre de la plantilla HTML para mostrar la lista de productos
+    context_object_name = 'productos'  # Nombre de la variable de contexto en la plantilla
+    paginate_by = 10  # Cantidad de productos por página
+
+    def get_queryset(self):
+        # Filtrar los productos por búsqueda (opcional)
+        query = self.request.GET.get('q')
+        if query:
+            return Producto.objects.filter(Q(nombre__icontains=query) | Q(descripcion__icontains=query))
+        else:
+            return Producto.objects.all()
+        
+
+class ProductoEditarView(UpdateView):
+    model = Producto
+    template_name = 'producto_editar.html'  # Nombre de la plantilla para la edición
+    fields = ['nombre', 'precio', 'codigo_barras', 'gramaje', 'foto', 'descripcion', 'departamento', 'marca', 'tipo_gramaje', 'tipo_venta']
+    success_url = '/productos/'  

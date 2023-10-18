@@ -11,7 +11,7 @@ from .views import *
 
 urlpatterns = [
     path('login', LoginView.as_view(template_name='login.html', authentication_form=MyAuthForm,redirect_authenticated_user=True), name='login'),
-    path('cerrar_sesion/', cerrar_sesion, name='cerrar_sesion'),
+    path('cerrar_sesion/', views.cerrar_sesion, name='cerrar_sesion'),
     path("robots.txt",TemplateView.as_view(template_name="robots.txt", content_type="text/plain")),
     path('', views.index, name='index'),
     path('caja/', views.caja, name='caja'),
@@ -47,7 +47,10 @@ urlpatterns = [
     path('generar_codigo_ean13/', views.generar_y_imprimir_codigo_ean13, name='generar_codigo_ean13'),
     path('generar_venta/<parametro1>/<parametro2>/<parametro3>/<parametro4>', views.generar_venta, name='generar_venta'),
     path('vaciar_carrito/', views.vaciar_carrito, name='vaciar_carrito'),
+    path('productos/', ProductoListView.as_view(), name='producto-list'),
+    path('producto/editar/<int:pk>/', ProductoEditarView.as_view(), name='producto-editar'),  # Define la URL de edición
 ]
+
     
 
 

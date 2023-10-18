@@ -5,6 +5,7 @@ from django.db.models.signals import post_delete
 from django.dispatch import receiver
 from django.db.models.signals import pre_delete,post_migrate
 from django.db.utils import IntegrityError
+from math import ceil
 
 
 
@@ -109,14 +110,16 @@ class CarritoItem(models.Model):
         if self.producto.tipo_venta == 'gramaje':
             peso_en_gramos = self.gramaje
             if self.producto.tipo_gramaje == 'kg':
-                return peso_en_gramos * (self.producto.precio / 1000)
+                subtotal = peso_en_gramos * (self.producto.precio / 1000)
             else:
-                return peso_en_gramos * self.producto.precio
+                subtotal = peso_en_gramos * self.producto.precio
         else:
-            return self.cantidad * self.producto.precio
-        
-    def __str__(self):
-        return f"{self.cantidad} x {self.producto.nombre} para {self.usuario.username}"
+            subtotal = self.cantidad * self.producto.precio
+
+        # Redondea el subtotal al próximo múltiplo de 10 y asegura que no sea menor que 10.
+        subtotal = max(10, ceil(subtotal / 10) * 10)
+
+        return subtotal
     
 class Configuracion(models.Model):
     id = models.AutoField(primary_key=True)
