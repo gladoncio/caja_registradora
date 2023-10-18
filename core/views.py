@@ -1212,20 +1212,32 @@ def cuadrar(request):
             maquina_faltante = abs(monto_debito - maquinas_debito)
 
             context = {
-            'total_ventas_despues_ultima_fecha': total_gastos_despues_ultima_fecha,
-            'monto_efectivo': monto_efectivo,
-            'monto_credito': monto_credito,
-            'monto_debito': monto_debito,
-            'monto_transferencia': monto_transferencia,
-            'monto_retiro': caja_diaria.retiro,
-            'monto_caja': caja_diaria.monto,
-            'total_bruto_general': total_bruto_general,
-            'ventas_por_departamento': ventas_por_departamento,
-            'caja_que_deberia' :  monto_que_deberia_dar,
-            'monto_en_la_caja' : total_efectivo,
-            'efectivo_faltante' : monto_faltante_efectivo,
-            'monto_faltante_maquinas' : maquina_faltante,
+                'total_ventas_despues_ultima_fecha': total_gastos_despues_ultima_fecha,
+                'monto_efectivo': monto_efectivo,
+                'monto_credito': monto_credito,
+                'monto_debito': monto_debito,
+                'monto_transferencia': monto_transferencia,
+                'monto_retiro': caja_diaria.retiro,
+                'monto_caja': caja_diaria.monto,
+                'total_bruto_general': total_bruto_general,
+                'ventas_por_departamento': ventas_por_departamento,
+                'caja_que_deberia' :  monto_que_deberia_dar,
+                'monto_en_la_caja' : total_efectivo,
+                'efectivo_faltante' : monto_faltante_efectivo,
+                'monto_faltante_maquinas' : maquina_faltante,
+                'billetes': {
+                    'monedas_10': monedas_10,
+                    'monedas_50': monedas_50,
+                    'monedas_100': monedas_100,
+                    'monedas_500': monedas_500,
+                    'billetes_1000': billetes_1000,
+                    'billetes_2000': billetes_2000,
+                    'billetes_5000': billetes_5000,
+                    'billetes_10000': billetes_10000,
+                    'billetes_20000': billetes_20000,
+                }
             }
+
 
             def generar_comandos_de_impresion(context, decimales):
                 # Inicializa una cadena vacía para almacenar los comandos de impresión
@@ -1235,15 +1247,27 @@ def cuadrar(request):
                 content += "Fecha: {}\n".format(timezone.now().strftime('%Y-%m-%d %H:%M:%S'))
                 content += "--------------------------\n"
 
+                  # Agregar el detalle de billetes
+                content += "Detalle de Billetes:\n"
+                content += "Monedas de 10: {}\n".format(request.POST.get('monedas_10', 0))
+                content += "Monedas de 50: {}\n".format(request.POST.get('monedas_50', 0))
+                content += "Monedas de 100: {}\n".format(request.POST.get('monedas_100', 0))
+                content += "Monedas de 500: {}\n".format(request.POST.get('monedas_500', 0))
+                content += "Billetes de 1000: {}\n".format(request.POST.get('billetes_1000', 0))
+                content += "Billetes de 2000: {}\n".format(request.POST.get('billetes_2000', 0))
+                content += "Billetes de 5000: {}\n".format(request.POST.get('billetes_5000', 0))
+                content += "Billetes de 10000: {}\n".format(request.POST.get('billetes_10000', 0))
+                content += "Billetes de 20000: {}\n".format(request.POST.get('billetes_20000', 0))
+                content += "--------------------------\n"
+
+                
                 # Datos de ventas y montos
                 content += "Ventas del día.\n"
                 content += "Total en Efectivo: ${:.{}f}\n".format(context['monto_efectivo'] if context['monto_efectivo'] is not None else 0, decimales)
-                content += "Total en Crédito: ${:.{}f}\n".format(context['monto_credito'] if context['monto_credito'] is not None else 0, decimales)
                 content += "Total en Débito: ${:.{}f}\n".format(context['monto_debito'] if context['monto_debito'] is not None else 0, decimales)
                 content += "Total en Transferencia: ${:.{}f}\n".format(context['monto_transferencia'] if context['monto_transferencia'] is not None else 0, decimales)
                 content += "Total de Retiro: ${:.{}f}\n".format(context['monto_retiro'] if context['monto_retiro'] is not None else 0, decimales)
                 content += "Total en Caja: ${:.{}f}\n".format(context['monto_caja'] if context['monto_caja'] is not None else 0, decimales)
-                content += "Total Bruto General: ${:.{}f}\n".format(context['total_bruto_general']['total_bruto'] if context['total_bruto_general']['total_bruto'] is not None else 0, decimales)
                 content += "Total Neto General: ${:.{}f}\n".format(context['total_bruto_general']['total_neto'] if context['total_bruto_general']['total_neto'] is not None else 0, decimales)
                 content += "Total de Ventas por Departamento:\n"
 

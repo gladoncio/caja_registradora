@@ -7,6 +7,26 @@
     <button class="btn btn-primary" id="cerrarCajaBtn" data-toggle="modal" data-target="#confirmarCerrarCajaModal">Cerrar Caja</button>
     <div class="row">
         <div class="col-lg-12">
+            <!-- Detalles de Billetes y Monedas -->
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="card shadow mb-4">
+                        <div class="card-body resize-text">
+                            <h3>Detalles de Billetes y Monedas</h3>
+                            <p>Monedas de 10: {{ billetes.monedas_10 }}</p>
+                            <p>Monedas de 50: {{ billetes.monedas_50 }}</p>
+                            <p>Monedas de 100: {{ billetes.monedas_100 }}</p>
+                            <p>Monedas de 500: {{ billetes.monedas_500 }}</p>
+                            <p>Billetes de 1000: {{ billetes.billetes_1000 }}</p>
+                            <p>Billetes de 2000: {{ billetes.billetes_2000 }}</p>
+                            <p>Billetes de 5000: {{ billetes.billetes_5000 }}</p>
+                            <p>Billetes de 10000: {{ billetes.billetes_10000 }}</p>
+                            <p>Billetes de 20000: {{ billetes.billetes_20000 }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="card shadow mb-4">
                 <div class="card-body resize-text">
                     <p>Monto en Efectivo: ${{ monto_efectivo|floatformat:configuracion.decimales }}</p>
@@ -30,7 +50,6 @@
             <div class="card shadow mb-4">
                 <div class="card-body resize-text">
                     <h3>Totales Generales</h3>
-                    <p>Total Bruto General: ${{ total_bruto_general.total_bruto|floatformat:configuracion.decimales }}</p>
                     <p>Total Neto General: ${{ total_bruto_general.total_neto|floatformat:configuracion.decimales }}</p>
                 </div>
             </div>
