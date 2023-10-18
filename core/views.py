@@ -1182,6 +1182,7 @@ def cuadrar(request):
             # Calcular el total de gastos
             total_gastos_despues_ultima_fecha = gastos_despues_ultima_fecha.aggregate(Sum('monto'))['monto__sum'] or 0
 
+
             monto_que_deberia_dar = monto_efectivo + caja_diaria.monto - caja_diaria.retiro - total_gastos_despues_ultima_fecha
             
             cuadre = Cuadre.objects.create(
@@ -1222,6 +1223,7 @@ def cuadrar(request):
                 'total_bruto_general': total_bruto_general,
                 'ventas_por_departamento': ventas_por_departamento,
                 'caja_que_deberia' :  monto_que_deberia_dar,
+                'total_gastos_despues_ultima_fecha' : total_gastos_despues_ultima_fecha,
                 'monto_en_la_caja' : total_efectivo,
                 'efectivo_faltante' : monto_faltante_efectivo,
                 'monto_faltante_maquinas' : maquina_faltante,
@@ -1267,6 +1269,7 @@ def cuadrar(request):
                 content += "Total en Débito: ${:.{}f}\n".format(context['monto_debito'] if context['monto_debito'] is not None else 0, decimales)
                 content += "Total en Transferencia: ${:.{}f}\n".format(context['monto_transferencia'] if context['monto_transferencia'] is not None else 0, decimales)
                 content += "Total de Retiro: ${:.{}f}\n".format(context['monto_retiro'] if context['monto_retiro'] is not None else 0, decimales)
+                content += "Total de gastos: ${:.{}f}\n".format(context['total_gastos_despues_ultima_fecha'] if context['total_gastos_despues_ultima_fecha'] is not None else 0, decimales)
                 content += "Total en Caja: ${:.{}f}\n".format(context['monto_caja'] if context['monto_caja'] is not None else 0, decimales)
                 content += "Total Neto General: ${:.{}f}\n".format(context['total_bruto_general']['total_neto'] if context['total_bruto_general']['total_neto'] is not None else 0, decimales)
                 content += "Total de Ventas por Departamento:\n"
