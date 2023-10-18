@@ -98,7 +98,82 @@
 <!-- /.container-fluid -->
 </div>
 
+<!-- Modal para mostrar productos similares y existencias -->
+<div class="modal fade" id="productosSimilaresModal" tabindex="-1" role="dialog" aria-labelledby="productosSimilaresModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="productosSimilaresModalLabel">Productos Similares y Existencias</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Muestra la lista de productos similares y existencias como una tabla -->
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Nombre del Producto</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for producto in productos_similares %}
+                            <tr>
+                                <td>{{ producto.nombre }}</td>
+                                <td>
+                                    <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#otroModal" data-articulo-id="{{ producto.id_producto }}">Otro Modal</button>
+                                </td>
+                                
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 
+<div class="modal fade" id="otroModal" tabindex="-1" role="dialog" aria-labelledby="otroModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="otroModalLabel">Título del Otro Modal</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Contenido del modal -->
+                <p>La ID del artículo es: <span id="articuloIdSpan"></span></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Agrega un script JavaScript al final de la página para abrir el modal automáticamente -->
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Aquí puedes verificar si no se encontró un producto y abrir el modal automáticamente
+        var productosSimilares = {% if productos_similares %}true{% else %}false{% endif %};
+        
+        if (productosSimilares) {
+            $('#productosSimilaresModal').modal('show');
+        }
+    });
+</script>
+
+<script>
+    $(document).ready(function() {
+        // Maneja el evento de hacer clic en el botón "Abrir Otro Modal".
+        $('#productosSimilaresModal').on('click', '.btn-primary', function() {
+            var productoId = $(this).data('producto-id');
+            $('#otroModal').modal('show');
+            $('#productoIdSpan').text(productoId);
+        });
+    });
+</script>
 
 <!-- Footer -->
 {% include 'base/footer.html' %}

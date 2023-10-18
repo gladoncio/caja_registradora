@@ -158,13 +158,14 @@ def caja(request):
                 # Redirige a la misma vista
                 return redirect('caja')
             except Producto.DoesNotExist:
-                # Maneja el caso en que no se encuentre un producto con el código de barras especificado
-                # Puedes mostrar un mensaje de error al usuario o realizar otras acciones.
+                productos_similares = Producto.objects.filter(nombre__icontains=barcode)
+                return render(request, 'caja.html', {'form': form, 'carrito_items': carrito_items, 'total': total, 'productos_similares': productos_similares})
                 pass
     else:
         form = BarcodeForm()
 
     total = round(total)
+    total = total // 10 * 10
     context = {
         'form': form,
         'carrito_items': carrito_items,
@@ -227,7 +228,7 @@ def agregar_al_carrito(request, producto_id):
                 carrito_item.gramaje = None  # Reiniciamos el gramaje si se agrega por cantidad
                 carrito_item.save()
 
-            # Restar el stock si es necesario
+        
     
     return redirect('caja')
 

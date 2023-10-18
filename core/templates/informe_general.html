@@ -28,7 +28,7 @@
             <div class="card shadow mb-4">
                 <div class="card-body resize-text">
                     <h3>Totales Generales</h3>
-                    <p>Total Bruto General: ${{ total_bruto_general.total_bruto|floatformat:configuracion.decimales }}</p>
+                    {% comment %} <p>Total Bruto General: ${{ total_bruto_general.total_bruto|floatformat:configuracion.decimales }}</p> {% endcomment %}
                     <p>Total Neto General: ${{ total_bruto_general.total_neto|floatformat:configuracion.decimales }}</p>
                 </div>
             </div>
