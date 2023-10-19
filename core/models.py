@@ -76,6 +76,7 @@ class Producto(models.Model):
     TIPO_VENTA_CHOICES = (
         ('unidad', 'Artículo por unidad'),
         ('gramaje', 'Artículo por gramaje'),
+        ('valor', 'Articulo por valor')
     )
     tipo_venta = models.CharField(max_length=10, choices=TIPO_VENTA_CHOICES, blank=False, null=False,default="unidad")
     

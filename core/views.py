@@ -139,7 +139,7 @@ def caja(request):
             barcode = form.cleaned_data['barcode']
             try:
                 producto = Producto.objects.get(codigo_barras=barcode)
-                if producto.tipo_venta != 'gramaje':
+                if producto.tipo_venta == 'unidad':
                     if config.tipo_venta == '2':
                         try:
                             stock = producto.stock
@@ -160,6 +160,8 @@ def caja(request):
                         carrito_item.save()
                     # Redirige a la misma vista
                     return redirect('caja')
+                elif producto.tipo_venta == 'valor':
+                    print("articulo por valor")
                 else:
                     messages.success(request, 'El producto es por gramaje.')
                     return redirect('caja')
@@ -1710,7 +1712,11 @@ class ProductoListView(ListView):
         # Filtrar los productos por búsqueda (opcional)
         query = self.request.GET.get('q')
         if query:
-            return Producto.objects.filter(Q(nombre__icontains=query) | Q(descripcion__icontains=query))
+            return Producto.objects.filter(
+                Q(nombre__icontains=query) | 
+                Q(descripcion__icontains=query) |
+                Q(codigo_barras__icontains=query)
+            )
         else:
             return Producto.objects.all()
         
