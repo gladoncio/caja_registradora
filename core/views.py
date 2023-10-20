@@ -68,7 +68,7 @@ def cerrar_sesion(request):
 def abrir_caja_impresora():
     try:
         # Abre una conexión con la impresora a través de USB (sustituye los valores con los adecuados)
-        printer = Usb(0x0483, 0x070b)
+        printer = Usb(0x1fc9, 0x2016)
 
         # Envía el comando para abrir la caja
         printer.cashdraw(2)  # El número puede variar según la impresora
@@ -82,7 +82,7 @@ def abrir_caja_impresora():
 
 def imprimir(request):
     try:
-        printer = Usb(0x0483, 0x070b)
+        printer = Usb(0x1fc9, 0x2016)
 
         # Imprimir un texto de ejemplo
         text_to_print = "¡Hola, mundo desde Python con Xprinter XP-80C!"
@@ -99,7 +99,7 @@ def imprimir(request):
 def imprimir_en_xprinter(content):
     config = Configuracion.objects.get(id=1)
     # Abre una conexión con la impresora a través de USB (sustituye los valores con los adecuados)
-    printer = Usb(0x0483, 0x070b)
+    printer = Usb(0x1fc9, 0x2016)
 
     # Envía el contenido de la boleta como comandos de impresión
     printer.text(content)
@@ -657,7 +657,7 @@ def abrir_caja(request):
             if contraseña == configuracion.clave_anulacion or contraseña == request.user.clave_anulacion:
                 try:
                     # Abre una conexión con la impresora a través de USB (sustituye los valores con los adecuados)
-                    printer = Usb(0x0483, 0x070b)
+                    printer = Usb(0x1fc9, 0x2016)
 
                     # Envía el comando para abrir la caja
                     printer.cashdraw(2)  # El número puede variar según la impresora
@@ -1551,7 +1551,7 @@ def generar_y_imprimir_codigo_ean13(request):
         barcode_image = ean.render()
 
         # Configura la impresora
-        printer = Usb(0x0483, 0x070b)
+        printer = Usb(0x1fc9, 0x2016)
 
         # Imprime el código de barras en la impresora
         printer.image(barcode_image)
