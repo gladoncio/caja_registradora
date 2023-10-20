@@ -33,12 +33,13 @@ from django.urls import reverse_lazy
 from django.contrib.auth import update_session_auth_hash
 from django.core.exceptions import ObjectDoesNotExist  # Importa la excepción ObjectDoesNotExist
 from barcode.writer import ImageWriter
-from barcode import generate
 import random
 from barcode import EAN13
 from django.core.paginator import Paginator
 from django.views.generic import ListView
 from math import ceil
+from escpos import *
+from .impresora import abrir_caja_impresora, imprimir, imprimir_en_xprinter, generar_y_imprimir_codigo_ean13
 
 
 # ██╗░░░░░░█████╗░░██████╗░██╗███╗░░██╗  ██╗░░░██╗██╗███████╗░██╗░░░░░░░██╗░██████╗
@@ -56,59 +57,6 @@ def cerrar_sesion(request):
     logout(request)
     return redirect(index)
 
-
-
-# ███████╗██╗░░░██╗███╗░░██╗░█████╗░██╗░█████╗░███╗░░██╗███████╗░██████╗
-# ██╔════╝██║░░░██║████╗░██║██╔══██╗██║██╔══██╗████╗░██║██╔════╝██╔════╝
-# █████╗░░██║░░░██║██╔██╗██║██║░░╚═╝██║██║░░██║██╔██╗██║█████╗░░╚█████╗░
-# ██╔══╝░░██║░░░██║██║╚████║██║░░██╗██║██║░░██║██║╚████║██╔══╝░░░╚═══██╗
-# ██║░░░░░╚██████╔╝██║░╚███║╚█████╔╝██║╚█████╔╝██║░╚███║███████╗██████╔╝
-# ╚═╝░░░░░░╚═════╝░╚═╝░░╚══╝░╚════╝░╚═╝░╚════╝░╚═╝░░╚══╝╚══════╝╚═════╝░
-
-def abrir_caja_impresora():
-    try:
-        # Abre una conexión con la impresora a través de USB (sustituye los valores con los adecuados)
-        printer = Usb(0x0483, 0x070B)
-
-        # Envía el comando para abrir la caja
-        printer.cashdraw(2)  # El número puede variar según la impresora
-
-        # Cierra la conexión con la impresora
-        printer.close()
-
-        return True  # Éxito al abrir la caja
-    except Exception as e:
-        return False  # Error al abrir la caja
-
-def imprimir(request):
-    try:
-        printer = Usb(0x0483, 0x070B)
-
-        # Imprimir un texto de ejemplo
-        text_to_print = "¡Hola, mundo desde Python con Xprinter XP-80C!"
-        printer.text(text_to_print)
-        #printer.cut()
-
-        # Cerrar la conexión con la impresora
-        printer.close()
-
-        return HttpResponse("Impresión exitosa")  # Esto devuelve una respuesta HTTP con un mensaje de éxito.
-    except Exception as e:
-        return HttpResponse(f"Error al imprimir: {str(e)}", status=500)  # Esto devuelve una respuesta HTTP con un mensaje de error y un estado 500 (Error interno del servidor).
-    
-def imprimir_en_xprinter(content):
-    config = Configuracion.objects.get(id=1)
-    # Abre una conexión con la impresora a través de USB (sustituye los valores con los adecuados)
-    printer = Usb(0x0483, 0x070B)
-
-    # Envía el contenido de la boleta como comandos de impresión
-    printer.text(content)
-
-    if config.imprimir == 'con_corte':
-        #printer.cut()
-        print("test")
-
-    printer.close()
 
 
 # ██████╗░██╗░░░██╗░██████╗░█████╗░░█████╗░██████╗░░█████╗░██████╗░  ██╗███╗░░██╗██████╗░███████╗██╗░░██╗
@@ -658,13 +606,7 @@ def abrir_caja(request):
             if contraseña == configuracion.clave_anulacion or contraseña == request.user.clave_anulacion:
                 try:
                     # Abre una conexión con la impresora a través de USB (sustituye los valores con los adecuados)
-                    printer = Usb(0x0483, 0x070B)
-
-                    # Envía el comando para abrir la caja
-                    printer.cashdraw(2)  # El número puede variar según la impresora
-
-                    # Cierra la conexión con la impresora
-                    printer.close()
+                    abrir_caja_impresora()
 
                     messages.error(request, 'Caja abierta Exitosamente.')
                 except Exception as e:
@@ -1172,7 +1114,7 @@ def informe_general(request):
         content += "Caja Diaria: ${:.{}f}\n".format(context['monto_caja'] if context['monto_caja'] is not None else 0, decimales)
         content += "Total Neto General: ${:.{}f}\n".format(context['total_bruto_general']['total_neto'] if context['total_bruto_general']['total_neto'] is not None else 0, decimales)
       
-        content += "Total de Ventas por Departamento:\n"
+        content += "Total de Ventas por Depto:\n"
         for venta_por_departamento in ventas_por_departamento:
             content += "{}:\n".format(venta_por_departamento['departamento'] if venta_por_departamento['departamento'] is not None else "sin departamento")
             content += "    ${:.2f}\n".format(venta_por_departamento['total_ventas'] if venta_por_departamento['total_ventas'] is not None else 0.00)
@@ -1182,7 +1124,10 @@ def informe_general(request):
         return content
     
     content = generar_comandos_de_impresion(context, decimales)
+
     # response = HttpResponse(content, content_type='text/plain')
+
+    # imprimir_en_xprinter(content)
     # return response
     if request.method == 'POST':
         print("imprimiendo reporte")
@@ -1540,38 +1485,6 @@ def generar_codigo_ean13(request):
     return response
 
 
-def generar_y_imprimir_codigo_ean13(request):
-    try:
-        # Genera un número aleatorio de 12 dígitos para el código de barras EAN-13
-        codigo_de_barras = ''.join([str(random.randint(0, 9)) for _ in range(12)])
-
-        # Crea el objeto EAN-13
-        ean = EAN13(codigo_de_barras, writer=ImageWriter())
-
-        # Genera el código de barras como una imagen PNG
-        barcode_image = ean.render()
-
-        # Configura la impresora
-        printer = Usb(0x0483, 0x070B)
-
-        # Imprime el código de barras en la impresora
-        printer.image(barcode_image)
-
-        # Corta el papel (si es necesario)
-        #printer.cut()
-
-        # Cierra la conexión con la impresora
-        printer.close()
-
-        # Devuelve la imagen como respuesta HTTP (opcional)
-        response = HttpResponse(content_type='image/png')
-        barcode_image.save(response, 'PNG')
-
-        return response
-
-    except Exception as e:
-        return HttpResponse(f"Error al generar e imprimir el código de barras: {str(e)}", status=500)
-    
 
 
 # ██╗░░░██╗███████╗██████╗░  ░█████╗░░█████╗░███╗░░██╗████████╗███████╗██╗░░██╗████████╗░█████╗░  ██████╗░███████╗
