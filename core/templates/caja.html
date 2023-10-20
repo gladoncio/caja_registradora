@@ -7,7 +7,7 @@
 <div class="container-fluid">
     <!-- Page Heading -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Caja</h1>
+        <h1 class="h3 mb-0 text-gray-800">Caja{{accion}}</h1>
     </div>
 
     <!-- Barcode Input -->
@@ -151,7 +151,50 @@
     </div>
 </div>
 
-
+  
+<!-- Modal para ingresar el valor -->
+<div class="modal fade" id="valorModal" tabindex="-1" role="dialog" aria-labelledby="valorModalLabel" aria-hidden="true">
+    <div class="modal-dialog resize-text" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="valorModalLabel">Ingresar Valor del Producto</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+        <form method="post" action="{% url 'agregar_producto_al_carrito' id_producto %}">
+        {% csrf_token %}
+        {{ form_valor.as_p }}
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+          <button type="submit" class="btn btn-primary" id="agregarValor">Agregar al Carrito</button>
+        </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // Agregar un script para abrir el modal cuando 'accion' sea igual a "variable"
+    document.addEventListener("DOMContentLoaded", function() {
+      var accion = "{{ accion }}";
+      if (accion === "variable") {
+        $('#valorModal').modal('show');
+        console.log("dsadasdasdsadas");
+  
+        // Enfocar automáticamente el campo de entrada al abrir el modal
+        $('#valorModal').on('shown.bs.modal', function () {
+          $('#id_valor').focus();
+        });
+      }
+    });
+  </script>
+  
+  
+  
+  
 <!-- Agrega un script JavaScript al final de la página para abrir el modal automáticamente -->
 <script>
     document.addEventListener("DOMContentLoaded", function() {

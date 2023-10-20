@@ -224,3 +224,6 @@ class CambiarClaveForm(forms.Form):
                 raise forms.ValidationError('Las claves no coinciden.')
 
         return cleaned_data
+    
+class ValorForm(forms.Form):
+    valor = forms.DecimalField(max_digits=7, decimal_places=2)

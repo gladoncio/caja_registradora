@@ -106,6 +106,7 @@ class CarritoItem(models.Model):
     cantidad = models.PositiveIntegerField(default=1)
     gramaje = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
     fecha_agregado = models.DateTimeField(auto_now_add=True)
+    valor =  models.DecimalField(max_digits=7, decimal_places=2, blank=True, null=True)
         
     def subtotal(self):
         if self.producto.tipo_venta == 'gramaje':
@@ -114,6 +115,8 @@ class CarritoItem(models.Model):
                 subtotal = peso_en_gramos * (self.producto.precio / 1000)
             else:
                 subtotal = peso_en_gramos * self.producto.precio
+        elif self.producto.tipo_venta == 'valor':
+            subtotal = self.valor
         else:
             subtotal = self.cantidad * self.producto.precio
 

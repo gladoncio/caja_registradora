@@ -130,6 +130,8 @@ def index(request):
 # ░╚════╝░╚═╝░░╚═╝░╚════╝░╚═╝░░╚═╝
 
 def caja(request):
+    accion = "nada"
+    id = 0
     config = Configuracion.objects.get(id=1)
     carrito_items = CarritoItem.objects.filter(usuario=request.user).order_by('-fecha_agregado')
     total = sum(item.subtotal() for item in carrito_items)
@@ -161,14 +163,18 @@ def caja(request):
                     # Redirige a la misma vista
                     return redirect('caja')
                 elif producto.tipo_venta == 'valor':
+                    id_producto = producto.id_producto
+                    accion = "variable"
+                    form_valor = ValorForm(request.POST)
+                    context = {'form': form,'carrito_items': carrito_items, 'total': total, 'accion' : accion, 'id_producto' : id_producto, 'form_valor' : form_valor}
+                    return render(request, 'caja.html', context)
                     print("articulo por valor")
                 else:
                     messages.success(request, 'El producto es por gramaje.')
-                    return redirect('caja')
             except Producto.DoesNotExist:
                 productos_similares = Producto.objects.filter(nombre__icontains=barcode)
                 if productos_similares.exists():
-                    return render(request, 'caja.html', {'form': form, 'carrito_items': carrito_items, 'total': total, 'productos_similares': productos_similares})
+                    return render(request, 'caja.html', {'form': form, 'carrito_items': carrito_items, 'total': total, 'productos_similares': productos_similares, 'id_producto' : id})
                     pass
                 else:
                     print("no confidencias ni existencias")
@@ -180,10 +186,36 @@ def caja(request):
     context = {
         'form': form,
         'carrito_items': carrito_items,
-        'total' : total
+        'total' : total,
+        'id_producto' : id
         # Otros datos de contexto que necesites
     }
     return render(request, 'caja.html', context)
+
+def agregar_producto_al_carrito(request, id_producto):
+    config = Configuracion.objects.get(id=1)
+    carrito_items = CarritoItem.objects.filter(usuario=request.user).order_by('-fecha_agregado')
+    if request.method == 'POST':
+        form = ValorForm(request.POST)  # Crear una instancia del formulario con los datos POST
+        if form.is_valid():
+            valor = form.cleaned_data['valor']
+            producto = Producto.objects.get(id_producto = id_producto)
+
+            carrito_item, created = CarritoItem.objects.get_or_create(
+                usuario=request.user,
+                producto=producto,
+                defaults={'cantidad': 1},
+                valor = valor  # Cantidad predeterminada si no existe
+            )
+            if not created:
+                carrito_item.valor = carrito_item.valor + valor
+                carrito_item.cantidad += 1
+                carrito_item.save()
+
+            return redirect('caja')
+
+    return redirect('caja')
+
 
 
 
@@ -449,7 +481,7 @@ def detalle_venta(request, venta_id):
 # ╚█████╔╝███████╗██║░░██║██║░░██║██║░░██║██║░░██║  ███████╗██║░░██║  ╚█████╔╝██║░░██║╚█████╔╝██║░░██║
 # ░╚════╝░╚══════╝╚═╝░░╚═╝╚═╝░░╚═╝╚═╝░░╚═╝╚═╝░░╚═╝  ╚══════╝╚═╝░░╚═╝  ░╚════╝░╚═╝░░╚═╝░╚════╝░╚═╝░░╚═╝
 
-def cerrar_caja(request):
+def cerrar_caja(request, monto_en_la_caja):
     caja_diaria = CajaDiaria.objects.get(id=1)
     try:
         ultima_fecha_registro = RegistroTransaccion.objects.latest('fecha_ingreso').fecha_ingreso
@@ -486,7 +518,7 @@ def cerrar_caja(request):
     )
 
 
-    caja_diaria_nueva = monto_efectivo + caja_diaria.monto - caja_diaria.retiro
+    caja_diaria_nueva = monto_en_la_caja
 
     caja_diaria.monto = caja_diaria_nueva
     caja_diaria.retiro = 0.0
@@ -1693,9 +1725,6 @@ def ingresar_gasto(request):
                 return redirect('ingresar_gasto')  # Redirige a la lista de gastos después de guardar
         
             except Usuario.DoesNotExist:
-                # No se encontró un usuario con la clave de anulación proporcionada
-                # Puedes manejar esto de acuerdo a tus requerimientos
-                # Por ejemplo, mostrar un mensaje de error
                 messages.error(request, 'Usuario no encontrado para la clave de anulación proporcionada.')
     else:
         form = GastoCajaForm()
@@ -1709,14 +1738,22 @@ class ProductoListView(ListView):
     paginate_by = 10  # Cantidad de productos por página
 
     def get_queryset(self):
-        # Filtrar los productos por búsqueda (opcional)
         query = self.request.GET.get('q')
+        departamento_id = self.request.GET.get('departamento_id')  # Obtener el ID del departamento de la URL
+        if query == "None":
+            return Producto.objects.filter(departamento__isnull=True)
         if query:
+            # Realizar la búsqueda por nombre, descripción, código de barras y departamento
             return Producto.objects.filter(
-                Q(nombre__icontains=query) | 
+                Q(nombre__icontains=query) |
                 Q(descripcion__icontains=query) |
-                Q(codigo_barras__icontains=query)
+                Q(codigo_barras__icontains=query) |
+                Q(departamento__nombre__icontains=query)  # Reemplaza 'nombre' por el campo correcto de Departamento
             )
+
+        elif departamento_id:
+            # Filtrar por departamento si se proporciona el ID del departamento en la URL
+            return Producto.objects.filter(departamento_id=departamento_id)
         else:
             return Producto.objects.all()
         
