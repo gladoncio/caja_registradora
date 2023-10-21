@@ -10,6 +10,7 @@ from barcode import EAN13
 from barcode.writer import ImageWriter
 from PIL import Image
 import io
+from .views import generar_comandos_de_impresion
 
 
 USB = "/dev/usb/lp0"
@@ -93,11 +94,11 @@ def imprimir_ultima_id():
         # Convertir la ID a una cadena (si es necesario)
         ultima_id_str = str(ultima_id.id)
 
-        print (" imprimiendo ")
 
         venta = Venta.objects.get(id=ultima_id_str)
 
-        # Imprimir la ID
-        imprimir_en_xprinter(venta)
+        contest = generar_comandos_de_impresion(venta)
+
+        imprimir_en_xprinter(contest)
     except:
         pass
