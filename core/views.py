@@ -39,7 +39,7 @@ from django.core.paginator import Paginator
 from django.views.generic import ListView
 from math import ceil
 from escpos import *
-from .impresora import abrir_caja_impresora, imprimir, imprimir_en_xprinter, generar_y_imprimir_codigo_ean13, imprimir_ultima_id
+from .impresora import abrir_caja_impresora, imprimir, imprimir_en_xprinter, generar_y_imprimir_codigo_ean13
 
 
 # ██╗░░░░░░█████╗░░██████╗░██╗███╗░░██╗  ██╗░░░██╗██╗███████╗░██╗░░░░░░░██╗░██████╗
@@ -329,8 +329,8 @@ def generar_venta(request, parametro1, parametro2, parametro3, parametro4):
                 else:
                     messages.error(request, 'Error al abrir la caja. Inténtalo de nuevo.')
 
-            # if config != 'no':
-            #     imprimir_ultima_id()
+            if config != 'no':
+                imprimir_ultima_id()
 
             return redirect('caja')  # Cambiar por la página deseada
         else:
@@ -1673,7 +1673,7 @@ class ProductoEditarView(UpdateView):
     fields = ['nombre', 'precio', 'codigo_barras', 'gramaje', 'foto', 'descripcion', 'departamento', 'marca', 'tipo_gramaje', 'tipo_venta']
     success_url = '/productos/'  
 
-def imprimir_ultima_id(request):
+def imprimir_ultima_id():
     try:
         # Obtener la última ID desde tu modelo
         ultima_id = Venta.objects.latest('id')
