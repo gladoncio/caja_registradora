@@ -328,11 +328,9 @@ def generar_venta(request, parametro1, parametro2, parametro3, parametro4):
                     messages.success(request, 'Caja abierta exitosamente.')
                 else:
                     messages.error(request, 'Error al abrir la caja. Inténtalo de nuevo.')
+                    
             print(config.imprimir)
-            
-
-
-            if config.imprimir != 'no':
+            if config.imprimir == 'sin_corte':
                 print("imprimiendo")
                 content = generar_comandos_de_impresion(nueva_venta)
                 imprimir_en_xprinter(content)
