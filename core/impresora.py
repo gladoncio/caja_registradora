@@ -10,7 +10,7 @@ from barcode import EAN13
 from barcode.writer import ImageWriter
 from PIL import Image
 import io
-from .views import generar_comandos_de_impresion
+#from .views import generar_comandos_de_impresion
 
 
 USB = "/dev/usb/lp0"
