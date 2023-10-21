@@ -329,8 +329,8 @@ def generar_venta(request, parametro1, parametro2, parametro3, parametro4):
                 else:
                     messages.error(request, 'Error al abrir la caja. Inténtalo de nuevo.')
 
-            if config != 'no':
-                imprimir_ultima_id()
+            # if config != 'no':
+            #     imprimir_ultima_id()
 
             return redirect('caja')  # Cambiar por la página deseada
         else:
