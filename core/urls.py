@@ -50,6 +50,7 @@ urlpatterns = [
     path('vaciar_carrito/', views.vaciar_carrito, name='vaciar_carrito'),
     path('productos/', ProductoListView.as_view(), name='producto-list'),
     path('producto/editar/<int:pk>/', ProductoEditarView.as_view(), name='producto-editar'),  # Define la URL de edición
+    path('imprimir_ultima_id/', views.imprimir_ultima_id, name='imprimir_ultima_id'),
 ]
 
     

@@ -11,6 +11,7 @@ from barcode.writer import ImageWriter
 from PIL import Image
 import io
 
+
 USB = "/dev/usb/lp0"
 
 def generar_y_imprimir_codigo_ean13(request):
@@ -52,7 +53,7 @@ def imprimir_en_xprinter(content):
     # Codifica el contenido en UTF-8
     content_encoded = content_normalized.encode('utf-8')
 
-    # Abre el archivo de impresión en modo escritura con codificación UTF-8
+    
     with open(USB, 'wb') as printer_file:
         printer_file.write(content_encoded)
 
@@ -84,3 +85,19 @@ def abrir_caja_impresora():
 
 
 
+def imprimir_ultima_id():
+    try:
+        # Obtener la última ID desde tu modelo
+        ultima_id = Venta.objects.latest('id')
+
+        # Convertir la ID a una cadena (si es necesario)
+        ultima_id_str = str(ultima_id.id)
+
+        print (" imprimiendo ")
+
+        venta = Venta.objects.get(id=ultima_id_str)
+
+        # Imprimir la ID
+        imprimir_en_xprinter(venta)
+    except:
+        pass

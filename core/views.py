@@ -39,7 +39,7 @@ from django.core.paginator import Paginator
 from django.views.generic import ListView
 from math import ceil
 from escpos import *
-from .impresora import abrir_caja_impresora, imprimir, imprimir_en_xprinter, generar_y_imprimir_codigo_ean13
+from .impresora import abrir_caja_impresora, imprimir, imprimir_en_xprinter, generar_y_imprimir_codigo_ean13, imprimir_ultima_id
 
 
 # ██╗░░░░░░█████╗░░██████╗░██╗███╗░░██╗  ██╗░░░██╗██╗███████╗░██╗░░░░░░░██╗░██████╗
@@ -328,13 +328,10 @@ def generar_venta(request, parametro1, parametro2, parametro3, parametro4):
                     messages.success(request, 'Caja abierta exitosamente.')
                 else:
                     messages.error(request, 'Error al abrir la caja. Inténtalo de nuevo.')
-                    
-            print(config.imprimir)
-            if config.imprimir == 'sin_corte':
-                print("imprimiendo")
-                content = generar_comandos_de_impresion(nueva_venta)
-                imprimir_en_xprinter(content)
-            
+
+            if config != 'no':
+                imprimir_ultima_id()
+
             return redirect('caja')  # Cambiar por la página deseada
         else:
             # Manejar el caso donde el carrito del usuario está vacío
@@ -1675,3 +1672,4 @@ class ProductoEditarView(UpdateView):
     template_name = 'producto_editar.html'  # Nombre de la plantilla para la edición
     fields = ['nombre', 'precio', 'codigo_barras', 'gramaje', 'foto', 'descripcion', 'departamento', 'marca', 'tipo_gramaje', 'tipo_venta']
     success_url = '/productos/'  
+
