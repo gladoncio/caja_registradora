@@ -332,6 +332,12 @@ def generar_venta(request, parametro1, parametro2, parametro3, parametro4):
             if config != 'no':
                 imprimir_ultima_id()
 
+            ultima_venta = obtener_ultima_venta()
+            vuelto = ultima_venta.vuelto
+            if vuelto > 0:
+                messages.success(request, f'El vuelto de la venta es {vuelto}.')
+
+
             return redirect('caja')  # Cambiar por la página deseada
         else:
             # Manejar el caso donde el carrito del usuario está vacío
@@ -1687,5 +1693,20 @@ def imprimir_ultima_id():
         contest = generar_comandos_de_impresion(venta)
 
         imprimir_en_xprinter(contest)
+    except:
+        pass
+
+def obtener_ultima_venta():
+    try:
+        # Obtener la última ID desde tu modelo
+        ultima_id = Venta.objects.latest('id')
+
+        # Convertir la ID a una cadena (si es necesario)
+        ultima_id_str = str(ultima_id.id)
+
+
+        venta = Venta.objects.get(id=ultima_id_str)
+        
+        return venta
     except:
         pass
