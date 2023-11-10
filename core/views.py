@@ -39,7 +39,8 @@ from django.core.paginator import Paginator
 from django.views.generic import ListView
 from math import ceil
 from escpos import *
-from .impresora import abrir_caja_impresora, imprimir, imprimir_en_xprinter, generar_y_imprimir_codigo_ean13
+from .impresora import abrir_caja_impresora, imprimir, imprimir_en_xprinter, generar_y_imprimir_codigo_ean13, generar_comandos_de_impresion
+import locale
 
 
 # ██╗░░░░░░█████╗░░██████╗░██╗███╗░░██╗  ██╗░░░██╗██╗███████╗░██╗░░░░░░░██╗░██████╗
@@ -94,7 +95,6 @@ def caja(request):
                     if config.tipo_venta == '2':
                         try:
                             stock = producto.stock
-                            print(stock)
                         except ObjectDoesNotExist:
                         # Si el objeto Stock no existe, maneja la situación aquí
                             messages.success(request, 'El producto no tiene Stock.')
@@ -192,13 +192,9 @@ def agregar_al_carrito(request, producto_id):
             peso = float(request.POST.get('peso'))
             tipo_gramaje = request.POST.get('tipo_gramaje')
             if tipo_gramaje == 'kg':
-                print("kg")
                 peso_en_gramos = peso * 1000
-                print (peso_en_gramos)
             else:
-                print("gr")
                 peso_en_gramos = peso
-                print (peso_en_gramos)
             carrito_item, created = CarritoItem.objects.get_or_create(usuario=request.user, producto=producto)
             if not created:
                 carrito_item.gramaje = F('gramaje') + peso_en_gramos
@@ -299,7 +295,6 @@ def generar_venta(request, parametro1, parametro2, parametro3, parametro4):
                 subtotal = item.subtotal()
                 total_venta += subtotal
                 VentaProducto.objects.create(venta=nueva_venta, producto=item.producto, cantidad=item.cantidad, gramaje=item.gramaje, subtotal=subtotal)
-                print(item.producto)
             nueva_venta.total = total_venta
             messages.success(request, 'VENTA INGRESADA CORRECTAMENTE.')
             nueva_venta.save()
@@ -329,13 +324,14 @@ def generar_venta(request, parametro1, parametro2, parametro3, parametro4):
                 else:
                     messages.error(request, 'Error al abrir la caja. Inténtalo de nuevo.')
 
-            if config != 'no':
+            if config.imprimir != 'no':
                 imprimir_ultima_id()
 
             ultima_venta = obtener_ultima_venta()
             vuelto = ultima_venta.vuelto
             if vuelto > 0:
-                messages.success(request, f'El vuelto de la venta es {vuelto}.')
+                vuelto = '{:.{}f}'.format(vuelto, config.decimales)
+                messages.success(request, f'El vuelto de la venta es {vuelto}')
 
 
             return redirect('caja')  # Cambiar por la página deseada
@@ -344,8 +340,9 @@ def generar_venta(request, parametro1, parametro2, parametro3, parametro4):
             pass
     except Exception as e:
         # Manejar excepciones u otros errores
-        pass
-    
+        print(f"Ocurrió un error en generar la venta vista: {e}")
+        messages.error(request, f"Ocurrió un error en generar la venta: {e}")
+        
     # Redireccionar a la página del carrito si ocurre algún error
     return redirect('caja')  # Cambiar por la página del carrito
 
@@ -712,69 +709,6 @@ def imprimir_boleta(request, venta_id):
 
 
 
-# ░██████╗░███████╗███╗░░██╗███████╗██████╗░░█████╗░██████╗░  ███████╗██╗░░░░░
-# ██╔════╝░██╔════╝████╗░██║██╔════╝██╔══██╗██╔══██╗██╔══██╗  ██╔════╝██║░░░░░
-# ██║░░██╗░█████╗░░██╔██╗██║█████╗░░██████╔╝███████║██████╔╝  █████╗░░██║░░░░░
-# ██║░░╚██╗██╔══╝░░██║╚████║██╔══╝░░██╔══██╗██╔══██║██╔══██╗  ██╔══╝░░██║░░░░░
-# ╚██████╔╝███████╗██║░╚███║███████╗██║░░██║██║░░██║██║░░██║  ███████╗███████╗
-# ░╚═════╝░╚══════╝╚═╝░░╚══╝╚══════╝╚═╝░░╚═╝╚═╝░░╚═╝╚═╝░░╚═╝  ╚══════╝╚══════╝
-
-# ░█████╗░░█████╗░███╗░░██╗████████╗███████╗██╗░░██╗████████╗░█████╗░  ██████╗░███████╗  ██╗░░░░░░█████╗░
-# ██╔══██╗██╔══██╗████╗░██║╚══██╔══╝██╔════╝╚██╗██╔╝╚══██╔══╝██╔══██╗  ██╔══██╗██╔════╝  ██║░░░░░██╔══██╗
-# ██║░░╚═╝██║░░██║██╔██╗██║░░░██║░░░█████╗░░░╚███╔╝░░░░██║░░░██║░░██║  ██║░░██║█████╗░░  ██║░░░░░███████║
-# ██║░░██╗██║░░██║██║╚████║░░░██║░░░██╔══╝░░░██╔██╗░░░░██║░░░██║░░██║  ██║░░██║██╔══╝░░  ██║░░░░░██╔══██║
-# ╚█████╔╝╚█████╔╝██║░╚███║░░░██║░░░███████╗██╔╝╚██╗░░░██║░░░╚█████╔╝  ██████╔╝███████╗  ███████╗██║░░██║
-# ░╚════╝░░╚════╝░╚═╝░░╚══╝░░░╚═╝░░░╚══════╝╚═╝░░╚═╝░░░╚═╝░░░░╚════╝░  ╚═════╝░╚══════╝  ╚══════╝╚═╝░░╚═╝
-
-# ██╗░░░██╗███████╗███╗░░██╗████████╗░█████╗░
-# ██║░░░██║██╔════╝████╗░██║╚══██╔══╝██╔══██╗
-# ╚██╗░██╔╝█████╗░░██╔██╗██║░░░██║░░░███████║
-# ░╚████╔╝░██╔══╝░░██║╚████║░░░██║░░░██╔══██║
-# ░░╚██╔╝░░███████╗██║░╚███║░░░██║░░░██║░░██║
-# ░░░╚═╝░░░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░╚═╝░░╚═╝
-
-def generar_comandos_de_impresion(venta):
-    config = Configuracion.objects.get(id=1)
-    decimales = config.decimales
-
-    # Inicializa una cadena vacía para almacenar los comandos de impresión
-    content = ""
-    content += "--------------------------\n"
-
-    # Encabezado de la boleta (puedes personalizarlo según tus necesidades)
-    content += "Boleta de Venta\n"
-    content += f"Fecha: {venta.fecha_hora} \n"
-
-    # Agregar el método de pago de esta venta
-    formas_pago = venta.formapago_set.all()
-    if formas_pago.exists():
-        metodos_pago = ", ".join([forma.tipo_pago for forma in formas_pago])
-        content += f"Método(s) de Pago: {metodos_pago}\n"
-
-    content += "--------------------------\n"
-
-    # Detalles de los productos vendidos
-    for venta_producto in venta.ventaproducto_set.all():
-        producto = venta_producto.producto
-        cantidad = venta_producto.cantidad
-        gramaje = venta_producto.gramaje
-        precio_unitario = round(venta_producto.subtotal, decimales)  # Formatea el precio unitario
-        # Agrega los detalles de cada producto a la boleta
-        content += f"Producto: {producto.nombre}\n"
-        if cantidad != 0:
-            content += f"Cantidad: {cantidad}\n"
-        else:
-            content += f"Cantidad: {gramaje} gramos\n"
-        content += f"Subtotal: {precio_unitario}\n"
-        content += "--------------------------\n"
-
-    # Total de la venta
-    total_venta = round(venta.total, decimales)  
-    vuelto = round(venta.vuelto, decimales)# Formatea el total de la venta
-    content += f"vuelto: {vuelto}\n"
-    content += f"Total: {total_venta}\n"
-    content += "--------------------------\n"
-    return content
 
 
 

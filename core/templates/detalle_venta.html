@@ -1,5 +1,6 @@
 {% extends 'base/nav.html' %}
 
+
 {% block body %}
 <div class="container-fluid">
     <h1 class="h3 mb-4 text-gray-800">Detalle de Venta</h1>
@@ -10,6 +11,7 @@
                     <h5>ID de Venta: {{ venta.id }}</h5>
                     <p>Fecha y Hora: {{ venta.fecha_hora }}</p>
                     <p>Vuelto: {{ venta.vuelto|floatformat:configuracion.decimales }}</p>
+
                     <p>Total: ${{ venta.total|floatformat:configuracion.decimales  }}</p>
 
                     <h3>Productos Vendidos:</h3>

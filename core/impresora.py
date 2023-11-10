@@ -10,10 +10,75 @@ from barcode import EAN13
 from barcode.writer import ImageWriter
 from PIL import Image
 import io
-#from .views import generar_comandos_de_impresion
 
 
 USB = "/dev/usb/lp0"
+
+# ░██████╗░███████╗███╗░░██╗███████╗██████╗░░█████╗░██████╗░  ███████╗██╗░░░░░
+# ██╔════╝░██╔════╝████╗░██║██╔════╝██╔══██╗██╔══██╗██╔══██╗  ██╔════╝██║░░░░░
+# ██║░░██╗░█████╗░░██╔██╗██║█████╗░░██████╔╝███████║██████╔╝  █████╗░░██║░░░░░
+# ██║░░╚██╗██╔══╝░░██║╚████║██╔══╝░░██╔══██╗██╔══██║██╔══██╗  ██╔══╝░░██║░░░░░
+# ╚██████╔╝███████╗██║░╚███║███████╗██║░░██║██║░░██║██║░░██║  ███████╗███████╗
+# ░╚═════╝░╚══════╝╚═╝░░╚══╝╚══════╝╚═╝░░╚═╝╚═╝░░╚═╝╚═╝░░╚═╝  ╚══════╝╚══════╝
+
+# ░█████╗░░█████╗░███╗░░██╗████████╗███████╗██╗░░██╗████████╗░█████╗░  ██████╗░███████╗  ██╗░░░░░░█████╗░
+# ██╔══██╗██╔══██╗████╗░██║╚══██╔══╝██╔════╝╚██╗██╔╝╚══██╔══╝██╔══██╗  ██╔══██╗██╔════╝  ██║░░░░░██╔══██╗
+# ██║░░╚═╝██║░░██║██╔██╗██║░░░██║░░░█████╗░░░╚███╔╝░░░░██║░░░██║░░██║  ██║░░██║█████╗░░  ██║░░░░░███████║
+# ██║░░██╗██║░░██║██║╚████║░░░██║░░░██╔══╝░░░██╔██╗░░░░██║░░░██║░░██║  ██║░░██║██╔══╝░░  ██║░░░░░██╔══██║
+# ╚█████╔╝╚█████╔╝██║░╚███║░░░██║░░░███████╗██╔╝╚██╗░░░██║░░░╚█████╔╝  ██████╔╝███████╗  ███████╗██║░░██║
+# ░╚════╝░░╚════╝░╚═╝░░╚══╝░░░╚═╝░░░╚══════╝╚═╝░░╚═╝░░░╚═╝░░░░╚════╝░  ╚═════╝░╚══════╝  ╚══════╝╚═╝░░╚═╝
+
+# ██╗░░░██╗███████╗███╗░░██╗████████╗░█████╗░
+# ██║░░░██║██╔════╝████╗░██║╚══██╔══╝██╔══██╗
+# ╚██╗░██╔╝█████╗░░██╔██╗██║░░░██║░░░███████║
+# ░╚████╔╝░██╔══╝░░██║╚████║░░░██║░░░██╔══██║
+# ░░╚██╔╝░░███████╗██║░╚███║░░░██║░░░██║░░██║
+# ░░░╚═╝░░░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░╚═╝░░╚═╝
+
+def generar_comandos_de_impresion(venta):
+    config = Configuracion.objects.get(id=1)
+    decimales = config.decimales
+
+    # Inicializa una cadena vacía para almacenar los comandos de impresión
+    content = ""
+    content += "--------------------------\n"
+
+    # Encabezado de la boleta (puedes personalizarlo según tus necesidades)
+    content += "Boleta de Venta\n"
+    content += f"Fecha: {venta.fecha_hora} \n"
+
+    # Agregar el método de pago de esta venta
+    formas_pago = venta.formapago_set.all()
+    if formas_pago.exists():
+        metodos_pago = ", ".join([forma.tipo_pago for forma in formas_pago])
+        content += f"Método(s) de Pago: {metodos_pago}\n"
+
+    content += "--------------------------\n"
+
+    # Detalles de los productos vendidos
+    for venta_producto in venta.ventaproducto_set.all():
+        producto = venta_producto.producto
+        cantidad = venta_producto.cantidad
+        gramaje = venta_producto.gramaje
+        precio_unitario = round(venta_producto.subtotal, decimales)  # Formatea el precio unitario
+        # Agrega los detalles de cada producto a la boleta
+        content += f"Producto: {producto.nombre}\n"
+        if cantidad != 0:
+            content += f"Cantidad: {cantidad}\n"
+        else:
+            content += f"Cantidad: {gramaje} gramos\n"
+        content += f"Subtotal: {precio_unitario}\n"
+        content += "--------------------------\n"
+
+    # Total de la venta
+    total_venta = round(venta.total, decimales)  
+    vuelto = round(venta.vuelto, decimales)# Formatea el total de la venta
+    content += f"vuelto: {vuelto}\n"
+    content += f"Total: {total_venta}\n"
+    content += "--------------------------\n"
+    return content
+
+
 
 def generar_y_imprimir_codigo_ean13(request):
     try:
@@ -46,7 +111,6 @@ def generar_y_imprimir_codigo_ean13(request):
 
 def imprimir_en_xprinter(content):
     config = Configuracion.objects.get(id=1)
-    print(content)
 
     # Elimina los acentos del contenido
     content_normalized = unidecode(content)
@@ -75,14 +139,17 @@ def imprimir(request):
         return HttpResponse(f"Error al imprimir: {str(e)}", status=500)  # Esto devuelve una respuesta HTTP con un mensaje de error y un estado 500 (Error interno del servidor).
 
 def abrir_caja_impresora():
-    # Comando en formato binario para abrir la gaveta
-    open_drawer_command = b'\x1B\x70\x00\x50\x50'
+    try:
+        # Comando en formato binario para abrir la gaveta
+        open_drawer_command = b'\x1B\x70\x00\x50\x50'
 
-    # Abre el archivo correspondiente al dispositivo USB
-    with open(USB, 'wb') as usb_device:
-        usb_device.write(open_drawer_command)
+        # Abre el archivo correspondiente al dispositivo USB
+        with open(USB, 'wb') as usb_device:
+            usb_device.write(open_drawer_command)
 
-    return "La gaveta se abrió"
+        return True
+    except:
+        return False
 
 
 
@@ -102,3 +169,4 @@ def imprimir_ultima_id():
         imprimir_en_xprinter(contest)
     except:
         pass
+
