@@ -1212,7 +1212,7 @@ def cuadrar(request):
                 content = ""
                 content += "--------------------------\n"
                 content += "Informe de Cierre de Caja\n"
-                content += "Fecha: {}\n".format(timezone.now().strftime('%Y-%m-%d %H:%M:%S'))
+                content += "Fecha: {}\n".format(timezone.localtime(timezone.now()).strftime('%Y-%m-%d %H:%M:%S'))
                 content += "--------------------------\n"
 
                   # Agregar el detalle de billetes

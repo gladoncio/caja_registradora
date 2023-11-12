@@ -9,6 +9,7 @@ import random
 from barcode import EAN13
 from barcode.writer import ImageWriter
 from PIL import Image
+from django.utils.formats import date_format
 import io
 
 
