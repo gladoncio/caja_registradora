@@ -45,7 +45,7 @@ def generar_comandos_de_impresion(venta):
 
     # Encabezado de la boleta (puedes personalizarlo según tus necesidades)
     content += "Boleta de Venta\n"
-    content += f"Fecha: {venta.fecha_hora} \n"
+    content += f"Fecha: {timezone.localtime(venta.fecha_hora).strftime('%Y-%m-%d %H:%M:%S')} \n"
 
     # Agregar el método de pago de esta venta
     formas_pago = venta.formapago_set.all()

@@ -1247,7 +1247,7 @@ def cuadrar(request):
                     # Utiliza strftime para formatear la fecha
                     fecha_formateada = fecha_en_zona_horaria.strftime('%H:%M')
                     
-                    content += "{} - ${:.0f} - {}\n".format(fecha_formateada, gasto.monto, gasto.descripcion)
+                    content += "{}\n ${:.0f} - {}\n".format(fecha_formateada, gasto.monto, gasto.descripcion)
                 content += "--------------------------\n"
 
                 
