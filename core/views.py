@@ -1241,11 +1241,14 @@ def cuadrar(request):
                 
                 content += "Detalle de los Gastos:\n"
                 for gasto in context['gastos_detalle']:
-                    # Utiliza la función date para formatear la fecha
-                    fecha_formateada = date_format(gasto.fecha_hora, 'DATE_FORMAT')
+                    # Ajusta la zona horaria si es necesario
+                    fecha_en_zona_horaria = timezone.localtime(gasto.fecha_hora)
+
+                    # Utiliza strftime para formatear la fecha
+                    fecha_formateada = fecha_en_zona_horaria.strftime('%H:%M')
+                    
                     content += "{} - ${:.0f} - {}\n".format(fecha_formateada, gasto.monto, gasto.descripcion)
                 content += "--------------------------\n"
-
 
                 
                 content += "Caja Diaria: ${:.{}f}\n".format(context['monto_caja'] if context['monto_caja'] is not None else 0, decimales)
