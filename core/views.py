@@ -1241,9 +1241,9 @@ def cuadrar(request):
                 
                 content += "Detalle de los Gastos:\n"
                 for gasto in context['gastos_detalle']:
-                    with timezone.override('America/Santiago'):  # Ajusta según tu zona horaria
-                        hora_formateada = date_format(gasto.fecha_hora, 'TIME_FORMAT')
-                    content += "{}\n - ${:.0f} - {}\n".format(hora_formateada, gasto.monto, gasto.descripcion)
+                    # Utiliza la función date para formatear la fecha
+                    fecha_formateada = date_format(gasto.fecha_hora, 'DATE_FORMAT')
+                    content += "{} - ${:.0f} - {}\n".format(fecha_formateada, gasto.monto, gasto.descripcion)
                 content += "--------------------------\n"
 
 
