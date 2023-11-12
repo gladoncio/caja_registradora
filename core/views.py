@@ -41,6 +41,7 @@ from math import ceil
 from escpos import *
 from .impresora import abrir_caja_impresora, imprimir, imprimir_en_xprinter, generar_y_imprimir_codigo_ean13, generar_comandos_de_impresion
 import locale
+from django.utils.formats import date_format
 
 
 # ██╗░░░░░░█████╗░░██████╗░██╗███╗░░██╗  ██╗░░░██╗██╗███████╗░██╗░░░░░░░██╗░██████╗
@@ -1238,14 +1239,12 @@ def cuadrar(request):
                 content += "--------------------------\n"
 
                 
-                # Datos de ventas y montos
                 content += "Detalle de los Gastos:\n"
                 for gasto in context['gastos_detalle']:
-                    # Utiliza strftime para formatear la fecha y hora
-                    hora_formateada = gasto.fecha_hora.strftime('%H:%M:%S')
+                    # Utiliza date_format para formatear la fecha y hora según la configuración de Django
+                    hora_formateada = date_format(gasto.fecha_hora, 'TIME_FORMAT')
                     content += "{}\n - ${:.0f} - {}\n".format(hora_formateada, gasto.monto, gasto.descripcion)
                 content += "--------------------------\n"
-
 
 
                 
