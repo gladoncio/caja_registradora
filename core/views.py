@@ -1241,8 +1241,8 @@ def cuadrar(request):
                 
                 content += "Detalle de los Gastos:\n"
                 for gasto in context['gastos_detalle']:
-                    # Utiliza date_format para formatear la fecha y hora según la configuración de Django
-                    hora_formateada = date_format(gasto.fecha_hora, 'TIME_FORMAT')
+                    with timezone.override('America/Santiago'):  # Ajusta según tu zona horaria
+                        hora_formateada = date_format(gasto.fecha_hora, 'TIME_FORMAT')
                     content += "{}\n - ${:.0f} - {}\n".format(hora_formateada, gasto.monto, gasto.descripcion)
                 content += "--------------------------\n"
 
