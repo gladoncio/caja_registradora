@@ -1241,7 +1241,9 @@ def cuadrar(request):
                 # Datos de ventas y montos
                 content += "Detalle de los Gastos:\n"
                 for gasto in context['gastos_detalle']:
-                    content += "    ${:.2f} - {} - {}\n".format(gasto.monto, gasto.descripcion, gasto.fecha_hora)
+                    # Utiliza strftime para formatear la fecha y hora
+                    hora_formateada = gasto.fecha_hora.strftime('%H:%M:%S')
+                    content += "{}\n - ${:.0f} - {}\n".format(hora_formateada, gasto.monto, gasto.descripcion)
                 content += "--------------------------\n"
 
 
