@@ -26,6 +26,22 @@
                     </div>
                 </div>
             </div>
+            <div class="card shadow mb-4">
+                <div class="card-body resize-text">
+                    <div id="detalle-gastos">
+                        <h2>Detalle de Gastos</h2>
+                        <ul>
+                            {% if gastos_detalle %}
+                            {% for gasto in gastos_detalle %}
+                                <li>${{ gasto.monto }} - {{ gasto.descripcion }} - {{ gasto.fecha_hora }}</li>
+                            {% endfor %}
+                            {% else %}
+                                <li>No hay gastos ingresados</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
 
             <div class="card shadow mb-4">
                 <div class="card-body resize-text">

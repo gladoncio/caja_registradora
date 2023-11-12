@@ -1191,6 +1191,7 @@ def cuadrar(request):
                 'monto_en_la_caja' : total_efectivo,
                 'efectivo_faltante' : monto_faltante_efectivo,
                 'monto_faltante_maquinas' : maquina_faltante,
+                'gastos_detalle' : gastos_despues_ultima_fecha,
                 'billetes': {
                     'monedas_10': monedas_10,
                     'monedas_50': monedas_50,
@@ -1234,6 +1235,18 @@ def cuadrar(request):
                 content += "Total en Transferencia: ${:.{}f}\n".format(context['monto_transferencia'] if context['monto_transferencia'] is not None else 0, decimales)
                 content += "Total de Retiro: ${:.{}f}\n".format(context['monto_retiro'] if context['monto_retiro'] is not None else 0, decimales)
                 content += "Total de gastos: ${:.{}f}\n".format(context['total_gastos_despues_ultima_fecha'] if context['total_gastos_despues_ultima_fecha'] is not None else 0, decimales)
+                content += "--------------------------\n"
+
+                
+                # Datos de ventas y montos
+                content += "Detalle de los Gastos:\n"
+                for gasto in context['gastos_detalle']:
+                    content += "    ${:.2f} - {} - {}\n".format(gasto.monto, gasto.descripcion, gasto.fecha_hora)
+                content += "--------------------------\n"
+
+
+
+                
                 content += "Caja Diaria: ${:.{}f}\n".format(context['monto_caja'] if context['monto_caja'] is not None else 0, decimales)
                 content += "Total Neto General: ${:.{}f}\n".format(context['total_bruto_general']['total_neto'] if context['total_bruto_general']['total_neto'] is not None else 0, decimales)
               
