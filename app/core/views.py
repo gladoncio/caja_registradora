@@ -54,14 +54,26 @@ def check_updates(request):
 
     # Realizar la solicitud a la API de GitHub
     response = requests.get(api_url)
-    releases = response.json()
+    github_releases = response.json()
 
     # Filtrar solo las releases (excluir drafts y pre-releases)
-    releases = [release for release in releases if not release.get('draft') and not release.get('prerelease')]
+    github_releases = [release for release in github_releases if not release.get('draft') and not release.get('prerelease')]
 
-    # Puedes pasar las releases al template o hacer cualquier otra lógica aquí
+    # Obtener la fecha de la última release en GitHub (si hay releases)
+    if github_releases:
+        fecha_ultima_release_github = datetime.strptime(github_releases[0]['published_at'], '%Y-%m-%dT%H:%M:%SZ')
+    else:
+        fecha_ultima_release_github = None
 
-    return render(request, 'actualizaciones.html', {'releases': releases})
+    # Obtener la fecha de la última actualización en tu modelo
+    ultima_actualizacion = ActualizacionModel.objects.latest('fecha_actualizacion')
+    fecha_ultima_actualizacion_modelo = ultima_actualizacion.fecha_actualizacion
+
+    # Comparar las fechas
+    hay_actualizaciones = fecha_ultima_release_github and fecha_ultima_actualizacion_modelo and (fecha_ultima_release_github > fecha_ultima_actualizacion_modelo)
+
+    # Puedes pasar las variables al template o hacer cualquier otra lógica aquí
+    return render(request, 'actualizaciones.html', {'hay_actualizaciones': hay_actualizaciones})
 
 
 # ██╗░░░░░░█████╗░░██████╗░██╗███╗░░██╗  ██╗░░░██╗██╗███████╗░██╗░░░░░░░██╗░██████╗
