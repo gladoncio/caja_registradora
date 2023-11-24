@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Obtener la ruta del directorio actual
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 # Actualizar los paquetes del sistema
 sudo apt update
 sudo apt upgrade -y
@@ -22,4 +25,10 @@ docker-compose --version
 # Construir imágenes con Docker Compose (reemplaza esto con tus propios comandos de Docker Compose)
 docker-compose build
 
-docker-compose up 
+# Script para iniciar el contenedor
+echo -e "#!/bin/bash\n\ncd $SCRIPT_DIR\n\ndocker-compose up -d" > ~/Escritorio/Iniciar_Contenedor.sh
+chmod +x ~/Escritorio/Iniciar_Contenedor.sh
+
+# Script para detener y reiniciar el contenedor
+echo -e "#!/bin/bash\n\ncd $SCRIPT_DIR\n\ndocker-compose down" > ~/Escritorio/Detener_Reiniciar_Contenedor.sh
+chmod +x ~/Escritorio/Detener_Reiniciar_Contenedor.sh
