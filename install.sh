@@ -42,13 +42,15 @@ sudo chmod +x /usr/local/bin/docker-compose
 docker --version
 docker-compose --version
 
+sudo usermod -aG docker $USERNAME
+
 # Construir imágenes con Docker Compose (reemplaza esto con tus propios comandos de Docker Compose)
 docker-compose build
 
 # Script para iniciar el contenedor
-echo -e "#!/bin/bash\n\ncd $SCRIPT_DIR\n\nsudo docker-compose up -d" > "$DESKTOP_DIR/Iniciar_caja.sh"
+echo -e "#!/bin/bash\n\ncd $SCRIPT_DIR\n\ndocker-compose up -d" > "$DESKTOP_DIR/Iniciar_caja.sh"
 chmod +x "$DESKTOP_DIR/Iniciar_caja.sh"
 
 # Script para detener y reiniciar el contenedor
-echo -e "#!/bin/bash\n\ncd $SCRIPT_DIR\n\nsudo docker-compose down" > "$DESKTOP_DIR/Detener_caja.sh"
+echo -e "#!/bin/bash\n\ncd $SCRIPT_DIR\n\ndocker-compose down" > "$DESKTOP_DIR/Detener_caja.sh"
 chmod +x "$DESKTOP_DIR/Detener_caja.sh"
