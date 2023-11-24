@@ -42,6 +42,26 @@ from escpos import *
 from .impresora import abrir_caja_impresora, imprimir, imprimir_en_xprinter, generar_y_imprimir_codigo_ean13, generar_comandos_de_impresion
 import locale
 from django.utils.formats import date_format
+import json
+
+def check_updates(request):
+    # Repositorio de GitHub y nombre del propietario
+    owner = 'gladoncio'
+    repo = 'caja_registradora'
+
+    # URL de la API de GitHub para obtener las releases
+    api_url = f'https://api.github.com/repos/{owner}/{repo}/releases'
+
+    # Realizar la solicitud a la API de GitHub
+    response = requests.get(api_url)
+    releases = response.json()
+
+    # Filtrar solo las releases (excluir drafts y pre-releases)
+    releases = [release for release in releases if not release.get('draft') and not release.get('prerelease')]
+
+    # Puedes pasar las releases al template o hacer cualquier otra lógica aquí
+
+    return render(request, 'actualizaciones.html', {'releases': releases})
 
 
 # ██╗░░░░░░█████╗░░██████╗░██╗███╗░░██╗  ██╗░░░██╗██╗███████╗░██╗░░░░░░░██╗░██████╗

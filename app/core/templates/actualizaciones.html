@@ -1,0 +1,7 @@
+<!-- En tu archivo actualizaciones.html -->
+<h2>Releases de GitHub</h2>
+<ul>
+  {% for release in releases %}
+    <li>{{ release.tag_name }} - {{ release.name }}</li>
+  {% endfor %}
+</ul>
