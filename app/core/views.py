@@ -74,8 +74,11 @@ def check_updates(request):
     # Comparar las fechas
     hay_actualizaciones = fecha_ultima_release_github and fecha_ultima_actualizacion_modelo and (fecha_ultima_release_github > fecha_ultima_actualizacion_modelo)
 
+    # Determinar el mensaje a mostrar en el template
+    mensaje_actualizacion = "¡Estás actualizado!" if not hay_actualizaciones else "Hay actualizaciones disponibles."
+
     # Puedes pasar las variables al template o hacer cualquier otra lógica aquí
-    return render(request, 'actualizaciones.html', {'hay_actualizaciones': hay_actualizaciones})
+    return render(request, 'actualizaciones.html', {'hay_actualizaciones': hay_actualizaciones, 'mensaje_actualizacion': mensaje_actualizacion})
 
 
 # ██╗░░░░░░█████╗░░██████╗░██╗███╗░░██╗  ██╗░░░██╗██╗███████╗░██╗░░░░░░░██╗░██████╗
