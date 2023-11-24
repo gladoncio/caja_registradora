@@ -14,6 +14,12 @@ La Caja Registradora es un proyecto Django diseñado para gestionar ventas y con
 
 ## Instrucciones de Instalación
 
-1. **Descargar el Proyecto:**
-   ```bash
-   git clone https://github.com/tu-usuario/caja-registradora.git
+```bash
+# 1. Descargar el Proyecto
+git clone https://github.com/tu-usuario/caja-registradora.git
+
+# 2. Ir al Directorio del Proyecto
+cd caja-registradora
+
+# 3. Ejecutar el Script de Instalación
+sudo ./install.sh
