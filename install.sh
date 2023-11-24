@@ -27,6 +27,9 @@ mkdir -p "$DESKTOP_DIR"
 sudo apt update
 sudo apt upgrade -y
 
+sudo apt install zenity
+
+
 # Instalar Docker
 sudo apt install -y docker.io
 
@@ -48,16 +51,16 @@ sudo usermod -aG docker $USERNAME
 docker-compose build
 
 # Script para iniciar el contenedor
-echo -e "#!/bin/bash\n\ncd $SCRIPT_DIR\n\ndocker-compose up -d\nxdg-open http://localhost:8000" > "$DESKTOP_DIR/Iniciar_caja.sh"
+echo -e "#!/bin/bash\n\ncd $SCRIPT_DIR\nzenity --info --text='Iniciando el contenedor, por favor espera...'\ndocker-compose up -d\nzenity --info --text='El contenedor se ha iniciado correctamente.' &\nsleep 10\nxdg-open http://localhost:8000" > "$DESKTOP_DIR/Iniciar_caja.sh"
 chmod +x "$DESKTOP_DIR/Iniciar_caja.sh"
 
 # Script para detener y reiniciar el contenedor
-echo -e "#!/bin/bash\n\ncd $SCRIPT_DIR\n\ndocker-compose down" > "$DESKTOP_DIR/Detener_caja.sh"
+echo -e "#!/bin/bash\n\ncd $SCRIPT_DIR\nzenity --info --text='Deteniendo el contenedor, por favor espera...'\ndocker-compose down\nsleep 5\nzenity --info --text='El contenedor se ha detenido correctamente.'" > "$DESKTOP_DIR/Detener_caja.sh"
 chmod +x "$DESKTOP_DIR/Detener_caja.sh"
 
 
 # Confirmar si el usuario desea reiniciar
-read -p "¿Deseas reiniciar el sistema ahora? (y/n): " reiniciar
+read -p "Se necesita reiniciar ¿Deseas reiniciar el sistema ahora? (y/n): " reiniciar
 if [ "$reiniciar" == "y" ]; then
     sudo reboot
 else
