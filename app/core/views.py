@@ -59,9 +59,11 @@ def check_updates(request):
     # Filtrar solo las releases (excluir drafts y pre-releases)
     github_releases = [release for release in github_releases if not release.get('draft') and not release.get('prerelease')]
 
-    # Obtener la fecha de la última release en GitHub (si hay releases)
     if github_releases:
-        fecha_ultima_release_github = datetime.strptime(github_releases[0]['published_at'], '%Y-%m-%dT%H:%M:%SZ')
+        fecha_ultima_release_github_str = github_releases[0]['published_at']
+        fecha_ultima_release_github = datetime.strptime(fecha_ultima_release_github_str, '%Y-%m-%dT%H:%M:%SZ')
+        # Convertir la fecha a timezone-aware (UTC)
+        fecha_ultima_release_github = timezone.make_aware(fecha_ultima_release_github, timezone.utc)
     else:
         fecha_ultima_release_github = None
 
