@@ -48,7 +48,7 @@ sudo usermod -aG docker $USERNAME
 docker-compose build
 
 # Script para iniciar el contenedor
-echo -e "#!/bin/bash\n\ncd $SCRIPT_DIR\n\ndocker-compose up -d" > "$DESKTOP_DIR/Iniciar_caja.sh"
+echo -e "#!/bin/bash\n\ncd $SCRIPT_DIR\n\ndocker-compose up -d\nxdg-open http://localhost:8000" > "$DESKTOP_DIR/Iniciar_caja.sh"
 chmod +x "$DESKTOP_DIR/Iniciar_caja.sh"
 
 # Script para detener y reiniciar el contenedor
