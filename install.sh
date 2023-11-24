@@ -8,11 +8,17 @@ if [ -z "$USERNAME" ]; then
     USERNAME=$(logname)
 fi
 
+echo "Nombre de usuario: $USERNAME"
+
 # Obtener la ruta del directorio actual
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
+echo "Directorio del script: $SCRIPT_DIR"
+
 # Ruta del escritorio del usuario
 DESKTOP_DIR="/home/$USERNAME/Escritorio"
+
+echo "Directorio del escritorio: $DESKTOP_DIR"
 
 # Crear el directorio Escritorio si no existe
 mkdir -p "$DESKTOP_DIR"
