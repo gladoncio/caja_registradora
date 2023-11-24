@@ -341,4 +341,4 @@ def crear_fecha_inicial(sender, **kwargs):
     if not ActualizacionModel.objects.exists():
         # Crear una instancia con la fecha inicial
         fecha_inicial = timezone.now()
-        ActualizacionModel.objects.create(fecha_actualizacion=fecha_inicial, descripcion="Fecha inicial de la base de datos")
+        ActualizacionModel.objects.create(fecha_actualizacion=fecha_inicial)

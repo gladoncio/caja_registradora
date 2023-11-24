@@ -56,4 +56,10 @@ echo -e "#!/bin/bash\n\ncd $SCRIPT_DIR\n\ndocker-compose down" > "$DESKTOP_DIR/D
 chmod +x "$DESKTOP_DIR/Detener_caja.sh"
 
 
-reboot
+# Confirmar si el usuario desea reiniciar
+read -p "¿Deseas reiniciar el sistema ahora? (y/n): " reiniciar
+if [ "$reiniciar" == "y" ]; then
+    sudo reboot
+else
+    echo "No se reiniciará el sistema."
+fi
