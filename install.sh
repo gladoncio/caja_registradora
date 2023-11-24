@@ -1,9 +1,16 @@
 #!/bin/bash
 
+# Obtener el nombre de usuario
+USERNAME=$(logname)
+
 # Obtener la ruta del directorio actual
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-echo $SCRIPT_DIR
+# Ruta del escritorio del usuario
+DESKTOP_DIR="/home/$USERNAME/Escritorio"
+
+# Crear el directorio Escritorio si no existe
+mkdir -p "$DESKTOP_DIR"
 
 # Actualizar los paquetes del sistema
 sudo apt update
@@ -28,9 +35,9 @@ docker-compose --version
 docker-compose build
 
 # Script para iniciar el contenedor
-echo -e "#!/bin/bash\n\ncd $SCRIPT_DIR\n\ndocker-compose up -d" > ~/Escritorio/Iniciar_Contenedor.sh
-chmod +x ~/Escritorio/Iniciar_Contenedor.sh
+echo -e "#!/bin/bash\n\ncd $SCRIPT_DIR\n\ndocker-compose up -d" > "$DESKTOP_DIR/Iniciar_Contenedor.sh"
+chmod +x "$DESKTOP_DIR/Iniciar_Contenedor.sh"
 
 # Script para detener y reiniciar el contenedor
-echo -e "#!/bin/bash\n\ncd $SCRIPT_DIR\n\ndocker-compose down" > ~/Escritorio/Detener_Reiniciar_Contenedor.sh
-chmod +x ~/Escritorio/Detener_Reiniciar_Contenedor.sh
+echo -e "#!/bin/bash\n\ncd $SCRIPT_DIR\n\ndocker-compose down" > "$DESKTOP_DIR/Detener_Reiniciar_Contenedor.sh"
+chmod +x "$DESKTOP_DIR/Detener_Reiniciar_Contenedor.sh"
