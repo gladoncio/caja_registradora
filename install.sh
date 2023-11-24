@@ -21,3 +21,5 @@ docker-compose --version
 
 # Construir imágenes con Docker Compose (reemplaza esto con tus propios comandos de Docker Compose)
 docker-compose build
+
+docker-compose up 
