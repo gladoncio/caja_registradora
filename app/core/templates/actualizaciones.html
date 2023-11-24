@@ -5,11 +5,14 @@
     <div class="row">
         <div class="col-lg-12">
             <h2 class="mt-4">Releases de GitHub</h2>
-            <p>{{ mensaje_actualizacion }}</p>
+            <p class="lead {% if hay_actualizaciones %}text-success{% else %}text-danger{% endif %}">
+                {{ mensaje_actualizacion }}
+            </p>
             <!-- Resto de tu código para mostrar las releases -->
         </div>
     </div>
 </div>
+
 
 {% include 'base/footer.html' %}
 {% include 'base/logout.html' %}

@@ -260,6 +260,7 @@ class Cuadre(models.Model):
 class ActualizacionModel(models.Model):
     id = models.AutoField(primary_key=True)
     fecha_actualizacion = models.DateTimeField()
+    version = models.CharField(max_length=20, default="")
 
 
 # Modelos de copia de seguridad
