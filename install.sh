@@ -1,7 +1,12 @@
 #!/bin/bash
 
-# Obtener el nombre de usuario
-USERNAME=$(logname)
+# Obtener el nombre de usuario principal
+USERNAME="$SUDO_USER"
+
+# Si SUDO_USER está vacío, intentar obtener el nombre de usuario actual
+if [ -z "$USERNAME" ]; then
+    USERNAME=$(logname)
+fi
 
 # Obtener la ruta del directorio actual
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
