@@ -8,7 +8,6 @@ from django.db.utils import IntegrityError
 from math import ceil
 
 
-
 class Usuario(AbstractUser):
     # Define las opciones de permisos como una tupla de tuplas
     PERMISOS_CHOICES = (
@@ -336,4 +335,10 @@ class RegistroCajaDiaria(models.Model):
     def __str__(self):
         return f'Gasto de ${self.monto} - {self.descripcion} - {self.fecha_hora}'
 
-
+@receiver(post_migrate)
+def crear_fecha_inicial(sender, **kwargs):
+    # Verificar si ya existe una instancia de ActualizacionModel
+    if not ActualizacionModel.objects.exists():
+        # Crear una instancia con la fecha inicial
+        fecha_inicial = timezone.now()
+        ActualizacionModel.objects.create(fecha_actualizacion=fecha_inicial, descripcion="Fecha inicial de la base de datos")
