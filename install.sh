@@ -16,7 +16,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 echo "Directorio del script: $SCRIPT_DIR"
 
 # Ruta del escritorio del usuario
-DESKTOP_DIR="/home/$USERNAME/Escritorio"
+DESKTOP_DIR="/home/$USERNAME/Desktop"
 
 echo "Directorio del escritorio: $DESKTOP_DIR"
 
