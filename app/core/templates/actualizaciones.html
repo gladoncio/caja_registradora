@@ -1,7 +1,19 @@
-<!-- En tu archivo actualizaciones.html -->
-<h2>Releases de GitHub</h2>
-<ul>
-  {% for release in releases %}
-    <li>{{ release.tag_name }} - {{ release.name }}</li>
-  {% endfor %}
-</ul>
+{% extends 'base/nav.html' %}
+
+{% block body %}
+<div class="container">
+    <div class="row">
+        <div class="col-lg-12">
+            <h2 class="mt-4">Releases de GitHub</h2>
+            <ul class="list-group">
+                {% for release in releases %}
+                    <li class="list-group-item">{{ release.tag_name }} - {{ release.name }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+{% include 'base/footer.html' %}
+{% include 'base/logout.html' %}
+{% endblock %}
