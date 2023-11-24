@@ -8,3 +8,6 @@ sudo chmod +x /usr/local/bin/docker-compose
 
 # Verificar la instalación de Docker Compose
 docker-compose --version
+
+docker-compose build
+
