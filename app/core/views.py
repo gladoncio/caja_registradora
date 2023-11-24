@@ -77,8 +77,12 @@ def check_updates(request):
     # Determinar el mensaje a mostrar en el template
     mensaje_actualizacion = "¡Estás actualizado!" if not hay_actualizaciones else "Hay actualizaciones disponibles."
 
+    context = {'hay_actualizaciones': hay_actualizaciones,
+                'mensaje_actualizacion': mensaje_actualizacion,
+                'releases' : github_releases}
+
     # Puedes pasar las variables al template o hacer cualquier otra lógica aquí
-    return render(request, 'actualizaciones.html', {'hay_actualizaciones': hay_actualizaciones, 'mensaje_actualizacion': mensaje_actualizacion})
+    return render(request, 'actualizaciones.html', context)
 
 
 # ██╗░░░░░░█████╗░░██████╗░██╗███╗░░██╗  ██╗░░░██╗██╗███████╗░██╗░░░░░░░██╗░██████╗
