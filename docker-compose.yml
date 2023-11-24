@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: sh -c "echo 'hola' >> /dev/usb/lp0 && python manage.py runserver 0.0.0.0:8000"
+    command: sh -c "echo 'hola' >> /dev/usb/lp0 && python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     volumes:
       - ./app:/app
     ports:
