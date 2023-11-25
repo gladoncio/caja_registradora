@@ -92,7 +92,14 @@ def checkout_latest_release(request):
 
         # Intenta realizar el checkout en la última release
         try:
+            subprocess.run(["git", "checkout", "main"], check=True)
+            
+            subprocess.run(["git", "pull", "origin", "main"], check=True)
+            
+            subprocess.run(["git", "status"])
+
             subprocess.run(["git", "checkout", latest_release_name], check=True)
+
             message = f"Actualización exitosa a la última release ({latest_release_name})."
         except subprocess.CalledProcessError as e:
             message = f"Error al hacer checkout: {e}"
