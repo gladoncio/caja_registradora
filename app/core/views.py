@@ -94,10 +94,10 @@ def checkout_latest_release(request):
             current_directory = os.getcwd()
 
             # Cambia al directorio principal del proyecto
-            os.chdir("/app/..")
+            os.chdir("../")
 
             # Imprime la lista de archivos en el directorio actual
-            ls_result = subprocess.run(["ls", "-l"], capture_output=True, text=True)
+            ls_result = subprocess.run(["ls", "-l"], capture_output=True, text=True, cwd="/app")
             print(ls_result.stdout)
 
             # Ejecuta el comando git checkout
