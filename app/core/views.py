@@ -93,14 +93,15 @@ def checkout_latest_release(request):
         # Intenta realizar el checkout en la última release
         try:
             subprocess.run(["git", "checkout", latest_release_name], check=True)
-            message = f"Checkout exitoso a la última release ({latest_release_name})."
+            message = f"Actualización exitosa a la última release ({latest_release_name})."
         except subprocess.CalledProcessError as e:
             message = f"Error al hacer checkout: {e}"
 
     except Exception as e:
         message = f"Error al obtener la última release desde GitHub: {e}"
 
-    return HttpResponse(message)
+    messages.success(request, message)
+    return redirect('verificar-actualizaciones')
 
 
 
