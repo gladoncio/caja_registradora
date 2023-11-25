@@ -17,6 +17,9 @@ RUN apk add --no-cache build-base libffi-dev openssl-dev \
 # Instalar Git
 RUN apk add --no-cache git
 
+# Configurar Git para ignorar problemas de propiedad en el directorio /app
+RUN git config --global --add safe.directory /app
+
 # Expose the port on which your Django app will run
 EXPOSE 8000
 

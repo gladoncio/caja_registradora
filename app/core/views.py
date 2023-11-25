@@ -86,30 +86,22 @@ def check_updates(request):
 
 
 def checkout_latest_release(request):
-    latest_release_name = check_github_version()
+    try:
+        # Obtiene el nombre de la última release desde GitHub
+        latest_release_name = check_github_version()
 
-    if latest_release_name is not None:
+        # Intenta realizar el checkout en la última release
         try:
-
-            latest_release_name = check_github_version()
-
-            if latest_release_name is not None:
-                try:
-                    # Ejecuta el comando git checkout
-                    subprocess.run(["git", "checkout", latest_release_name], check=True)
-
-                    message = f"Checkout exitoso a la última release ({latest_release_name})."
-
-                except subprocess.CalledProcessError as e:
-                    message = f"Error al hacer checkout: {e}"
-            else:
-                message = "No se pudo obtener la última release desde GitHub."
+            subprocess.run(["git", "checkout", latest_release_name], check=True)
+            message = f"Checkout exitoso a la última release ({latest_release_name})."
         except subprocess.CalledProcessError as e:
             message = f"Error al hacer checkout: {e}"
-    else:
-        message = "No se pudo obtener la última release desde GitHub."
+
+    except Exception as e:
+        message = f"Error al obtener la última release desde GitHub: {e}"
 
     return HttpResponse(message)
+
 
 
 
