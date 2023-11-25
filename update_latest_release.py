@@ -21,21 +21,9 @@ latest_release_name = check_github_version()
 
 if latest_release_name is not None:
     try:
-        # Obtiene el directorio actual antes de cambiarlo
-        current_directory = os.getcwd()
-
-        # Cambia al directorio principal del proyecto
-        os.chdir("/app/..")
-
-        # Imprime la lista de archivos en el directorio actual
-        ls_result = subprocess.run(["ls", "-l"], capture_output=True, text=True)
-
-        print(ls_result.stdout)
         # Ejecuta el comando git checkout
         subprocess.run(["git", "checkout", latest_release_name], check=True)
 
-        # Regresa al directorio original después de ejecutar el comando
-        os.chdir(current_directory)
         message = f"Checkout exitoso a la última release ({latest_release_name})."
 
     except subprocess.CalledProcessError as e:
