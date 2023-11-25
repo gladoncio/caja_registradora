@@ -16,12 +16,14 @@
 
     <!-- Custom fonts for this template-->
     <link href="{% static "vendor/fontawesome-free/css/all.min.css" %}" rel="stylesheet" type="text/css">
+
     <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
         rel="stylesheet">
 
     <!-- Custom styles for this template-->
     <link href="{% static "css/sb-admin-2.css" %}" rel="stylesheet">
     <link href="{% static "css/texto.css" %}" rel="stylesheet">
+
 
 </head>
     {% include 'base/tamaño_letra.html' %}
@@ -91,57 +93,28 @@
                     <span>Caja diaria y Retiros</span>
                 </a>
             </li>
-            
+
             {% if request.user.permisos == 'admin' %}
             <li class="nav-item active">
-                <a class="nav-link" href="{% url 'admin:index' %}">
-                    <i class="fas fa-cog me-2"></i> <!-- Icono de engranaje de administración -->
-                    <span>Administración</span>
-                </a>
-            </li>
-
-            <li class="nav-item active">
-                <a class="nav-link" href="{% url "producto-list" %}">
-                    <i class="fas fa-search me-2"></i> <!-- Icono de búsqueda -->
-                    <span>Administración de productos</span>
-                </a>
-            </li>
-            
-            <li class="nav-item active">
-                <a class="nav-link" href="{% url 'generate_barcode' %}">
-                    <i class="fas fa-id-card me-2"></i> <!-- Icono de tarjeta de autorización -->
-                    <span>Tarjeta de Autorización</span>
-                </a>
-            </li>
-            
-            <li class="nav-item active">
-                <a class="nav-link" href="{% url 'lista_usuarios' %}">
+                <a class="nav-link" href="{% url "verificar-actualizaciones" %}">
                     <i class="fas fa-user-plus me-2"></i> <!-- Icono de agregar usuario -->
-                    <span>Administrar Usuarios</span>
+                    <span>Verificar Actualizaciones</span>
                 </a>
             </li>
-            <li class="nav-item active">
-                <a class="nav-link" href="{% url "generar_codigo_ean13" %}">
-                    <i class="fas fa-user-plus me-2"></i> <!-- Icono de agregar usuario -->
-                    <span>Generar Codigo de Barrass</span>
-                </a>
-            </li>
-
             {% endif %}
-            
+
             <!-- Divider -->
             <hr class="sidebar-divider">
-
             <!-- Heading -->
-
-            <!-- Nav Item - Pages Collapse Menu -->
+        
+            <!-- Primer menú desplegable -->
             <li class="nav-item">
-                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
-                    aria-expanded="true" aria-controls="collapseTwo">
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseOne"
+                    aria-expanded="true" aria-controls="collapseOne">
                     <i class="fas fa-fw fa-cog"></i>
                     <span>Opciones de Caja</span>
                 </a>
-                <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+                <div id="collapseOne" class="collapse" aria-labelledby="headingOne" data-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">
                         <h6 class="collapse-header">Caja:</h6>
                         <a class="collapse-item" href="{% url "informe_general" %}">Informe de Caja</a>
@@ -150,16 +123,36 @@
                 </div>
             </li>
 
-
-
             <!-- Divider -->
             <hr class="sidebar-divider">
 
-            <!-- Nav Item - Pages Collapse Menu -->
+            <!-- Segundo menú desplegable -->
+            {% if request.user.permisos == 'admin' %}
+            <li class="nav-item">
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
+                    aria-expanded="true" aria-controls="collapseTwo">
+                    <i class="fas fa-fw fa-cog"></i>
+                    <span>Configuraciones administración</span>
+                </a>
+                <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+                    <div class="bg-white py-2 collapse-inner rounded">
+                        <h6 class="collapse-header">Caja:</h6>
+                        <a class="collapse-item" href="{% url "admin:index" %}">Panel del administrador</a>
+                        <a class="collapse-item" href="{% url "generar_codigo_ean13" %}">Generar Código de barras</a>
+                        <a class="collapse-item" href="{% url "lista_usuarios" %}">Administrar Usuarios</a>
+                        <a class="collapse-item" href="{% url "generate_barcode" %}">Tarjeta de Autorización</a>
+                        <a class="collapse-item" href="{% url "producto-list" %}">Administración de productos</a>
+                    </div>
+                </div>
+            </li>
+            {% endif %}
+
+            
+            <!-- Divider -->
+            <hr class="sidebar-divider">
 
 
 
-            <!-- Nav Item - Tables -->
 
         </ul>
         <!-- End of Sidebar -->
@@ -240,37 +233,10 @@ function promptUpdate() {
                 {% endblock %}
 
 
-                <script>
-                    $(document).ready(function () {
-                        $('#search-input').on('input', function () {
-                            var query = $(this).val();
-                    
-                            $.ajax({
-                                url: '/api/busqueda/',
-                                data: { 'search': query },
-                                dataType: 'json',
-                                success: function (data) {
-                                    $('#search-results').empty();
-                    
-                                    if (data.results.length > 0) {
-                                        var resultsList = '<ul>';
-                                        data.results.forEach(function (result) {
-                                            resultsList += '<li><a href="' + result.url + '">' + result.label + '</a></li>';
-                                        });
-                                        resultsList += '</ul>';
-                                        $('#search-results').html(resultsList);
-                                    } else {
-                                        $('#search-results').html('<p>No se encontraron resultados.</p>');
-                                    }
-                                }
-                            });
-                        });
-                    });
-                    </script>
                     
                     
 
-    <!-- Bootstrap core JavaScript-->
+
     <script src="{% static "vendor/jquery/jquery.min.js" %}"></script>
     <script src="{% static "vendor/bootstrap/js/bootstrap.bundle.min.js" %}"></script>
 
@@ -281,11 +247,41 @@ function promptUpdate() {
     <script src="{% static "js/sb-admin-2.min.js" %}"></script>
 
     <!-- Page level plugins -->
-    <script src="{% static "vendor/chart.js/Chart.min.js" %}"></script>
+    {% comment %} <script src="{% static "vendor/chart.js/Chart.min.js" %}"></script> {% endcomment %}
 
     <!-- Page level custom scripts -->
-    <script src="{% static "js/demo/chart-area-demo.js" %}"></script>
-    <script src="{% static "js/demo/chart-pie-demo.js" %}"></script>
+    {% comment %} <script src="{% static "js/demo/chart-area-demo.js" %}"></script>
+    <script src="{% static "js/demo/chart-pie-demo.js" %}"></script> {% endcomment %}
+
+    <script>
+        $(document).ready(function () {
+            $('#search-input').on('input', function () {
+                var query = $(this).val();
+        
+                $.ajax({
+                    url: '/api/busqueda/',
+                    data: { 'search': query },
+                    dataType: 'json',
+                    success: function (data) {
+                        $('#search-results').empty();
+        
+                        if (data.results.length > 0) {
+                            var resultsList = '<ul>';
+                            data.results.forEach(function (result) {
+                                resultsList += '<li><a href="' + result.url + '">' + result.label + '</a></li>';
+                            });
+                            resultsList += '</ul>';
+                            $('#search-results').html(resultsList);
+                        } else {
+                            $('#search-results').html('<p>No se encontraron resultados.</p>');
+                        }
+                    }
+                });
+            });
+        });
+        </script>
+
+
 
 </body>
 
