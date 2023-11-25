@@ -84,14 +84,27 @@ def check_updates(request):
     # Puedes pasar las variables al template o hacer cualquier otra lógica aquí
     return render(request, 'actualizaciones.html', context)
 
+import os
+import subprocess
+from django.http import HttpResponse
 
 def checkout_latest_release(request):
     latest_release_name = check_github_version()
 
     if latest_release_name is not None:
         try:
-            # Cambia al directorio principal del proyecto y luego ejecuta el comando git checkout
-            subprocess.run(["cd", "/app/..", "&&", "git", "checkout", latest_release_name], check=True)
+            # Obtiene el directorio actual antes de cambiarlo
+            current_directory = os.getcwd()
+
+            # Cambia al directorio principal del proyecto
+            os.chdir("/app/..")
+
+            # Ejecuta el comando git checkout
+            subprocess.run(["git", "checkout", latest_release_name], check=True)
+
+            # Regresa al directorio original después de ejecutar el comando
+            os.chdir(current_directory)
+
             message = f"Checkout exitoso a la última release ({latest_release_name})."
         except subprocess.CalledProcessError as e:
             message = f"Error al hacer checkout: {e}"
@@ -99,6 +112,7 @@ def checkout_latest_release(request):
         message = "No se pudo obtener la última release desde GitHub."
 
     return HttpResponse(message)
+
 
 
 
