@@ -6,7 +6,7 @@
         <div class="col-lg-12">
             <h2 class="mt-4 resize-text">Releases de GitHub</h2>
             {% if hay_actualizaciones %}
-                <button class="btn btn-primary mb-3" id="btnActualizar">Actualizar</button>
+                <a class="btn btn-primary mb-3" href="{% url 'checkout_latest_release' %}" id="btnActualizar">Actualizar</a>
             {% endif %}
             <p class="lead {% if not hay_actualizaciones %}text-success{% else %}text-danger{% endif %} resize-text">
                 {{ mensaje_actualizacion }}
