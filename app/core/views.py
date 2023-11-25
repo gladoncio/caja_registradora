@@ -93,20 +93,19 @@ def checkout_latest_release(request):
             # Obtiene el directorio actual antes de cambiarlo
             current_directory = os.getcwd()
 
-            # Cambia al directorio principal del proyecto
-            os.chdir("/home/caja/Documentos/GitHub/caja_registradora/")
 
-            # Imprime la lista de archivos en el directorio actual
-            ls_result = subprocess.run(["ls", "-l"], capture_output=True, text=True, cwd="/app")
-            print(ls_result.stdout)
+            print(f'Directorio actual antes del cambio: {current_directory}')
 
-            # Ejecuta el comando git checkout
-            subprocess.run(["git", "checkout", latest_release_name], check=True)
+            # Cambia al directorio principal del proyecto (un nivel hacia arriba desde el directorio actual)
+            # Obtiene el nuevo directorio actual después del cambio
+            new_directory = os.getcwd()
+            print(f'Nuevo directorio actual: {new_directory}')
 
-            # Regresa al directorio original después de ejecutar el comando
-            os.chdir(current_directory)
+            # Lista los archivos en el nuevo directorio
+            archivos = os.listdir(new_directory)
+            print(f'Archivos en el nuevo directorio: {archivos}')
 
-            message = f"Checkout exitoso a la última release ({latest_release_name})."
+            message = f"Checkout exitoso a la última release ({latest_release_name}). Archivos en el nuevo directorio: {archivos}"
         except subprocess.CalledProcessError as e:
             message = f"Error al hacer checkout: {e}"
     else:

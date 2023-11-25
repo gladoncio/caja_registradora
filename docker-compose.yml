@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
     command: sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     volumes:
-      - ./app:/app
+      - .:/app
     ports:
       - "8000:8000"
-    privileged: true  # Agrega esta línea para dar acceso privilegiado al contenedor
+    privileged: true
