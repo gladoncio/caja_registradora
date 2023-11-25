@@ -12,6 +12,8 @@ try:
 
     message = f"volviendo a la ultima update."
 
+    print(message)
+    
 except subprocess.CalledProcessError as e:
     message = f"Error al hacer checkout: {e}"
 
