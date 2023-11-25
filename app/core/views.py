@@ -90,22 +90,20 @@ def checkout_latest_release(request):
 
     if latest_release_name is not None:
         try:
-            # Obtiene el directorio actual antes de cambiarlo
-            current_directory = os.getcwd()
 
+            latest_release_name = check_github_version()
 
-            print(f'Directorio actual antes del cambio: {current_directory}')
+            if latest_release_name is not None:
+                try:
+                    # Ejecuta el comando git checkout
+                    subprocess.run(["git", "checkout", latest_release_name], check=True)
 
-            # Cambia al directorio principal del proyecto (un nivel hacia arriba desde el directorio actual)
-            # Obtiene el nuevo directorio actual después del cambio
-            new_directory = os.getcwd()
-            print(f'Nuevo directorio actual: {new_directory}')
+                    message = f"Checkout exitoso a la última release ({latest_release_name})."
 
-            # Lista los archivos en el nuevo directorio
-            archivos = os.listdir(new_directory)
-            print(f'Archivos en el nuevo directorio: {archivos}')
-
-            message = f"Checkout exitoso a la última release ({latest_release_name}). Archivos en el nuevo directorio: {archivos}"
+                except subprocess.CalledProcessError as e:
+                    message = f"Error al hacer checkout: {e}"
+            else:
+                message = "No se pudo obtener la última release desde GitHub."
         except subprocess.CalledProcessError as e:
             message = f"Error al hacer checkout: {e}"
     else:
