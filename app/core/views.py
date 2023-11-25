@@ -90,7 +90,8 @@ def checkout_latest_release(request):
 
     if latest_release_name is not None:
         try:
-            subprocess.run(["git", "checkout", latest_release_name], check=True)
+            # Cambia al directorio principal del proyecto y luego ejecuta el comando git checkout
+            subprocess.run(["cd", "/app/..", "&&", "git", "checkout", latest_release_name], check=True)
             message = f"Checkout exitoso a la última release ({latest_release_name})."
         except subprocess.CalledProcessError as e:
             message = f"Error al hacer checkout: {e}"
@@ -98,7 +99,6 @@ def checkout_latest_release(request):
         message = "No se pudo obtener la última release desde GitHub."
 
     return HttpResponse(message)
-
 
 
 
