@@ -52,36 +52,44 @@ def check_updates(request):
     # URL de la API de GitHub para obtener las releases
     api_url = f'https://api.github.com/repos/{owner}/{repo}/releases'
 
-    # Realizar la solicitud a la API de GitHub
-    response = requests.get(api_url)
-    github_releases = response.json()
+    try:
+        # Realizar la solicitud a la API de GitHub
+        response = requests.get(api_url)
+        response.raise_for_status()  # Asegúrate de que la solicitud fue exitosa
+        github_releases = response.json()
+    except requests.RequestException as e:
+        # Manejar la excepción según sea necesario
+        print(f"Error al hacer la solicitud a la API de GitHub: {e}")
+        github_releases = []
 
     # Filtrar solo las releases (excluir drafts y pre-releases)
-    github_releases = [release for release in github_releases if not release.get('draft') and not release.get('prerelease')]
+    github_releases = [release for release in github_releases if isinstance(release, dict) and not release.get('draft') and not release.get('prerelease')]
 
     if github_releases:
         fecha_ultima_release_github_str = github_releases[0]['published_at']
         fecha_ultima_release_github = datetime.strptime(fecha_ultima_release_github_str, '%Y-%m-%dT%H:%M:%SZ')
         # Convertir la fecha a timezone-aware (UTC)
-        fecha_ultima_release_github = timezone.make_aware(fecha_ultima_release_github, timezone.utc)
+        fecha_ultima_release_github = fecha_ultima_release_github.replace(tzinfo=timezone.utc)
     else:
         fecha_ultima_release_github = None
 
     # Obtener la fecha de la última actualización en tu modelo
     ultima_actualizacion = ActualizacionModel.objects.latest('fecha_actualizacion')
-    fecha_ultima_actualizacion_modelo = ultima_actualizacion.fecha_actualizacion
+    fecha_ultima_actualizacion_modelo = ultima_actualizacion.fecha_actualizacion.replace(tzinfo=timezone.utc) if ultima_actualizacion else None
 
     # Comparar las fechas
-    hay_actualizaciones = fecha_ultima_release_github and fecha_ultima_actualizacion_modelo and (fecha_ultima_release_github > fecha_ultima_actualizacion_modelo)
+    hay_actualizaciones = fecha_ultima_release_github and (
+        not fecha_ultima_actualizacion_modelo or
+        fecha_ultima_release_github > fecha_ultima_actualizacion_modelo
+    )
 
     # Determinar el mensaje a mostrar en el template
     mensaje_actualizacion = "¡Estás actualizado!" if not hay_actualizaciones else "Hay actualizaciones disponibles."
 
     context = {'hay_actualizaciones': hay_actualizaciones,
-                'mensaje_actualizacion': mensaje_actualizacion,
-                'releases' : github_releases}
-
-    # Puedes pasar las variables al template o hacer cualquier otra lógica aquí
+               'mensaje_actualizacion': mensaje_actualizacion,
+               'releases': github_releases}
+    
     return render(request, 'actualizaciones.html', context)
 
 
@@ -93,11 +101,8 @@ def checkout_latest_release(request):
         # Intenta realizar el checkout en la última release
         try:
             subprocess.run(["git", "checkout", "main"], check=True)
-            
             subprocess.run(["git", "pull", "origin", "main"], check=True)
-            
             subprocess.run(["git", "status"])
-
             subprocess.run(["git", "checkout", latest_release_name], check=True)
 
             message = f"Actualización exitosa a la última release ({latest_release_name})."
