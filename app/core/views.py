@@ -85,7 +85,6 @@ def check_updates(request):
     return render(request, 'actualizaciones.html', context)
 
 
-
 def checkout_latest_release(request):
     latest_release_name = check_github_version()
 
@@ -96,6 +95,10 @@ def checkout_latest_release(request):
 
             # Cambia al directorio principal del proyecto
             os.chdir("/app/..")
+
+            # Imprime la lista de archivos en el directorio actual
+            ls_result = subprocess.run(["ls", "-l"], capture_output=True, text=True)
+            print(ls_result.stdout)
 
             # Ejecuta el comando git checkout
             subprocess.run(["git", "checkout", latest_release_name], check=True)
