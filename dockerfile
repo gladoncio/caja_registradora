@@ -11,6 +11,9 @@ COPY ./requirements.txt /app/requirements.txt
 RUN apk add --no-cache build-base libffi-dev openssl-dev \
     && pip install --no-cache-dir -r /app/requirements.txt
 
+# Instalar Git
+RUN apk add --no-cache git
+
 # Copy the entire project into the container
 COPY . /app
 
