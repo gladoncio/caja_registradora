@@ -94,7 +94,7 @@ def checkout_latest_release(request):
             current_directory = os.getcwd()
 
             # Cambia al directorio principal del proyecto
-            os.chdir("../")
+            os.chdir("/home/caja/Documentos/GitHub/caja_registradora/")
 
             # Imprime la lista de archivos en el directorio actual
             ls_result = subprocess.run(["ls", "-l"], capture_output=True, text=True, cwd="/app")
