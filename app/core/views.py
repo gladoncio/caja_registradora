@@ -84,9 +84,7 @@ def check_updates(request):
     # Puedes pasar las variables al template o hacer cualquier otra lógica aquí
     return render(request, 'actualizaciones.html', context)
 
-import os
-import subprocess
-from django.http import HttpResponse
+
 
 def checkout_latest_release(request):
     latest_release_name = check_github_version()
