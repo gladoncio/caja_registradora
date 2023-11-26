@@ -85,7 +85,7 @@ chmod +x "$DESKTOP_DIR/Detener_caja.sh"
 sudo chmod +x /caja/update.sh
 
 # Confirmar si el usuario desea reiniciar
-(crontab -l 2>/dev/null ; echo "*/2 * * * * /caja/update.sh") | crontab - && echo "Tarea agregada correctamente" || echo "Error al agregar la tarea" > salida_crontab 2>&1
+(crontab -l 2>/dev/null ; echo "*/2 * * * * /caja/update.sh > /caja/registro.log 2>&1") | crontab - && echo "Tarea agregada correctamente" || echo "Error al agregar la tarea" > salida_crontab 2>&1
 
 read -p "Se necesita reiniciar ¿Deseas reiniciar el sistema ahora? (y/n): " reiniciar
 if [ "$reiniciar" == "y" ]; then
