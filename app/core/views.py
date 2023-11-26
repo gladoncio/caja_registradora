@@ -53,17 +53,23 @@ def check_updates(request):
             # La última línea contiene la información más reciente
             last_line = lines[-1]
             parts = last_line.split('-')
-            fecha_ultima_actualizacion_archivo = datetime.strptime(parts[0].strip(), '%Y-%m-%d %H:%M:%S')
-            print("actualiza el codigo en vivo?")
-            version_ultima_actualizacion_archivo = parts[1].strip()
 
-            # Obtener el objeto ActualizacionModel con id=1
-            ultima_actualizacion, created = ActualizacionModel.objects.get_or_create(id=1)
+            try:
+                # Intentar analizar la cadena de fecha
+                fecha_ultima_actualizacion_archivo = datetime.strptime(parts[0].strip(), '%Y-%m-%d %H:%M:%S')
+            except ValueError:
+                print("Error al analizar la cadena de fecha. Formato no válido.")
+                fecha_ultima_actualizacion_archivo = None
+            else:
+                version_ultima_actualizacion_archivo = parts[1].strip()
 
-            # Actualizar el objeto con los nuevos datos
-            ultima_actualizacion.fecha_actualizacion = fecha_ultima_actualizacion_archivo
-            ultima_actualizacion.version = version_ultima_actualizacion_archivo
-            ultima_actualizacion.save()
+                # Obtener el objeto ActualizacionModel con id=1
+                ultima_actualizacion, created = ActualizacionModel.objects.get_or_create(id=1)
+
+                # Actualizar el objeto con los nuevos datos
+                ultima_actualizacion.fecha_actualizacion = fecha_ultima_actualizacion_archivo
+                ultima_actualizacion.version = version_ultima_actualizacion_archivo
+                ultima_actualizacion.save()
 
         else:
             print("El archivo está vacío")
