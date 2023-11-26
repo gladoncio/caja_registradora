@@ -118,8 +118,7 @@ def check_updates(request):
     mensaje_actualizacion = "¡Estás actualizado!" if not hay_actualizaciones else "Hay actualizaciones disponibles."
     if hay_actualizaciones:
         message = "Las actualizaciones se aplican cada 30 minutos automáticamente."
-        
-    messages.success(request, message)
+        messages.success(request, message)
 
     context = {'hay_actualizaciones': hay_actualizaciones,
                'mensaje_actualizacion': mensaje_actualizacion,
