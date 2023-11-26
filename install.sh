@@ -10,25 +10,30 @@ fi
 
 echo "Nombre de usuario: $USERNAME"
 
-# Obtener la ruta del directorio actual
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 echo "Directorio del script: $SCRIPT_DIR"
 
-# Ruta del escritorio del usuario
-DESKTOP_DIR="/home/$USERNAME/Desktop"
+# Obtener la ruta del escritorio del usuario actual
+DESKTOP_DIR=$(sudo -u $USERNAME xdg-user-dir DESKTOP)
 
 echo "Directorio del escritorio: $DESKTOP_DIR"
 
-# Crear el directorio Escritorio si no existe
-mkdir -p "$DESKTOP_DIR"
+RUTE="/caja/"
+
+# Crear la nueva ruta si no existe
+mkdir -p "$RUTE"
+
+# Copiar archivos al nuevo directorio
+cp -r "$SCRIPT_DIR"/* "$RUTE"
+
+cd "$RUTE"
 
 # Actualizar los paquetes del sistema
 sudo apt update
 sudo apt upgrade -y
 
 sudo apt install zenity
-
 
 # Instalar Docker
 sudo apt install -y docker.io
@@ -51,13 +56,12 @@ sudo usermod -aG docker $USERNAME
 docker-compose build
 
 # Script para iniciar el contenedor
-echo -e "#!/bin/bash\n\ncd $SCRIPT_DIR\ndocker-compose up -d\nzenity --info --text='Iniciando el contenedor, por favor espera 5 segundos...'\nsleep 10\nzenity --info --text='El contenedor se ha iniciado abriendo en el navegador.' &\nxdg-open http://localhost:8000" > "$DESKTOP_DIR/Iniciar_caja.sh"
+echo -e "#!/bin/bash\n\ncd $RUTE\ndocker-compose up -d\nzenity --info --text='Iniciando el contenedor, por favor espera 5 segundos...'\nsleep 10\nzenity --info --text='El contenedor se ha iniciado abriendo en el navegador.' &\nxdg-open http://localhost:8000" > "$DESKTOP_DIR/Iniciar_caja.sh"
 chmod +x "$DESKTOP_DIR/Iniciar_caja.sh"
 
 # Script para detener y reiniciar el contenedor
-echo -e "#!/bin/bash\n\ncd $SCRIPT_DIR\nzenity --info --text='Deteniendo el contenedor, por favor espera 3 segundos...'\ndocker-compose down\nsleep 3\nzenity --info --text='El contenedor se ha detenido correctamente.'" > "$DESKTOP_DIR/Detener_caja.sh"
+echo -e "#!/bin/bash\n\ncd $RUTE\nzenity --info --text='Deteniendo el contenedor, por favor espera 3 segundos...'\ndocker-compose down\nsleep 3\nzenity --info --text='El contenedor se ha detenido correctamente.'" > "$DESKTOP_DIR/Detener_caja.sh"
 chmod +x "$DESKTOP_DIR/Detener_caja.sh"
-
 
 # Confirmar si el usuario desea reiniciar
 read -p "Se necesita reiniciar ¿Deseas reiniciar el sistema ahora? (y/n): " reiniciar
