@@ -89,8 +89,15 @@ echo -e "\n$PYTHON_PATH update_latest_release.py" >> "/caja/update.sh"
 
 sudo chmod +x /caja/update.sh
 
-# Confirmar si el usuario desea reiniciar
-(crontab -l 2>/dev/null ; echo "*/2 * * * * /caja/update.sh > /caja/registro.log 2>&1") | crontab - && echo "Tarea agregada correctamente" || echo "Error al agregar la tarea" > salida_crontab 2>&1
+# Línea que deseas agregar al crontab
+CRON_LINE="*/2 * * * * /caja/update.sh > /caja/registro.log 2>&1"
+
+# Verificar si la línea ya está en el crontab
+if (crontab -l 2>/dev/null | grep -Fxq "$CRON_LINE"); then
+    echo "La tarea ya está programada en el crontab."
+else
+    (crontab -l 2>/dev/null ; echo "$CRON_LINE") | crontab - && echo "Tarea agregada correctamente" || echo "Error al agregar la tarea" > salida_crontab 2>&1
+fi
 
 read -p "Se necesita reiniciar ¿Deseas reiniciar el sistema ahora? (y/n): " reiniciar
 if [ "$reiniciar" == "y" ]; then
