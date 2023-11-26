@@ -116,8 +116,9 @@ def check_updates(request):
 
     # Determinar el mensaje a mostrar en el template
     mensaje_actualizacion = "¡Estás actualizado!" if not hay_actualizaciones else "Hay actualizaciones disponibles."
-
-    message = "Las actualizaciones se aplican cada 30 minutos automáticamente."
+    if hay_actualizaciones:
+        message = "Las actualizaciones se aplican cada 30 minutos automáticamente."
+        
     messages.success(request, message)
 
     context = {'hay_actualizaciones': hay_actualizaciones,
