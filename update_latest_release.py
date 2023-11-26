@@ -62,3 +62,4 @@ else:
     message = "No se pudo obtener la última release desde GitHub."
 
 print(message)
+raise
