@@ -1,4 +1,6 @@
 #!/bin/sh
-# Obtener la versión desde el archivo
+
+zenity --info --text='actualizando...'
+
 python update_latest_release.py
 

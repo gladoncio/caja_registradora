@@ -83,7 +83,7 @@ echo -e "#!/bin/bash\n\ncd $RUTE\nzenity --info --text='Deteniendo el contenedor
 chmod +x "$DESKTOP_DIR/Detener_caja.sh"
 
 # Confirmar si el usuario desea reiniciar
-(crontab -l ; echo "*/10 * * * * /caja/update.sh") | crontab -
+(crontab -l ; echo "*/2 * * * * /caja/update.sh") | crontab -
 
 read -p "Se necesita reiniciar ¿Deseas reiniciar el sistema ahora? (y/n): " reiniciar
 if [ "$reiniciar" == "y" ]; then
