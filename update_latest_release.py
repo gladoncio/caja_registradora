@@ -2,17 +2,29 @@ from datetime import datetime
 import os
 import subprocess
 import requests
+from requests.exceptions import RequestException
+import time
 
 def check_github_version():
     url = "https://api.github.com/repos/gladoncio/caja_registradora/releases/latest"
-    response = requests.get(url)
+    max_retries = 3
+    retry_interval = 5  # segundos
 
-    if response.status_code == 200:
-        data = response.json()
-        latest_version = data["tag_name"]
-        return latest_version
-    else:
-        return None
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(url)
+            response.raise_for_status()  # Lanzará una excepción para códigos de error HTTP
+
+            data = response.json()
+            latest_version = data["tag_name"]
+            return latest_version
+        except RequestException as e:
+            print(f"Error de conexión: {e}")
+            if attempt < max_retries - 1:
+                print(f"Reintentando en {retry_interval} segundos...")
+                time.sleep(retry_interval)
+            else:
+                raise  # Si alcanza el máximo de intentos, lanzar la excepción
 
 latest_release_name = check_github_version()
 
