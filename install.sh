@@ -25,7 +25,11 @@ RUTE="/caja/"
 mkdir -p "$RUTE"
 
 # Copiar archivos al nuevo directorio
-cp -r "$SCRIPT_DIR"/* "$RUTE"
+cp -rT "$SCRIPT_DIR"/* "$RUTE"
+
+# Eliminar todo en el directorio excepto install.sh
+shopt -s extglob
+rm -rf !("install.sh")
 
 cd "$RUTE"
 
@@ -70,3 +74,4 @@ if [ "$reiniciar" == "y" ]; then
 else
     echo "No se reiniciará el sistema."
 fi
+
