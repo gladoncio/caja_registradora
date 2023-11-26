@@ -54,6 +54,7 @@ def check_updates(request):
             last_line = lines[-1]
             parts = last_line.split('-')
             fecha_ultima_actualizacion_archivo = datetime.strptime(parts[0].strip(), '%Y-%m-%d %H:%M:%S')
+            print("actualiza el codigo en vivo?")
             version_ultima_actualizacion_archivo = parts[1].strip()
 
             # Obtener el objeto ActualizacionModel con id=1
