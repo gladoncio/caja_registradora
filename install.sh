@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if [ "$EUID" -ne 0 ]; then
+    echo "Este script debe ejecutarse con privilegios de superusuario."
+    exit 1
+fi
+
 # Obtener el nombre de usuario principal
 USERNAME="$SUDO_USER"
 
@@ -49,7 +54,7 @@ sudo systemctl start docker
 sudo systemctl enable docker
 
 # Instalar Docker Compose
-sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo curl -fsSL "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
 
 # Verificar la instalación de Docker y Docker Compose
@@ -62,7 +67,14 @@ sudo usermod -aG docker $USERNAME
 docker-compose build
 
 # Script para iniciar el contenedor
-echo -e "#!/bin/bash\n\ncd $RUTE\ndocker-compose up -d\nzenity --info --text='Iniciando el contenedor, por favor espera 5 segundos...'\nsleep 10\nzenity --info --text='El contenedor se ha iniciado abriendo en el navegador.' &\nxdg-open http://localhost:8000" > "$DESKTOP_DIR/Iniciar_caja.sh"
+echo -e "#!/bin/bash\n\ncd $RUTE" > "$DESKTOP_DIR/Iniciar_caja.sh"
+echo -e "PRINTER_DEVICES=\$(ls /dev/usb/lp*)\n" >> "$DESKTOP_DIR/Iniciar_caja.sh"
+echo -e "if [ -z \"\$PRINTER_DEVICES\" ]; then\n" >> "$DESKTOP_DIR/Iniciar_caja.sh"
+echo -e "    zenity --error --text='No se encontraron impresoras conectadas en /dev/usb/. No se iniciará el contenedor.'\n" >> "$DESKTOP_DIR/Iniciar_caja.sh"
+echo -e "    exit 1\n" >> "$DESKTOP_DIR/Iniciar_caja.sh"
+echo -e "fi\n" >> "$DESKTOP_DIR/Iniciar_caja.sh"
+echo -e "docker-compose up -d\nzenity --info --text='Iniciando el contenedor, por favor espera 5 segundos...'\n" >> "$DESKTOP_DIR/Iniciar_caja.sh"
+echo -e "sleep 10\nzenity --info --text='El contenedor se ha iniciado abriendo en el navegador.' &\nxdg-open http://localhost:8000" >> "$DESKTOP_DIR/Iniciar_caja.sh"
 chmod +x "$DESKTOP_DIR/Iniciar_caja.sh"
 
 # Script para detener y reiniciar el contenedor
