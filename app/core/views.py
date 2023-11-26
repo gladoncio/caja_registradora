@@ -97,18 +97,13 @@ def checkout_latest_release(request):
     try:
         # Obtiene el nombre de la última release desde GitHub
         latest_release_name = check_github_version()
-
-        # Intenta realizar el checkout en la última release
+        with open("version.txt", "w") as f:
+            f.write(latest_release_name)
         try:
-            subprocess.run(["git", "checkout", "main"], check=True)
-            subprocess.run(["git", "pull", "origin", "main"], check=True)
-            subprocess.run(["git", "status"])
-            subprocess.run(["git", "checkout", latest_release_name], check=True)
-
-            message = f"Actualización exitosa a la última release ({latest_release_name})."
+            subprocess.run(['sh', 'update.sh'], check=True)
+            return HttpResponse("La aplicación se ha actualizado correctamente.")
         except subprocess.CalledProcessError as e:
-            message = f"Error al hacer checkout: {e}"
-
+            return HttpResponse(f"Error al intentar actualizar la aplicación: {e}", status=500)
     except Exception as e:
         message = f"Error al obtener la última release desde GitHub: {e}"
 
