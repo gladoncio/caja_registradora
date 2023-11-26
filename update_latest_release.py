@@ -25,15 +25,22 @@ if latest_release_name is not None:
 
         subprocess.run(["git", "checkout", "-f", latest_release_name], check=True)
 
-        # Guarda la fecha, hora y versión en un archivo
+        # Guarda la fecha, hora y versión en un archivo solo si el archivo no existe o está vacío
         now = datetime.now()
         timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
-        with open("update_info.txt", "a") as file:
-            file.write(f"{timestamp} - Versión actualizada a {latest_release_name}\n")
+        file_path = "update_info.txt"
+        
+        if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
+            with open(file_path, "a") as file:
+                file.write(f"{timestamp} - Versión actualizada a {latest_release_name}\n")
 
-        message = f"Checkout exitoso a la última release ({latest_release_name})."
-
+            message = f"Checkout exitoso a la última release ({latest_release_name})."
+        else:
+            message = f"El archivo {file_path} ya existe y no está vacío. No se ha actualizado."
+            
     except subprocess.CalledProcessError as e:
         message = f"Error al hacer checkout: {e}"
 else:
     message = "No se pudo obtener la última release desde GitHub."
+
+print(message)
