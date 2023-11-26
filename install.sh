@@ -25,11 +25,11 @@ RUTE="/caja/"
 mkdir -p "$RUTE"
 
 # Copiar archivos al nuevo directorio
-cp -rT "$SCRIPT_DIR"/* "$RUTE"
+shopt -s dotglob
+sudo cp -r "$SCRIPT_DIR"/* "$RUTE"
 
 # Eliminar todo en el directorio excepto install.sh
-shopt -s extglob
-rm -rf !("install.sh")
+find . ! -name 'install.sh' -exec rm -r {} +
 
 cd "$RUTE"
 
