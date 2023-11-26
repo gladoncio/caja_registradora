@@ -1,7 +1,7 @@
-import requests
 from datetime import datetime
 import os
 import subprocess
+import requests
 
 def check_github_version():
     url = "https://api.github.com/repos/gladoncio/caja_registradora/releases/latest"
@@ -12,7 +12,6 @@ def check_github_version():
         latest_version = data["tag_name"]
         return latest_version
     else:
-        # Manejar el error, puedes imprimir un mensaje o levantar una excepción según tus necesidades
         return None
 
 latest_release_name = check_github_version()
@@ -26,7 +25,6 @@ if latest_release_name is not None:
         stored_version = None
         if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
             with open(file_path, "r") as file:
-                # Leer la última línea del archivo para obtener la versión almacenada
                 lines = file.readlines()
                 stored_version_line = lines[-1].strip()
                 stored_version = stored_version_line.split()[-1]
@@ -36,10 +34,10 @@ if latest_release_name is not None:
             subprocess.run(["git", "reset", "--hard", f"origin/{latest_release_name}"])
             subprocess.run(["git", "checkout", "-f", latest_release_name], check=True)
 
-            # Guarda la fecha, hora y versión en un archivo
+            # Guarda la fecha, hora y versión en un archivo (abrir en modo "w" en lugar de "a")
             now = datetime.now()
             timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
-            with open(file_path, "a") as file:
+            with open(file_path, "w") as file:
                 file.write(f"{timestamp} - Versión actualizada a {latest_release_name}\n")
 
             message = f"Checkout exitoso a la última release ({latest_release_name})."
