@@ -48,6 +48,7 @@ def check_updates(request):
     try:
         with open("update_info.txt", "r") as file:
             lines = file.readlines()
+
         if lines:
             # La última línea contiene la información más reciente
             last_line = lines[-1]
@@ -56,7 +57,7 @@ def check_updates(request):
             version_ultima_actualizacion_archivo = parts[1].strip()
 
             # Obtener el objeto ActualizacionModel con id=1
-            ultima_actualizacion = ActualizacionModel.objects.get(id=1)
+            ultima_actualizacion, created = ActualizacionModel.objects.get_or_create(id=1)
 
             # Actualizar el objeto con los nuevos datos
             ultima_actualizacion.fecha_actualizacion = fecha_ultima_actualizacion_archivo
@@ -64,9 +65,10 @@ def check_updates(request):
             ultima_actualizacion.save()
 
         else:
-            print("esta vacio")
+            print("El archivo está vacío")
+
     except FileNotFoundError:
-        print("no existe")
+        print("El archivo no existe")
 
     # Repositorio de GitHub y nombre del propietario
     owner = 'gladoncio'
