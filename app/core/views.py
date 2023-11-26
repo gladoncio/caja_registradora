@@ -53,6 +53,9 @@ def check_updates(request):
             # La última línea contiene la información más reciente
             last_line = lines[-1]
             parts = last_line.split('-')
+            print(last_line)
+            print(parts[0].strip())
+            print(parts[1].strip())
 
             try:
                 # Intentar analizar la cadena de fecha
