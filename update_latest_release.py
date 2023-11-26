@@ -19,7 +19,10 @@ latest_release_name = check_github_version()
 
 if latest_release_name is not None:
     try:
-        # Ejecuta el comando git checkout forzando (ignorando cambios locales)
+        subprocess.run(["git", "fetch", "--all"])
+        
+        subprocess.run(["git", "reset", "--hard", f"origin/{latest_release_name}"])
+
         subprocess.run(["git", "checkout", "-f", latest_release_name], check=True)
 
         # Guarda la fecha, hora y versión en un archivo
