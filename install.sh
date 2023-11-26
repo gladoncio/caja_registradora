@@ -39,6 +39,8 @@ sudo chmod -R 777 "$RUTE"
 
 cd "$RUTE"
 
+sudo chmod -R 7777 .git
+
 # Actualizar los paquetes del sistema
 sudo apt update
 sudo apt upgrade -y
