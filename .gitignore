@@ -3,3 +3,5 @@ __pycache__
 *.sqlite3-journal
 venv/
 media/
+update.sh
+update_info.txt
