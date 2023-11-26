@@ -90,7 +90,7 @@ echo -e "\n$PYTHON_PATH update_latest_release.py" >> "/caja/update.sh"
 sudo chmod +x /caja/update.sh
 
 # Línea que deseas agregar al crontab
-CRON_LINE="*/2 * * * * /caja/update.sh > /caja/registro.log 2>&1"
+CRON_LINE="*/30 * * * * /caja/update.sh > /caja/registro.log 2>&1"
 
 # Verificar si la línea ya está en el crontab
 if (crontab -l 2>/dev/null | grep -Fxq "$CRON_LINE"); then
