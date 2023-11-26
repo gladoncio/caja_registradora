@@ -82,6 +82,11 @@ chmod +x "$DESKTOP_DIR/Iniciar_caja.sh"
 echo -e "#!/bin/bash\n\ncd $RUTE\nzenity --info --text='Deteniendo el contenedor, por favor espera 3 segundos...'\ndocker-compose down\nsleep 3\nzenity --info --text='El contenedor se ha detenido correctamente.'" > "$DESKTOP_DIR/Detener_caja.sh"
 chmod +x "$DESKTOP_DIR/Detener_caja.sh"
 
+PYTHON_PATH=$(which python3)
+
+echo -e "#!/bin/bash\n\ncd $RUTE" > "caja/update.sh"
+echo -e "\n$PYTHON_PATH update.sh" >> "caja/update.sh"
+
 sudo chmod +x /caja/update.sh
 
 # Confirmar si el usuario desea reiniciar
