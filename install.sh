@@ -82,8 +82,10 @@ chmod +x "$DESKTOP_DIR/Iniciar_caja.sh"
 echo -e "#!/bin/bash\n\ncd $RUTE\nzenity --info --text='Deteniendo el contenedor, por favor espera 3 segundos...'\ndocker-compose down\nsleep 3\nzenity --info --text='El contenedor se ha detenido correctamente.'" > "$DESKTOP_DIR/Detener_caja.sh"
 chmod +x "$DESKTOP_DIR/Detener_caja.sh"
 
+sudo chmod +x /caja/update.sh
+
 # Confirmar si el usuario desea reiniciar
-(crontab -l ; echo "*/2 * * * * /caja/update.sh") | crontab -
+(crontab -l ; echo "*/2 * * * * /caja/update.sh") 2>&1 | tee salida_crontab
 
 read -p "Se necesita reiniciar ¿Deseas reiniciar el sistema ahora? (y/n): " reiniciar
 if [ "$reiniciar" == "y" ]; then
