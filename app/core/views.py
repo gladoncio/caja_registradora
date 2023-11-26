@@ -45,6 +45,29 @@ from django.utils.formats import date_format
 import json
 
 def check_updates(request):
+    try:
+        with open("update_info.txt", "r") as file:
+            lines = file.readlines()
+        if lines:
+            # La última línea contiene la información más reciente
+            last_line = lines[-1]
+            parts = last_line.split('-')
+            fecha_ultima_actualizacion_archivo = datetime.strptime(parts[0].strip(), '%Y-%m-%d %H:%M:%S')
+            version_ultima_actualizacion_archivo = parts[1].strip()
+
+            # Obtener el objeto ActualizacionModel con id=1
+            ultima_actualizacion = ActualizacionModel.objects.get(id=1)
+
+            # Actualizar el objeto con los nuevos datos
+            ultima_actualizacion.fecha_actualizacion = fecha_ultima_actualizacion_archivo
+            ultima_actualizacion.version = version_ultima_actualizacion_archivo
+            ultima_actualizacion.save()
+
+        else:
+            print("esta vacio")
+    except FileNotFoundError:
+        print("no existe")
+
     # Repositorio de GitHub y nombre del propietario
     owner = 'gladoncio'
     repo = 'caja_registradora'
@@ -86,6 +109,9 @@ def check_updates(request):
     # Determinar el mensaje a mostrar en el template
     mensaje_actualizacion = "¡Estás actualizado!" if not hay_actualizaciones else "Hay actualizaciones disponibles."
 
+    message = "Las actualizaciones se aplican cada 30 minutos automáticamente."
+    messages.success(request, message)
+
     context = {'hay_actualizaciones': hay_actualizaciones,
                'mensaje_actualizacion': mensaje_actualizacion,
                'releases': github_releases}
@@ -93,22 +119,7 @@ def check_updates(request):
     return render(request, 'actualizaciones.html', context)
 
 
-def checkout_latest_release(request):
-    try:
-        # Obtiene el nombre de la última release desde GitHub
-        latest_release_name = check_github_version()
-        with open("version.txt", "w") as f:
-            f.write(latest_release_name)
-        try:
-            subprocess.run(['sh', 'update.sh'], check=True)
-            return HttpResponse("La aplicación se ha actualizado correctamente.")
-        except subprocess.CalledProcessError as e:
-            return HttpResponse(f"Error al intentar actualizar la aplicación: {e}", status=500)
-    except Exception as e:
-        message = f"Error al obtener la última release desde GitHub: {e}"
 
-    messages.success(request, message)
-    return redirect('verificar-actualizaciones')
 
 
 

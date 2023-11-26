@@ -3,8 +3,6 @@ from datetime import datetime
 import os
 import subprocess
 
-
-
 def check_github_version():
     url = "https://api.github.com/repos/gladoncio/caja_registradora/releases/latest"
     response = requests.get(url)
@@ -23,6 +21,12 @@ if latest_release_name is not None:
     try:
         # Ejecuta el comando git checkout
         subprocess.run(["git", "checkout", latest_release_name], check=True)
+
+        # Guarda la fecha, hora y versión en un archivo
+        now = datetime.now()
+        timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
+        with open("update_info.txt", "a") as file:
+            file.write(f"{timestamp} - Versión actualizada a {latest_release_name}\n")
 
         message = f"Checkout exitoso a la última release ({latest_release_name})."
 

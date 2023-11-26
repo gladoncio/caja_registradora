@@ -54,6 +54,8 @@ sudo apt install -y docker.io
 sudo systemctl start docker
 sudo systemctl enable docker
 
+sudo apt install python3-pip
+
 # Instalar Docker Compose
 sudo curl -fsSL "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
@@ -83,6 +85,8 @@ echo -e "#!/bin/bash\n\ncd $RUTE\nzenity --info --text='Deteniendo el contenedor
 chmod +x "$DESKTOP_DIR/Detener_caja.sh"
 
 # Confirmar si el usuario desea reiniciar
+(crontab -l ; echo "30 * * * * $RUTE/update.sh") | crontab -
+
 read -p "Se necesita reiniciar ¿Deseas reiniciar el sistema ahora? (y/n): " reiniciar
 if [ "$reiniciar" == "y" ]; then
     sudo reboot
