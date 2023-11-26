@@ -85,7 +85,7 @@ chmod +x "$DESKTOP_DIR/Detener_caja.sh"
 PYTHON_PATH=$(which python3)
 
 echo -e "#!/bin/bash\n\ncd $RUTE" > "/caja/update.sh"
-echo -e "\n$PYTHON_PATH update.sh" >> "/caja/update.sh"
+echo -e "\n$PYTHON_PATH update_latest_release.py" >> "/caja/update.sh"
 
 sudo chmod +x /caja/update.sh
 
