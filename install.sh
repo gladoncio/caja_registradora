@@ -29,7 +29,7 @@ shopt -s dotglob
 sudo cp -r "$SCRIPT_DIR"/* "$RUTE"
 
 # Eliminar todo en el directorio excepto install.sh
-find . ! -name 'install.sh' -exec rm -r {} +
+sudo rm -r "$SCRIPT_DIR"
 
 sudo chmod -R 777 "$RUTE"
 
