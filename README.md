@@ -20,7 +20,7 @@ git clone https://github.com/gladoncio/caja_registradora
 ```
 ### 2. Ir al Directorio del Proyecto
 ```bash
-cd caja-registradora
+cd caja_registradora
 ```
 ### 3. Ejecutar el Script de Instalación
 ```bash
