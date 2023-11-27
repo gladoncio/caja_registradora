@@ -3,15 +3,15 @@
 {% block body %}
 
 <div class="container-fluid">
-    <h1 class="h3 mb-4 text-gray-800 resize-text"> Resultado Cuadre </h1>
-    <button class="btn btn-primary" id="cerrarCajaBtn" data-toggle="modal" data-target="#confirmarCerrarCajaModal">Cerrar Caja</button>
+    <h1 class="h3 mb-4 resize-text" id="titulo"> Resultado Cuadre </h1>
+    <button class="btn btn-primary mb-4" id="cerrarCajaBtn" data-toggle="modal" data-target="#confirmarCerrarCajaModal">Cerrar Caja</button>
     <div class="row">
         <div class="col-lg-12">
             <!-- Detalles de Billetes y Monedas -->
             <div class="row">
                 <div class="col-lg-12">
                     <div class="card shadow mb-4">
-                        <div class="card-body resize-text">
+                        <div class="card-body resize-text solofondo">
                             <h3>Detalles de Billetes y Monedas</h3>
                             <p>Monedas de 10: {{ billetes.monedas_10 }}</p>
                             <p>Monedas de 50: {{ billetes.monedas_50 }}</p>
@@ -27,7 +27,7 @@
                 </div>
             </div>
             <div class="card shadow mb-4">
-                <div class="card-body resize-text">
+                <div class="card-body resize-text solofondo">
                     <div id="detalle-gastos">
                         <h2>Detalle de Gastos</h2>
                         <ul>
@@ -44,7 +44,7 @@
             </div>
 
             <div class="card shadow mb-4">
-                <div class="card-body resize-text">
+                <div class="card-body resize-text solofondo">
                     <p>Total en Efectivo: ${{ monto_efectivo|floatformat:configuracion.decimales }}</p>
                     <p>Total en Débito: ${{ monto_debito|floatformat:configuracion.decimales }}</p>
                     <p>Total en Transferencia: ${{ monto_transferencia|floatformat:configuracion.decimales }}</p>
@@ -71,7 +71,7 @@
     <div class="row">
         <div class="col-lg-12">
             <div class="card shadow mb-4">
-                <div class="card-body resize-text">
+                <div class="card-body resize-text solofondo">
                     <h3>Totales Generales</h3>
                     <p>Total Neto General: ${{ total_bruto_general.total_neto|floatformat:configuracion.decimales }}</p>
                 </div>
@@ -83,7 +83,7 @@
     <div class="row">
         <div class="col-lg-12">
             <div class="card shadow mb-4">
-                <div class="card-body resize-text">
+                <div class="card-body resize-text solofondo">
                     <h3>Totales por Departamento</h3>
                     <table class="table">
                         <thead>
@@ -115,17 +115,17 @@
 </div>
 <div class="modal fade" id="confirmarCerrarCajaModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
+        <div class="modal-content solofondo">
             <div class="modal-header">
                 <h5 class="modal-title" id="exampleModalLongTitle">Confirmar Cierre de Caja</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body solofondo">
                 ¿Estás seguro de que deseas cerrar la caja? Esta acción no se puede deshacer.
             </div>
-            <div class="modal-footer">
+            <div class="modal-footer solofondo">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
                 <a href="{% url 'cerrar_caja' monto_en_la_caja %}" class="btn btn-primary">Cerrar Caja</a>
             </div>

@@ -3,11 +3,11 @@
 
 {% block body %}
 <div class="container-fluid">
-    <h1 class="h3 mb-4 text-gray-800">Detalle de Venta</h1>
+    <h1 class="h3 mb-4" id="titulo">Detalle de Venta</h1>
     <div class="row">
         <div class="col-lg-12">
             <div class="card shadow mb-4">
-                <div class="card-body resize-text">
+                <div class="card-body resize-text solofondo">
                     <h5>ID de Venta: {{ venta.id }}</h5>
                     <p>Fecha y Hora: {{ venta.fecha_hora }}</p>
                     <p>Vuelto: {{ venta.vuelto|floatformat:configuracion.decimales }}</p>

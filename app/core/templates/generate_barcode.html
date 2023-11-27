@@ -2,16 +2,21 @@
 
 {% block body %}
 <div class="container-fluid">
-    <h1 class="h3 mb-4 text-gray-800">Contraseña de anulación</h1>
+    <h1 class="h3 mb-4" id="titulo">Contraseña de anulación</h1>
     <div class="row">
         <div class="col-lg-12">
             <div class="card shadow mb-4">
-                <div class="card-body">
+                <div class="card-body solofondo">
                     {% if image_url %}
                     <h2>Código de Barras:</h2>
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <button class="btn btn-primary mb-4" onclick="imprimirCodigoBarras()">Imprimir Código de Barras</button>
+                        </div>
+                    </div>
                     <img src="{{ image_url }}" alt="Código de Barras GS1 (EAN-13)" class="img-fluid">
                     {% endif %}
-                    <button class="btn btn-primary" onclick="imprimirCodigoBarras()">Imprimir Código de Barras</button>
+
                 </div>
             </div>
         </div>

@@ -23,6 +23,7 @@
     <!-- Custom styles for this template-->
     <link href="{% static "css/sb-admin-2.css" %}" rel="stylesheet">
     <link href="{% static "css/texto.css" %}" rel="stylesheet">
+    <link href="{% static "css/modo-oscuro.css" %}" rel="stylesheet">
 
 
 </head>
@@ -164,20 +165,25 @@
             <div id="content">
                 
                 <!-- Topbar -->
-                <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
+                <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow" id="nav">
 
                     <!-- Sidebar Toggle (Topbar) -->
                     <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
                         <i class="fa fa-bars"></i>
                     </button>
-
+                                             <!-- Modo oscuro -->
+                                             <div class="switch">
+                                                <input type="checkbox" class="switch__input" id="Switch">
+                                                <label class="switch__label" for="Switch">
+                                                    <span class="switch__indicator"></span>
+                                                    <span class="switch__decoration"></span>
+                                                </label>
+                                            </div>
+                    
                     <!-- Topbar Navbar -->
                     <ul class="navbar-nav ml-auto">
                         <div class="container">
                             
-                            <!-- Barra de búsqueda en tiempo real -->
-                          <!-- Barra de búsqueda en tiempo real -->
-                        
 
                             
 
@@ -186,7 +192,7 @@
                         <li class="nav-item dropdown no-arrow">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">{{ request.user.username }}</span>
+                                <span class="mr-2 d-none d-lg-inline text-gray-600 small" id="usernametext">{{ request.user.username }}</span>
                                 <img class="img-profile rounded-circle" src="{% static "img/undraw_profile.svg" %}">
                             </a>
                             <!-- Dropdown - User Information -->
@@ -213,13 +219,9 @@
                     </ul>
 
                 </nav>
-{% if actualizado == 'no' %}             
-<div id="update-notification" class="alert alert-info alert-dismissible fade show" role="alert">
-    <strong>Nueva versión disponible!</strong> Hay una nueva versión de la aplicación disponible. ¿Deseas actualizar?
-    <button type="button" class="btn btn-primary" onclick="promptUpdate()">Actualizar</button>
-    <button type="button" class="btn btn-secondary" data-dismiss="alert">Cerrar</button>
-</div>
-{% endif %}
+
+
+
 
 
 <script>
@@ -232,11 +234,10 @@ function promptUpdate() {
                 {% block body %}
                 {% endblock %}
 
-
+               
                     
-                    
 
-
+    <script src="{% static "js/oscuro.js" %}"></script>
     <script src="{% static "vendor/jquery/jquery.min.js" %}"></script>
     <script src="{% static "vendor/bootstrap/js/bootstrap.bundle.min.js" %}"></script>
 

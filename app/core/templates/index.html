@@ -7,26 +7,26 @@
 
         <!-- Page Heading -->
         <div class="d-sm-flex align-items-center justify-content-between mb-4">
-            <h1 class="h3 mb-0 text-gray-800 resize-text">Dashboard</h1>
+            <h1 class="h3 mb-0 resize-text" id="titulo">Dashboard</h1>
         </div>
         <!-- Content Row -->
         <div class="row">
             <!-- Search Box for Price -->
             <div class="col-lg-12">
                 <div class="card shadow mb-4">
-                    <div class="card-header py-3">
+                    <div class="card-header py-3 release-card-header">
                         <h6 class="m-0 font-weight-bold text-primary resize-text">Buscar Precio</h6>
                     </div>
-                    <div class="card-body">
+                    <div class="card-body solofondo">
                         <form>
                             <div class="form-group">
-                                <input type="text" class="form-control form-control-lg" id="productSearchInput" placeholder="Ingrese el nombre del producto">
+                                <input type="text" class="form-control form-control-lg onlyinput" id="productSearchInput" placeholder="Ingrese el nombre del producto">
                             </div>
-                            <button type="button" class="btn btn-primary" id="searchButton">Buscar</button>
+                            <button type="button" class="btn boton-dinamico" id="searchButton">Buscar</button>
                         </form>
                         <div class="mt-4" id="searchResults">
                                     <div class="mt-4" id="searchResults">
-                                        <table class="table resize-text">
+                                        <table class="table resize-text texto">
                                             <thead>
                                                 <tr>
                                                     <th>Nombre</th>
@@ -57,22 +57,22 @@
     aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header solofondo">
                 <h5 class="modal-title resize-text" id="cantidadModalLabel">Ingrese la cantidad</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body solofondo">
                 <form id="agregarCarritoForm">
                     <!-- Campo oculto para la ID del producto -->
                     <input type="hidden" id="productoIdInput" name="producto_id">
                     <input type="number" id="cantidadInput" class="form-control resize-text" placeholder="Cantidad" min="1">
                 </form>
             </div>
-            <div class="modal-footer">
+            <div class="modal-footer solofondo">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary agregar-carrito-modal" id="agregarCarritoBtn"
+                <button type="button" class="btn boton-dinamico agregar-carrito-modal" id="agregarCarritoBtn"
                     data-cantidad="0">Agregar al carrito</button>
             </div>
         </div>
@@ -84,13 +84,13 @@
     aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header solofondo">
                 <h5 class="modal-title resize-text" id="gramajeModalLabel">Ingrese el peso</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <div class="modal-body resize-text">
+            <div class="modal-body resize-text solofondo">
                 <form id="agregarCarritoForm">
                     <!-- Campo oculto para la ID del producto -->
                     <input type="hidden" id="productoIdInput" name="producto_id">
@@ -101,7 +101,7 @@
                     </select>
                 </form>
             </div>
-            <div class="modal-footer">
+            <div class="modal-footer solofondo">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-primary agregar-carrito-modal" id="agregarCarritoBtn"
                     data-cantidad="0">Agregar al carrito</button>

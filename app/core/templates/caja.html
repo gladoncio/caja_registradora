@@ -7,23 +7,25 @@
 <div class="container-fluid">
     <!-- Page Heading -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Caja{{accion}}</h1>
+        <h1 class="h3 mb-0" id="titulo">Caja{{accion}}</h1>
     </div>
 
-    <!-- Barcode Input -->
-    <div class="row">
+<!-- Barcode Input -->
+    <div class="row mb-3">
         <div class="col-lg-6">
             <form method="post">
                 {% csrf_token %}
                 <div class="input-group">
                     {{ form.barcode }}
                     <div class="input-group-append">
-                        <button type="submit" class="btn btn-primary">Agregar</button>
+                        <button type="submit" class="btn boton-dinamico">Agregar</button>
                     </div>
                 </div>
             </form>
         </div>
     </div>
+
+
 
 
 
@@ -42,21 +44,24 @@
         <!-- Product Management -->
         <div class="col-lg-12">
             <div class="card shadow mb-4">
-                <div class="card-header py-3">
+                <div class="card-header py-3 release-card">
                     <h6 class="m-0 font-weight-bold text-primary resize-text">Gestión de Productos</h6>
                 </div>
-                <div class="card-body">
+                <div class="card-body release-card">
                     <div class="mt-4 resize-text" id="productList">
-                        <p class="h3">Total: <span id="totalAmountDisplay">${{ total|floatformat:configuracion.decimales }}</span></p>
-                        <button id="generarBoletaBtn" class="btn btn-primary" onclick="redirectToSeleccionarMetodoPago()" {% if total <= 0 %}disabled{% endif %}>Generar Boleta</button>
+                        <p class="h3 mb-4">Total: <span id="totalAmountDisplay">${{ total|floatformat:configuracion.decimales }}</span></p>
+                        <div class="d-flex">
+                            <button id="generarBoletaBtn" class="btn boton-dinamico mr-2" onclick="redirectToSeleccionarMetodoPago()" {% if total <= 0 %}disabled{% endif %}>Generar Boleta</button>
                         
-                        <form method="post" action="{% url 'vaciar_carrito' %}" class="pd-3">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-danger">Vaciar Carrito</button>
-                        </form>
+                            <form method="post" action="{% url 'vaciar_carrito' %}" class="pd-3">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger">Vaciar Carrito</button>
+                            </form>
+                        </div>
+                        
                         
                         <br>
-                        <table class="table resize-text">
+                        <table class="table resize-text texto">
                             <thead>
                                 <tr>
                                     <th>Nombre</th>
@@ -108,7 +113,7 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body solofondo">
                 <!-- Muestra la lista de productos similares y existencias como una tabla -->
                 <table class="table table-bordered">
                     <thead>
@@ -156,18 +161,18 @@
 <div class="modal fade" id="valorModal" tabindex="-1" role="dialog" aria-labelledby="valorModalLabel" aria-hidden="true">
     <div class="modal-dialog resize-text" role="document">
       <div class="modal-content">
-        <div class="modal-header">
+        <div class="modal-header solofondo">
           <h5 class="modal-title" id="valorModalLabel">Ingresar Valor del Producto</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body solofondo">
         <form method="post" action="{% url 'agregar_producto_al_carrito' id_producto %}">
         {% csrf_token %}
         {{ form_valor.as_p }}
         </div>
-        <div class="modal-footer">
+        <div class="modal-footer solofondo">
           <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
           <button type="submit" class="btn btn-primary" id="agregarValor">Agregar al Carrito</button>
         </form>

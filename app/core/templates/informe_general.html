@@ -3,21 +3,18 @@
 {% block body %}
 
 <div class="container-fluid">
-    <h1 class="h3 mb-4 text-gray-800 resize-text">Informe General
-        <form id="imprimir-form" method="post">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-primary">Imprimir</button>
-        </form>
-    
-    </h1>
-
+    <h1 class="h3 resize-text" id="titulo">Informe General</h1>
+    <form id="imprimir-form" method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary mb-4">Imprimir</button>
+    </form>
     <div class="row">
         
         <div class="col-lg-12">
             
             <div class="card shadow mb-4">
                 
-                <div class="card-body resize-text">
+                <div class="card-body resize-text solofondo">
                 
                     <p>Total en Efectivo: ${{ monto_efectivo|floatformat:configuracion.decimales }}</p>
                     <p>Total en Débito: ${{ monto_debito|floatformat:configuracion.decimales }}</p>
@@ -36,7 +33,7 @@
     <div class="row">
         <div class="col-lg-12">
             <div class="card shadow mb-4">
-                <div class="card-body resize-text">
+                <div class="card-body resize-text solofondo">
                     <h3>Totales Generales</h3>
                     {% comment %} <p>Total Bruto General: ${{ total_bruto_general.total_bruto|floatformat:configuracion.decimales }}</p> {% endcomment %}
                     <p>Total Neto General: ${{ total_bruto_general.total_neto|floatformat:configuracion.decimales }}</p>
@@ -50,7 +47,7 @@
     <div class="row">
         <div class="col-lg-12">
             <div class="card shadow mb-4">
-                <div class="card-body resize-text">
+                <div class="card-body resize-text solofondo">
                     <h3>Totales por Departamento</h3>
                     <table class="table">
                         <thead>

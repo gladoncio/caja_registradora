@@ -1430,20 +1430,30 @@ def lista_gastos(request):
 # ██║░░██╗██║░░██║██║╚████║██╔══╝░░██║██║░░╚██╗██║░░░██║██╔══██╗██╔══██║██║░░██╗██║██║░░██║██║╚████║
 # ╚█████╔╝╚█████╔╝██║░╚███║██║░░░░░██║╚██████╔╝╚██████╔╝██║░░██║██║░░██║╚█████╔╝██║╚█████╔╝██║░╚███║
 # ░╚════╝░░╚════╝░╚═╝░░╚══╝╚═╝░░░░░╚═╝░╚═════╝░░╚═════╝░╚═╝░░╚═╝╚═╝░░╚═╝░╚════╝░╚═╝░╚════╝░╚═╝░░╚══╝
+class ConfiguracionForm(forms.ModelForm):
+    class Meta:
+        model = Configuracion
+        fields = ['decimales', 'clave_anulacion', 'idioma', 'imprimir', 'tipo_venta', 'porcentaje_iva', 'tamano_letra']
+        widgets = {
+            'decimales': forms.TextInput(attrs={'class': 'form-control resize-text onlyinput'}),
+            'clave_anulacion': forms.TextInput(attrs={'class': 'form-control resize-text onlyinput'}),
+            'idioma': forms.TextInput(attrs={'class': 'form-control resize-text onlyinput'}),
+            'imprimir': forms.Select(attrs={'class': 'form-control resize-text onlyinput'}),
+            'tipo_venta': forms.Select(attrs={'class': 'form-control resize-text onlyinput'}),
+            'porcentaje_iva': forms.TextInput(attrs={'class': 'form-control resize-text onlyinput'}),
+            'tamano_letra': forms.TextInput(attrs={'class': 'form-control resize-text onlyinput'}),
+        }
 
 class ConfiguracionUpdateView(UpdateView):
     model = Configuracion
-    fields = ['decimales', 'clave_anulacion', 'idioma', 'imprimir', 'tipo_venta', 'porcentaje_iva', 'tamano_letra']
-    template_name ='edit_configuracion.html'  # Crea un archivo de plantilla para la edición
+    form_class = ConfiguracionForm
+    template_name = 'edit_configuracion.html'
 
     def get_object(self, queryset=None):
-        # Retorna el objeto Configuracion con ID=1
         return Configuracion.objects.get(pk=1)
 
     def get_success_url(self):
-        # Después de editar con éxito, redirige a alguna página
-        return reverse_lazy('config')  # Cambia 'nombre_de_la_vista' al nombre de la vista que desees
-
+        return reverse_lazy('config')
 
 # ░██████╗███████╗░█████╗░░█████╗░██╗░█████╗░███╗░░██╗  ██████╗░███████╗
 # ██╔════╝██╔════╝██╔══██╗██╔══██╗██║██╔══██╗████╗░██║  ██╔══██╗██╔════╝
@@ -1713,11 +1723,28 @@ class ProductoListView(ListView):
             return Producto.objects.all()
         
 
+class ProductoForm(forms.ModelForm):
+    class Meta:
+        model = Producto
+        fields = ['nombre', 'precio', 'codigo_barras', 'gramaje', 'foto', 'descripcion', 'departamento', 'marca', 'tipo_gramaje', 'tipo_venta']
+        widgets = {
+            'nombre': forms.TextInput(attrs={'class': 'form-control onlyinput'}),
+            'precio': forms.NumberInput(attrs={'class': 'form-control onlyinput'}),
+            'codigo_barras': forms.TextInput(attrs={'class': 'form-control onlyinput'}),
+            'gramaje': forms.NumberInput(attrs={'class': 'form-control onlyinput'}),
+            'foto': forms.ClearableFileInput(attrs={'class': 'form-control onlyinput'}),
+            'descripcion': forms.Textarea(attrs={'class': 'form-control onlyinput'}),
+            'departamento': forms.Select(attrs={'class': 'form-control onlyinput'}),
+            'marca': forms.Select(attrs={'class': 'form-control onlyinput'}),
+            'tipo_gramaje': forms.Select(attrs={'class': 'form-control onlyinput'}),
+            'tipo_venta': forms.Select(attrs={'class': 'form-control onlyinput'}),
+        }
+
 class ProductoEditarView(UpdateView):
     model = Producto
-    template_name = 'producto_editar.html'  # Nombre de la plantilla para la edición
-    fields = ['nombre', 'precio', 'codigo_barras', 'gramaje', 'foto', 'descripcion', 'departamento', 'marca', 'tipo_gramaje', 'tipo_venta']
-    success_url = '/productos/'  
+    template_name = 'producto_editar.html'
+    form_class = ProductoForm
+    success_url = '/productos/'
 
 def imprimir_ultima_id():
     try:
