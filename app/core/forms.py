@@ -195,7 +195,7 @@ class ProductoForm(forms.ModelForm):
 class ContraseñaForm(forms.Form):
     contraseña = forms.CharField(
         label='Contraseña',
-        widget=forms.PasswordInput(attrs={'class': 'form-control resize-text'})
+        widget=forms.PasswordInput(attrs={'class': 'form-control resize-text onlyinput'})
     )
 
 

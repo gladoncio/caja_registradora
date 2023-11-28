@@ -24,7 +24,7 @@ DESKTOP_DIR=$(sudo -u $USERNAME xdg-user-dir DESKTOP)
 
 echo "Directorio del escritorio: $DESKTOP_DIR"
 
-RUTE="/caja/"
+RUTE="/caja"
 
 # Crear la nueva ruta si no existe
 mkdir -p "$RUTE"
@@ -44,6 +44,8 @@ sudo chmod -R 7777 .git
 # Actualizar los paquetes del sistema
 sudo apt update
 sudo apt upgrade -y
+
+sudo apt install curl
 
 sudo apt install zenity
 
@@ -68,18 +70,13 @@ sudo usermod -aG docker $USERNAME
 docker-compose build
 
 # Script para iniciar el contenedor
-echo -e "#!/bin/bash\n\ncd $RUTE" > "$DESKTOP_DIR/Iniciar_caja.sh"
-echo -e "PRINTER_DEVICES=\$(ls /dev/usb/lp*)\n" >> "$DESKTOP_DIR/Iniciar_caja.sh"
-echo -e "if [ -z \"\$PRINTER_DEVICES\" ]; then\n" >> "$DESKTOP_DIR/Iniciar_caja.sh"
-echo -e "    zenity --error --text='No se encontraron impresoras conectadas en /dev/usb/. No se iniciará el contenedor.'\n" >> "$DESKTOP_DIR/Iniciar_caja.sh"
-echo -e "    exit 1\n" >> "$DESKTOP_DIR/Iniciar_caja.sh"
-echo -e "fi\n" >> "$DESKTOP_DIR/Iniciar_caja.sh"
-echo -e "docker-compose up -d\nzenity --info --text='Iniciando el contenedor, por favor espera 5 segundos...'\n" >> "$DESKTOP_DIR/Iniciar_caja.sh"
-echo -e "sleep 10\nzenity --info --text='El contenedor se ha iniciado abriendo en el navegador.' &\nxdg-open http://localhost:8000" >> "$DESKTOP_DIR/Iniciar_caja.sh"
-chmod +x "$DESKTOP_DIR/Iniciar_caja.sh"
+echo -e "#!/bin/bash\n\ncd $RUTE" > "$RUTE/Iniciar_caja.sh"
+echo -e "docker-compose up -d" >> "$RUTE/Iniciar_caja.sh"
+echo -e "sleep 3 & \nxdg-open http://localhost:8000" >> "$RUTE/Iniciar_caja.sh"
+chmod +x "$RUTE/Iniciar_caja.sh"
 
 # Script para detener y reiniciar el contenedor
-echo -e "#!/bin/bash\n\ncd $RUTE\nzenity --info --text='Deteniendo el contenedor, por favor espera 3 segundos...'\ndocker-compose down\nsleep 3\nzenity --info --text='El contenedor se ha detenido correctamente.'" > "$DESKTOP_DIR/Detener_caja.sh"
+echo -e "#!/bin/bash\n\ncd $RUTE\ndocker-compose down\nsleep 3\nzenity --info --text='El contenedor se ha detenido correctamente.'" > "$DESKTOP_DIR/Detener_caja.sh"
 chmod +x "$DESKTOP_DIR/Detener_caja.sh"
 
 PYTHON_PATH=$(which python3)
@@ -98,6 +95,28 @@ if (crontab -l 2>/dev/null | grep -Fxq "$CRON_LINE"); then
 else
     (crontab -l 2>/dev/null ; echo "$CRON_LINE") | crontab - && echo "Tarea agregada correctamente" || echo "Error al agregar la tarea" > salida_crontab 2>&1
 fi
+
+# Crear el archivo de servicio systemd
+SERVICE_FILE="/etc/systemd/system/caja.service"
+
+echo "[Unit]" > "$SERVICE_FILE"
+echo "Description=Descripción de tu servicio" >> "$SERVICE_FILE"
+echo "After=network.target" >> "$SERVICE_FILE"
+echo "" >> "$SERVICE_FILE"
+echo "[Service]" >> "$SERVICE_FILE"
+echo "ExecStart=/caja/Iniciar_caja.sh" >> "$SERVICE_FILE"
+echo "Restart=always" >> "$SERVICE_FILE"
+echo "User=nombre_de_usuario" >> "$SERVICE_FILE"
+echo "" >> "$SERVICE_FILE"
+echo "[Install]" >> "$SERVICE_FILE"
+echo "WantedBy=default.target" >> "$SERVICE_FILE"
+
+# Recargar systemd
+sudo systemctl daemon-reload
+
+# Iniciar y habilitar el servicio
+sudo systemctl start caja
+sudo systemctl enable caja
 
 read -p "Se necesita reiniciar ¿Deseas reiniciar el sistema ahora? (y/n): " reiniciar
 if [ "$reiniciar" == "y" ]; then

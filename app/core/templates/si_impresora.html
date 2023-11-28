@@ -1,0 +1,20 @@
+{% extends 'base/nav.html' %}
+
+{% block body %}
+{% load static %}
+
+  <div class="container mt-5">
+    <div class="row justify-content-center">
+      <div class="col-md-6">
+        <div class="card text-center">
+          <div class="card-body solofondo">
+            <!-- Puedes agregar una imagen utilizando la etiqueta <img> -->
+            <img src="{% static 'img/check.gif' %}" alt="Descripción de la imagen" class="img-fluid">
+            <h5 class="card-title">Impresora Conectada</h5>
+            <a href="{% url 'caja' %}" class="btn boton-dinamico">Ir a caja</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

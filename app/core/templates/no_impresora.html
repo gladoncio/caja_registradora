@@ -1,0 +1,18 @@
+{% extends 'base/nav.html' %}
+
+{% block body %}
+  <div class="container mt-5">
+    <div class="row justify-content-center">
+      <div class="col-md-6">
+        <div class="card text-center">
+          <div class="card-body solofondo">
+            <h5 class="card-title">Impresora No Conectada</h5>
+            <p class="card-text">Lo sentimos, la impresora no está conectada. Por favor, verifique la conexión e inténtelo de nuevo.</p>
+            <a href="{% url 'impresora_si_conectada' %}" class="btn boton-dinamico">Volver a Intentar</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+{% endblock %}

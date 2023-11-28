@@ -12,27 +12,10 @@ from PIL import Image
 from django.utils.formats import date_format
 import io
 import os
+from .middleware import verificar_impresora_conectada
 
 
-# Directorio donde se encuentran los dispositivos USB
-usb_directory = "/dev/usb/"
-
-# Listar los archivos en el directorio USB
-usb_devices = os.listdir(usb_directory)
-
-# Filtrar los archivos que comienzan con 'lp'
-lp_devices = [device for device in usb_devices if device.startswith('lp')]
-
-# Seleccionar el primer dispositivo 'lp' disponible (puedes ajustar esto según tus necesidades)
-if lp_devices:
-    USB = os.path.join(usb_directory, lp_devices[0])
-else:
-    # En caso de que no se encuentre ningún dispositivo 'lp'
-    USB = None
-
-# Imprimir la información del dispositivo seleccionado
-print(f"Dispositivo USB seleccionado: {USB}")
-
+USB = verificar_impresora_conectada()
 
 
 # ░██████╗░███████╗███╗░░██╗███████╗██████╗░░█████╗░██████╗░  ███████╗██╗░░░░░

@@ -44,87 +44,6 @@ import locale
 from django.utils.formats import date_format
 import json
 
-def check_updates(request):
-    try:
-        with open("update_info.txt", "r") as file:
-            lines = file.readlines()
-
-        if lines:
-            # La última línea contiene la información más reciente
-            last_line = lines[-1]
-            parts = last_line.split(' - ')
-
-            stored_version_line = lines[-1].strip()
-            stored_version = stored_version_line.split()[-1]
-            try:
-                # Intentar analizar la cadena de fecha
-                fecha_ultima_actualizacion_archivo = datetime.strptime(parts[0].strip(), '%Y-%m-%d %H:%M:%S')
-                            # Obtener el objeto ActualizacionModel con id=1
-                ultima_actualizacion, created = ActualizacionModel.objects.get_or_create(id=1)
-
-                # Actualizar el objeto con los nuevos datos
-                ultima_actualizacion.fecha_actualizacion = fecha_ultima_actualizacion_archivo
-                ultima_actualizacion.version = stored_version
-                ultima_actualizacion.save()
-            except ValueError:
-                print("Error al analizar la cadena de fecha. Formato no válido.")
-                fecha_ultima_actualizacion_archivo = None
-
-        else:
-            print("El archivo está vacío")
-
-    except FileNotFoundError:
-        print("El archivo no existe")
-
-    # Repositorio de GitHub y nombre del propietario
-    owner = 'gladoncio'
-    repo = 'caja_registradora'
-
-    # URL de la API de GitHub para obtener las releases
-    api_url = f'https://api.github.com/repos/{owner}/{repo}/releases'
-
-    try:
-        # Realizar la solicitud a la API de GitHub
-        response = requests.get(api_url)
-        response.raise_for_status()  # Asegúrate de que la solicitud fue exitosa
-        github_releases = response.json()
-    except requests.RequestException as e:
-        # Manejar la excepción según sea necesario
-        print(f"Error al hacer la solicitud a la API de GitHub: {e}")
-        github_releases = []
-
-    # Filtrar solo las releases (excluir drafts y pre-releases)
-    github_releases = [release for release in github_releases if isinstance(release, dict) and not release.get('draft') and not release.get('prerelease')]
-
-    if github_releases:
-        fecha_ultima_release_github_str = github_releases[0]['published_at']
-        fecha_ultima_release_github = datetime.strptime(fecha_ultima_release_github_str, '%Y-%m-%dT%H:%M:%SZ')
-        # Convertir la fecha a timezone-aware (UTC)
-        fecha_ultima_release_github = fecha_ultima_release_github.replace(tzinfo=timezone.utc)
-    else:
-        fecha_ultima_release_github = None
-
-    # Obtener la fecha de la última actualización en tu modelo
-    ultima_actualizacion = ActualizacionModel.objects.latest('fecha_actualizacion')
-    fecha_ultima_actualizacion_modelo = ultima_actualizacion.fecha_actualizacion.replace(tzinfo=timezone.utc) if ultima_actualizacion else None
-
-    # Comparar las fechas
-    hay_actualizaciones = fecha_ultima_release_github and (
-        not fecha_ultima_actualizacion_modelo or
-        fecha_ultima_release_github > fecha_ultima_actualizacion_modelo
-    )
-
-    # Determinar el mensaje a mostrar en el template
-    mensaje_actualizacion = "¡Estás actualizado!" if not hay_actualizaciones else "Hay actualizaciones disponibles."
-    if hay_actualizaciones:
-        message = "Las actualizaciones se aplican cada 30 minutos automáticamente."
-        messages.success(request, message)
-
-    context = {'hay_actualizaciones': hay_actualizaciones,
-               'mensaje_actualizacion': mensaje_actualizacion,
-               'releases': github_releases}
-    
-    return render(request, 'actualizaciones.html', context)
 
 
 
@@ -168,7 +87,7 @@ def index(request):
 # ██║░░██╗██╔══██║██╗░░██║██╔══██║
 # ╚█████╔╝██║░░██║╚█████╔╝██║░░██║
 # ░╚════╝░╚═╝░░╚═╝░╚════╝░╚═╝░░╚═╝
-
+@login_required(login_url='/login')
 def caja(request):
     accion = "nada"
     id = 0
@@ -231,6 +150,7 @@ def caja(request):
     }
     return render(request, 'caja.html', context)
 
+@login_required(login_url='/login')
 def agregar_producto_al_carrito(request, id_producto):
     config = Configuracion.objects.get(id=1)
     carrito_items = CarritoItem.objects.filter(usuario=request.user).order_by('-fecha_agregado')
@@ -272,7 +192,7 @@ def agregar_producto_al_carrito(request, id_producto):
 # ╚█████╔╝██║░░██║██║░░██║██║░░██║██║░░░██║░░░╚█████╔╝
 # ░╚════╝░╚═╝░░╚═╝╚═╝░░╚═╝╚═╝░░╚═╝╚═╝░░░╚═╝░░░░╚════╝░
 
-@login_required
+@login_required(login_url='/login')
 def agregar_al_carrito(request, producto_id):
     config = Configuracion.objects.get(id=1)
     producto = get_object_or_404(Producto, id_producto=producto_id)
@@ -326,7 +246,7 @@ def agregar_al_carrito(request, producto_id):
 # ╚█████╔╝██║░░██║██║░░██║██║░░██║╚█████╔╝
 # ░╚════╝░╚═╝░░╚═╝╚═╝░░╚═╝╚═╝░░╚═╝░╚════╝░
 
-@login_required
+@login_required(login_url='/login')
 def eliminar_item(request, item_id):
     try:
         config = Configuracion.objects.get(id=1)
@@ -364,7 +284,8 @@ def eliminar_item(request, item_id):
 # ░░╚██╔╝░░███████╗██║░╚███║░░░██║░░░██║░░██║
 # ░░░╚═╝░░░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░╚═╝░░╚═╝
 
-@login_required
+
+@login_required(login_url='/login')
 def generar_venta(request, parametro1, parametro2, parametro3, parametro4):
     config = Configuracion.objects.get(id=1)
 
@@ -451,7 +372,7 @@ def generar_venta(request, parametro1, parametro2, parametro3, parametro4):
 # ░░╚██╔╝░░███████╗██║░╚███║░░░██║░░░██║░░██║██████╔╝
 # ░░░╚═╝░░░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░╚═╝░░╚═╝╚═════╝░
 
-
+@login_required(login_url='/login')
 def listar_ventas(request):
     # Encuentra la fecha de cierre de la última transacción
     ultima_fecha_cierre = RegistroTransaccion.objects.aggregate(Max('fecha_ingreso'))['fecha_ingreso__max']
@@ -503,6 +424,8 @@ def listar_ventas(request):
 # ░░╚██╔╝░░███████╗██║░╚███║░░░██║░░░██║░░██║
 # ░░░╚═╝░░░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░╚═╝░░╚═╝
 
+
+@login_required(login_url='/login')
 def detalle_venta(request, venta_id):
     venta = get_object_or_404(Venta, id=venta_id)
     productos_vendidos = VentaProducto.objects.filter(venta=venta)
@@ -518,6 +441,7 @@ def detalle_venta(request, venta_id):
 # ╚█████╔╝███████╗██║░░██║██║░░██║██║░░██║██║░░██║  ███████╗██║░░██║  ╚█████╔╝██║░░██║╚█████╔╝██║░░██║
 # ░╚════╝░╚══════╝╚═╝░░╚═╝╚═╝░░╚═╝╚═╝░░╚═╝╚═╝░░╚═╝  ╚══════╝╚═╝░░╚═╝  ░╚════╝░╚═╝░░╚═╝░╚════╝░╚═╝░░╚═╝
 
+@login_required(login_url='/login')
 def cerrar_caja(request, monto_en_la_caja):
     caja_diaria = CajaDiaria.objects.get(id=1)
     try:
@@ -579,7 +503,7 @@ def cerrar_caja(request, monto_en_la_caja):
 # ██║░░░░░██║░░██║╚█████╔╝██████╔╝╚██████╔╝╚█████╔╝░░░██║░░░╚█████╔╝
 # ╚═╝░░░░░╚═╝░░╚═╝░╚════╝░╚═════╝░░╚═════╝░░╚════╝░░░░╚═╝░░░░╚════╝░
 
-
+@login_required(login_url='/login')
 def agregar_producto(request):
     if request.method == 'POST':
         form = ProductoForm(request.POST, request.FILES)
@@ -606,66 +530,88 @@ def agregar_producto(request):
 # ░╚═════╝░╚═╝░░░░░╚═════╝░╚═╝░░╚═╝░░░╚═╝░░░╚══════╝
 
 
-def download_latest_version(tag_name):
-    # URL del archivo ZIP de la última versión en GitHub
-    url = f"https://github.com/gladoncio/caja_registradora/archive/{tag_name}.zip"
+def check_updates(request):
+    try:
+        with open("update_info.txt", "r") as file:
+            lines = file.readlines()
 
-    # Ruta local donde se almacenará el archivo ZIP descargado
-    current_file_directory = os.path.dirname(os.path.abspath(__file__))
-    local_file_path = os.path.join(current_file_directory, f"latest_version.zip")
+        if lines:
+            # La última línea contiene la información más reciente
+            last_line = lines[-1]
+            parts = last_line.split(' - ')
 
-    # Realizar la descarga
-    response = requests.get(url)
-    if response.status_code == 200:
-        with open(local_file_path, 'wb') as file:
-            file.write(response.content)
+            stored_version_line = lines[-1].strip()
+            stored_version = stored_version_line.split()[-1]
+            try:
+                # Intentar analizar la cadena de fecha
+                fecha_ultima_actualizacion_archivo = datetime.strptime(parts[0].strip(), '%Y-%m-%d %H:%M:%S')
+                            # Obtener el objeto ActualizacionModel con id=1
+                ultima_actualizacion, created = ActualizacionModel.objects.get_or_create(id=1)
+
+                # Actualizar el objeto con los nuevos datos
+                ultima_actualizacion.fecha_actualizacion = fecha_ultima_actualizacion_archivo
+                ultima_actualizacion.version = stored_version
+                ultima_actualizacion.save()
+            except ValueError:
+                print("Error al analizar la cadena de fecha. Formato no válido.")
+                fecha_ultima_actualizacion_archivo = None
+
+        else:
+            print("El archivo está vacío")
+
+    except FileNotFoundError:
+        print("El archivo no existe")
+
+    # Repositorio de GitHub y nombre del propietario
+    owner = 'gladoncio'
+    repo = 'caja_registradora'
+
+    # URL de la API de GitHub para obtener las releases
+    api_url = f'https://api.github.com/repos/{owner}/{repo}/releases'
+
+    try:
+        # Realizar la solicitud a la API de GitHub
+        response = requests.get(api_url)
+        response.raise_for_status()  # Asegúrate de que la solicitud fue exitosa
+        github_releases = response.json()
+    except requests.RequestException as e:
+        # Manejar la excepción según sea necesario
+        print(f"Error al hacer la solicitud a la API de GitHub: {e}")
+        github_releases = []
+
+    # Filtrar solo las releases (excluir drafts y pre-releases)
+    github_releases = [release for release in github_releases if isinstance(release, dict) and not release.get('draft') and not release.get('prerelease')]
+
+    if github_releases:
+        fecha_ultima_release_github_str = github_releases[0]['published_at']
+        fecha_ultima_release_github = datetime.strptime(fecha_ultima_release_github_str, '%Y-%m-%dT%H:%M:%SZ')
+        # Convertir la fecha a timezone-aware (UTC)
+        fecha_ultima_release_github = fecha_ultima_release_github.replace(tzinfo=timezone.utc)
     else:
-        raise Exception(f"No se pudo descargar la última versión. Código de estado: {response.status_code}")
+        fecha_ultima_release_github = None
 
-    # Descomprimir el archivo ZIP
-    extracted_directory = os.path.join(current_file_directory, f"latest_version_extracted")
-    with zipfile.ZipFile(local_file_path, 'r') as zip_ref:
-        zip_ref.extractall(extracted_directory)
+    # Obtener la fecha de la última actualización en tu modelo
+    ultima_actualizacion = ActualizacionModel.objects.latest('fecha_actualizacion')
+    fecha_ultima_actualizacion_modelo = ultima_actualizacion.fecha_actualizacion.replace(tzinfo=timezone.utc) if ultima_actualizacion else None
 
-    # Eliminar el archivo ZIP descargado
-    os.remove(local_file_path)
+    # Comparar las fechas
+    hay_actualizaciones = fecha_ultima_release_github and (
+        not fecha_ultima_actualizacion_modelo or
+        fecha_ultima_release_github > fecha_ultima_actualizacion_modelo
+    )
 
-    # Regresar la ruta local donde se descomprimió la última versión
-    return extracted_directory
+    # Determinar el mensaje a mostrar en el template
+    mensaje_actualizacion = "¡Estás actualizado!" if not hay_actualizaciones else "Hay actualizaciones disponibles."
+    if hay_actualizaciones:
+        message = "Las actualizaciones se aplican cada 30 minutos automáticamente."
+        messages.success(request, message)
 
-def update_project(new_version_directory, project_directory):
-    for root, _, files in os.walk(new_version_directory):
-        for file in files:
-            source_file = os.path.join(root, file)
-            relative_path = os.path.relpath(source_file, new_version_directory)
-            destination_file = os.path.join(project_directory, relative_path)
+    context = {'hay_actualizaciones': hay_actualizaciones,
+               'mensaje_actualizacion': mensaje_actualizacion,
+               'releases': github_releases}
+    
+    return render(request, 'actualizaciones.html', context)
 
-            # Copiar el archivo siempre, incluso si ya existe
-            os.makedirs(os.path.dirname(destination_file), exist_ok=True)
-            shutil.copy2(source_file, destination_file)
-
-# def update(request):
-#     # Directorio donde está ubicado tu proyecto Django (la carpeta "caja_registradora")
-#     project_directory = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-#     # Descargar la última versión desde GitHub (puedes usar tu función check_github_version)
-#     latest_version = check_github_version()
-
-#     fecha = get_github_latest_release_date()
-
-#     fecha_actualizacion = datetime.strptime(fecha, "%Y-%m-%dT%H:%M:%SZ")
-
-#     nueva_actualizacion, created = ActualizacionModel.objects.get_or_create(id=1, fecha_actualizacion=fecha_actualizacion)
-
-#     nueva_actualizacion.save()
-
-#     new_version_directory = download_latest_version(latest_version)
-
-#     # Actualizar el proyecto
-#     update_project(new_version_directory, project_directory)
-
-
-#     return render(request, 'update.html')
 
 
 
@@ -683,7 +629,7 @@ def update_project(new_version_directory, project_directory):
 # ╚█████╔╝╚█████╔╝██║░╚███║  ╚█████╔╝███████╗██║░░██║░░╚██╔╝░░███████╗
 # ░╚════╝░░╚════╝░╚═╝░░╚══╝  ░╚════╝░╚══════╝╚═╝░░╚═╝░░░╚═╝░░░╚══════╝
 
-
+@login_required(login_url='/login')
 def abrir_caja(request):
     configuracion = Configuracion.objects.first()
     if request.method == 'POST':
@@ -722,7 +668,8 @@ def abrir_caja(request):
 # ██╔══██║██║╚████║██║░░░██║██║░░░░░██╔══██║██║░░██╗██║██║░░██║██║╚████║
 # ██║░░██║██║░╚███║╚██████╔╝███████╗██║░░██║╚█████╔╝██║╚█████╔╝██║░╚███║
 # ╚═╝░░╚═╝╚═╝░░╚══╝░╚═════╝░╚══════╝╚═╝░░╚═╝░╚════╝░╚═╝░╚════╝░╚═╝░░╚══╝
-    
+
+@login_required(login_url='/login')
 def generate_barcode(request):
     configuracion = Configuracion.objects.first()
     barcode_image = None
@@ -763,6 +710,8 @@ def generate_barcode(request):
 # ╚█████╔╝██║░░██║███████╗██║░░██║██║░░██║  ╚██████╔╝██████╔╝╚██████╔╝██║░░██║██║░░██║██║╚█████╔╝██████╔╝
 # ░╚════╝░╚═╝░░╚═╝╚══════╝╚═╝░░╚═╝╚═╝░░╚═╝  ░╚═════╝░╚═════╝░░╚═════╝░╚═╝░░╚═╝╚═╝░░╚═╝╚═╝░╚════╝░╚═════╝░
 
+
+@login_required(login_url='/login')
 def crear_usuario(request):
     if request.method == 'POST':
         form = UsuarioCreationForm(request.POST)
@@ -785,6 +734,8 @@ def crear_usuario(request):
 # ██║██║░╚═╝░██║██║░░░░░██║░░██║██║██║░╚═╝░██║██║██║░░██║  ██████╦╝╚█████╔╝███████╗███████╗░░░██║░░░██║░░██║
 # ╚═╝╚═╝░░░░░╚═╝╚═╝░░░░░╚═╝░░╚═╝╚═╝╚═╝░░░░░╚═╝╚═╝╚═╝░░╚═╝  ╚═════╝░░╚════╝░╚══════╝╚══════╝░░░╚═╝░░░╚═╝░░╚═╝
 
+
+@login_required(login_url='/login')
 def imprimir_boleta(request, venta_id):
     venta = get_object_or_404(Venta, pk=venta_id)
 
@@ -816,7 +767,7 @@ def imprimir_boleta(request, venta_id):
 # ██║░╚═╝░██║███████╗░░░██║░░░╚█████╔╝██████╔╝╚█████╔╝  ██████╔╝███████╗  ██║░░░░░██║░░██║╚██████╔╝╚█████╔╝
 # ╚═╝░░░░░╚═╝╚══════╝░░░╚═╝░░░░╚════╝░╚═════╝░░╚════╝░  ╚═════╝░╚══════╝  ╚═╝░░░░░╚═╝░░╚═╝░╚═════╝░░╚════╝░
 
-
+@login_required(login_url='/login')
 def seleccionar_metodo_pago(request):
     carrito_items = CarritoItem.objects.filter(usuario=request.user)
     total = sum(item.subtotal() for item in carrito_items)
@@ -829,7 +780,7 @@ def seleccionar_metodo_pago(request):
 
 
 
-
+@login_required(login_url='/login')
 def procesar_pago(request):
     if request.method == 'POST':
         metodo_pago_seleccionado = request.POST.get('metodoPago')
@@ -876,6 +827,8 @@ def procesar_pago(request):
 # ███████╗██║░░░░░███████╗╚█████╔╝░░░██║░░░██║░░╚██╔╝░░╚█████╔╝
 # ╚══════╝╚═╝░░░░░╚══════╝░╚════╝░░░░╚═╝░░░╚═╝░░░╚═╝░░░░╚════╝░
 
+
+@login_required(login_url='/login')
 def ingresar_monto_efectivo(request):
     carrito_items = CarritoItem.objects.filter(usuario=request.user)
     total = sum(item.subtotal() for item in carrito_items)
@@ -911,6 +864,8 @@ def ingresar_monto_efectivo(request):
 # ██║░░██║███████╗██████╔╝░░░██║░░░██║░░██║██║░╚███║░░░██║░░░███████╗
 # ╚═╝░░╚═╝╚══════╝╚═════╝░░░░╚═╝░░░╚═╝░░╚═╝╚═╝░░╚══╝░░░╚═╝░░░╚══════╝
 
+
+@login_required(login_url='/login')
 def seleccionar_metodo_pago_resto(request, total, monto_efectivo):
     total = float(total)
     monto_efectivo = float(monto_efectivo)
@@ -936,7 +891,7 @@ def seleccionar_metodo_pago_resto(request, total, monto_efectivo):
     # De lo contrario, renderiza la página de selección de método de pago
     return render(request, 'seleccionar_metodo_pago_resto.html', context)
 
-
+@login_required(login_url='/login')
 def procesar_pago_restante(request, metodo_pago, restante):
     url_generar_venta = reverse('generar_venta', args=['venta_con_restante', metodo_pago, restante ,'0'])
     return redirect(url_generar_venta)
@@ -956,12 +911,15 @@ def procesar_pago_restante(request, metodo_pago, restante):
 # ██║░░██║██║░╚███║╚██████╔╝███████╗██║░░██║██████╔╝██║░░██║██████╔╝
 # ╚═╝░░╚═╝╚═╝░░╚══╝░╚═════╝░╚══════╝╚═╝░░╚═╝╚═════╝░╚═╝░░╚═╝╚═════╝░
 
+
+@login_required(login_url='/login')
 def listar_ventas_respaldo(request):
     # Aquí debes obtener las ventas del modelo VentaRespaldo
     ventas_respaldo = VentaRespaldo.objects.all()  # Puedes personalizar la consulta según tus necesidades
 
     return render(request, 'lista_ventas_respaldo.html', {'ventas_respaldo': ventas_respaldo})
 
+@login_required(login_url='/login')
 def listar_ventas_respaldo(request):
     # Encuentra la fecha de cierre de la última transacción
     ultima_fecha_cierre = RegistroTransaccion.objects.aggregate(Max('fecha_ingreso'))['fecha_ingreso__max']
@@ -1009,6 +967,8 @@ def listar_ventas_respaldo(request):
 # ██║░░██║██║░╚███║╚██████╔╝███████╗██║░░██║██████╔╝██║░░██║
 # ╚═╝░░╚═╝╚═╝░░╚══╝░╚═════╝░╚══════╝╚═╝░░╚═╝╚═════╝░╚═╝░░╚═╝
 
+
+@login_required(login_url='/login')
 def detalle_venta_respaldo(request, venta_respaldo_id):
     venta_respaldo = get_object_or_404(VentaRespaldo, id=venta_respaldo_id)
     productos_vendidos = VentaProductoRespaldo.objects.filter(venta=venta_respaldo)
@@ -1031,6 +991,7 @@ def detalle_venta_respaldo(request, venta_respaldo_id):
 # ░░╚██╔╝░░███████╗██║░╚███║░░░██║░░░██║░░██║
 # ░░░╚═╝░░░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░╚═╝░░╚═╝
 
+@login_required(login_url='/login')
 def eliminar_venta(request, venta_id):
     config = Configuracion.objects.get(id=1)
     venta = get_object_or_404(Venta, id=venta_id)
@@ -1058,6 +1019,7 @@ def eliminar_venta(request, venta_id):
 # ██║██║░╚███║██║░░░░░╚█████╔╝██║░░██║██║░╚═╝░██║███████╗  ╚██████╔╝███████╗██║░╚███║███████╗██║░░██║██║░░██║███████╗
 # ╚═╝╚═╝░░╚══╝╚═╝░░░░░░╚════╝░╚═╝░░╚═╝╚═╝░░░░░╚═╝╚══════╝  ░╚═════╝░╚══════╝╚═╝░░╚══╝╚══════╝╚═╝░░╚═╝╚═╝░░╚═╝╚══════╝
 
+@login_required(login_url='/login')
 def informe_general(request):
     caja_diaria = CajaDiaria.objects.get(id=1)
     config = Configuracion.objects.get(id=1)
@@ -1171,7 +1133,7 @@ def informe_general(request):
 # ╚█████╔╝╚██████╔╝██║░░██║██████╔╝██║░░██║██║░░██║██║░░██║
 # ░╚════╝░░╚═════╝░╚═╝░░╚═╝╚═════╝░╚═╝░░╚═╝╚═╝░░╚═╝╚═╝░░╚═╝
 
-
+@login_required(login_url='/login')
 def cuadrar(request):
     config = Configuracion.objects.get(id=1)
     decimales = config.decimales
@@ -1395,7 +1357,7 @@ def cuadrar(request):
 # ╚██████╔╝██║░░██║██████╔╝░░░██║░░░╚█████╔╝██████╔╝
 # ░╚═════╝░╚═╝░░╚═╝╚═════╝░░░░╚═╝░░░░╚════╝░╚═════╝░
 
-
+@login_required(login_url='/login')
 def lista_gastos(request):
     try:
         # Obtener la última fecha de RegistroTransaccion si existe
@@ -1430,6 +1392,7 @@ def lista_gastos(request):
 # ██║░░██╗██║░░██║██║╚████║██╔══╝░░██║██║░░╚██╗██║░░░██║██╔══██╗██╔══██║██║░░██╗██║██║░░██║██║╚████║
 # ╚█████╔╝╚█████╔╝██║░╚███║██║░░░░░██║╚██████╔╝╚██████╔╝██║░░██║██║░░██║╚█████╔╝██║╚█████╔╝██║░╚███║
 # ░╚════╝░░╚════╝░╚═╝░░╚══╝╚═╝░░░░░╚═╝░╚═════╝░░╚═════╝░╚═╝░░╚═╝╚═╝░░╚═╝░╚════╝░╚═╝░╚════╝░╚═╝░░╚══╝
+
 class ConfiguracionForm(forms.ModelForm):
     class Meta:
         model = Configuracion
@@ -1469,6 +1432,7 @@ class ConfiguracionUpdateView(UpdateView):
 # ╚██████╔╝██████╔╝╚██████╔╝██║░░██║██║░░██║██║╚█████╔╝██████╔╝
 # ░╚═════╝░╚═════╝░░╚═════╝░╚═╝░░╚═╝╚═╝░░╚═╝╚═╝░╚════╝░╚═════╝░
 
+@login_required(login_url='/login')
 def cambiar_clave_usuario(request, user_id):
     user = get_object_or_404(Usuario, id=user_id)
 
@@ -1486,11 +1450,12 @@ def cambiar_clave_usuario(request, user_id):
 
     return render(request, 'cambiar_clave.html', {'form': form, 'user': user}) 
 
-
+@login_required(login_url='/login')
 def lista_usuarios(request):
     usuarios = Usuario.objects.all()
     return render(request, 'lista_usuarios.html', {'usuarios': usuarios})
 
+@login_required(login_url='/login')
 def eliminar_usuario(request, user_id):
     usuario = get_object_or_404(Usuario, id=user_id)
     
@@ -1516,6 +1481,8 @@ def eliminar_usuario(request, user_id):
 # ╚█████╔╝╚█████╔╝██████╔╝██║╚██████╔╝╚█████╔╝  ██║░░██║██║░░██║██║░╚═╝░██║██████╔╝╚█████╔╝██║░╚═╝░██║
 # ░╚════╝░░╚════╝░╚═════╝░╚═╝░╚═════╝░░╚════╝░  ╚═╝░░╚═╝╚═╝░░╚═╝╚═╝░░░░░╚═╝╚═════╝░░╚════╝░╚═╝░░░░░╚═╝
 
+
+@login_required(login_url='/login')
 def generar_codigo_ean13(request):
     # Genera un número aleatorio de 12 dígitos para el código de barras
     codigo_de_barras = ''.join([str(random.randint(0, 9)) for _ in range(12)])
@@ -1551,7 +1518,8 @@ def generar_codigo_ean13(request):
 # ░╚████╔╝░██╔══╝░░██║╚████║░░░██║░░░██╔══██║
 # ░░╚██╔╝░░███████╗██║░╚███║░░░██║░░░██║░░██║
 # ░░░╚═╝░░░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░╚═╝░░╚═╝
-    
+
+@login_required(login_url='/login')
 def vista_boleta_venta_texto(request, venta_id):
     # Obtén el objeto Venta
     venta = Venta.objects.get(id=venta_id)
@@ -1572,6 +1540,7 @@ def vista_boleta_venta_texto(request, venta_id):
 # ░░╚██╔╝░░██║░░██║╚█████╔╝██║██║░░██║██║░░██║  ╚█████╔╝██║░░██║██║░░██║██║░░██║██║░░░██║░░░╚█████╔╝
 # ░░░╚═╝░░░╚═╝░░╚═╝░╚════╝░╚═╝╚═╝░░╚═╝╚═╝░░╚═╝  ░╚════╝░╚═╝░░╚═╝╚═╝░░╚═╝╚═╝░░╚═╝╚═╝░░░╚═╝░░░░╚════╝░
 
+@login_required(login_url='/login')
 def vaciar_carrito(request):
     carrito_items = CarritoItem.objects.filter(usuario=request.user)
 
@@ -1595,7 +1564,7 @@ def vaciar_carrito(request):
 # ██║░░██╗██╔══██║██╗░░██║██╔══██║  ░░╚██╔╝░░  ██╔══██╗██╔══╝░░░░░██║░░░██║██╔══██╗██║░░██║
 # ╚█████╔╝██║░░██║╚█████╔╝██║░░██║  ░░░██║░░░  ██║░░██║███████╗░░░██║░░░██║██║░░██║╚█████╔╝
 # ░╚════╝░╚═╝░░╚═╝░╚════╝░╚═╝░░╚═╝  ░░░╚═╝░░░  ╚═╝░░╚═╝╚══════╝░░░╚═╝░░░╚═╝╚═╝░░╚═╝░╚════╝░
-
+@login_required(login_url='/login')
 def editar_monto_caja_diaria(request):
     # Intenta recuperar el objeto CajaDiaria con ID 1 o crea uno nuevo si no existe
     caja_diaria, created = CajaDiaria.objects.get_or_create(id=1, defaults={'monto': 0.0, 'retiro': 0.0})
@@ -1667,7 +1636,7 @@ def editar_monto_caja_diaria(request):
 # ██║██║░╚███║╚██████╔╝██║░░██║███████╗██████╔╝██║░░██║██║░░██║  ╚██████╔╝██║░░██║██████╔╝░░░██║░░░╚█████╔╝
 # ╚═╝╚═╝░░╚══╝░╚═════╝░╚═╝░░╚═╝╚══════╝╚═════╝░╚═╝░░╚═╝╚═╝░░╚═╝  ░╚═════╝░╚═╝░░╚═╝╚═════╝░░░░╚═╝░░░░╚════╝░
 
-
+@login_required(login_url='/login')
 def ingresar_gasto(request):
     # Verificar si el usuario está autenticado
     if not request.user.is_authenticated:
@@ -1777,3 +1746,9 @@ def obtener_ultima_venta():
         return venta
     except:
         pass
+
+def impresora_no_conectada(request):
+    return render(request, 'no_impresora.html')
+
+def impresora_si_conectada(request):
+    return render(request, 'si_impresora.html')

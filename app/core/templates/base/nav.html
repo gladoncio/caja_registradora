@@ -46,8 +46,7 @@
 
             <!-- Divider -->
             <hr class="sidebar-divider my-0">
-
-            <!-- Nav Item - Dashboard -->
+{% if user.is_authenticated %}
             <li class="nav-item active">
                 <a class="nav-link" href="{% url "index" %}">
                     <i class="fas fa-search me-2"></i> <!-- Icono de búsqueda -->
@@ -148,10 +147,18 @@
             </li>
             {% endif %}
 
+{% else %}
+            <li class="nav-item active">
+                <a class="nav-link" href="{% url "login" %}">
+                    <i class="fas fa-user-plus me-2"></i> <!-- Icono de agregar usuario -->
+                    <span>Login</span>
+                </a>
+            </li>
+{% endif %}
+
             
             <!-- Divider -->
             <hr class="sidebar-divider">
-
 
 
 
@@ -183,12 +190,8 @@
                     <!-- Topbar Navbar -->
                     <ul class="navbar-nav ml-auto">
                         <div class="container">
-                            
-
-                            
-
                         </div>
-                        <!-- Nav Item - User Information -->
+                        {% if user.is_authenticated %}
                         <li class="nav-item dropdown no-arrow">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -211,10 +214,11 @@
                                 <div class="dropdown-divider"></div>
                                 <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
                                     <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
-                                    Logout
+                                    Desconectar
                                 </a>
                             </div>
                         </li>
+                        {% endif %}
 
                     </ul>
 
