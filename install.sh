@@ -72,8 +72,13 @@ docker-compose build
 # Script para iniciar el contenedor
 echo -e "#!/bin/bash\n\ncd $RUTE" > "$RUTE/Iniciar_caja.sh"
 echo -e "docker-compose up -d" >> "$RUTE/Iniciar_caja.sh"
+echo -e "exec > >(tee -i /caja/registro_servicio.log)" >> "$RUTE/Iniciar_caja.sh"
+echo -e "exec 2>&1" >> "$RUTE/Iniciar_caja.sh"
 echo -e "sleep 10" >> "$RUTE/Iniciar_caja.sh"
-echo -e "xdg-open http://localhost:8000" >> "$RUTE/Iniciar_caja.sh"
+echo -e "sudo -u caja firefox -P caja -no-remote http://localhost:8000" >> "$RUTE/Iniciar_caja.sh"
+
+
+
 chmod +x "$RUTE/Iniciar_caja.sh"
 
 # Script para detener y reiniciar el contenedor
