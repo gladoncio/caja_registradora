@@ -73,7 +73,7 @@ docker-compose build
 echo -e "#!/bin/bash\n\ncd $RUTE" > "$RUTE/Iniciar_caja.sh"
 echo -e "docker-compose up -d" >> "$RUTE/Iniciar_caja.sh"
 echo -e "sleep 3" >> "$RUTE/Iniciar_caja.sh"
-echo -e "sleep 3 & xdg-open http://localhost:8000" >> "$RUTE/Iniciar_caja.sh"
+echo -e "xdg-open http://localhost:8000" >> "$RUTE/Iniciar_caja.sh"
 chmod +x "$RUTE/Iniciar_caja.sh"
 
 # Script para detener y reiniciar el contenedor
@@ -107,7 +107,7 @@ echo "" >> "$SERVICE_FILE"
 echo "[Service]" >> "$SERVICE_FILE"
 echo "ExecStart=/caja/Iniciar_caja.sh" >> "$SERVICE_FILE"
 echo "Restart=always" >> "$SERVICE_FILE"
-echo "User=bravito" >> "$SERVICE_FILE"
+echo "User=root" >> "$SERVICE_FILE"
 echo "" >> "$SERVICE_FILE"
 echo "[Install]" >> "$SERVICE_FILE"
 echo "WantedBy=default.target" >> "$SERVICE_FILE"
