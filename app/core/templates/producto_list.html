@@ -8,7 +8,7 @@
       <div class="input-group">
         <input type="text" name="q" class="form-control onlyinput" placeholder="Buscar productos" value="{{ request.GET.q }}">
         <div class="input-group-append">
-          <button type="submit" class="btn btn-primary">Buscar </button>
+          <button type="submit" class="btn boton-dinamico">Buscar </button>
         </div>
       </div>
     </form>
@@ -31,7 +31,7 @@
             <td>{{ producto.departamento }}</td>
             <td>{{ producto.marca }}</td>
             <td>
-              <a href="{% url 'producto-editar' producto.id_producto %}" class="btn btn-primary btn-sm">Editar</a>
+              <a href="{% url 'producto-editar' producto.id_producto %}" class="btn boton-dinamico btn-sm">Editar</a>
             </td>
           </tr>
         {% empty %}
@@ -70,4 +70,14 @@
       </ul>
     </nav>
   </div>
+
+  
+  {% include 'base/footer.html' %}
+  <!-- End of Footer -->
+  
+  
+  <!-- End of Content Wrapper -->
+  {% include 'base/logout.html' %}
+
+
 {% endblock %}

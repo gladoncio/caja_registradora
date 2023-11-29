@@ -7,10 +7,11 @@ from django.forms.widgets import PasswordInput, TextInput
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
+from django.contrib.auth.forms import UserChangeForm
 
 class UsuarioCreationForm(UserCreationForm):
     permisos = forms.ChoiceField(
-        choices=[('admin', 'Admin'), ('cajero', 'Cajero')],
+        choices=Usuario.PERMISOS_CHOICES,  # Utiliza las opciones definidas en el modelo
         widget=forms.Select(attrs={'class': 'form-control'})
     )
 
@@ -25,7 +26,7 @@ class UsuarioCreationForm(UserCreationForm):
         self.fields['password1'].widget.attrs.update({'class': 'form-control resize-text onlyinput'})
         self.fields['password2'].widget.attrs.update({'class': 'form-control resize-text onlyinput'})
         self.fields['rut'].widget.attrs.update({'class': 'form-control resize-text onlyinput'})
-        self.fields['clave_anulacion'].widget.attrs.update({'class': 'form-control resize-text onlyinput'})
+        self.fields['clave_anulacion'].widget = forms.PasswordInput(attrs={'class': 'form-control resize-text onlyinput'})
         self.fields['permisos'].widget.attrs.update({'class': 'form-control resize-text onlyinput'})
 
 
@@ -230,9 +231,16 @@ class GastoCajaForm(forms.ModelForm):
 
         return cleaned_data
     
+
 class CambiarClaveForm(forms.Form):
-    nueva_clave = forms.CharField(label='Nueva Clave', widget=forms.PasswordInput)
-    confirmar_clave = forms.CharField(label='Confirmar Clave', widget=forms.PasswordInput)
+    nueva_clave = forms.CharField(
+        label='Nueva Clave',
+        widget=forms.PasswordInput(attrs={'class': 'onlyinput resize-text form-control'})
+    )
+    confirmar_clave = forms.CharField(
+        label='Confirmar Clave',
+        widget=forms.PasswordInput(attrs={'class': 'onlyinput resize-text form-control'})
+    )
 
     def clean(self):
         cleaned_data = super().clean()
@@ -244,6 +252,34 @@ class CambiarClaveForm(forms.Form):
                 raise forms.ValidationError('Las claves no coinciden.')
 
         return cleaned_data
-    
+
 class ValorForm(forms.Form):
-    valor = forms.DecimalField(max_digits=7, decimal_places=2)
+    valor = forms.DecimalField(
+        max_digits=7,
+        decimal_places=2,
+        widget=forms.NumberInput(attrs={'class': 'form-control resize-text onlyinput'})
+    )
+class UsuarioChangeForm(UserChangeForm):
+    class Meta:
+        model = Usuario
+        fields = ('username', 'permisos', 'rut')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Agregar clases de Bootstrap a los campos
+        self.fields['username'].widget.attrs.update({'class': 'form-control resize-text onlyinput'})
+        self.fields['permisos'].widget.attrs.update({'class': 'form-control resize-text onlyinput'})
+        self.fields['rut'].widget.attrs.update({'class': 'form-control resize-text onlyinput'})
+        self.fields['password'].widget = forms.HiddenInput()
+class CambiarClaveAnulacionForm(forms.ModelForm):
+    nueva_clave_anulacion = forms.CharField(
+        label='Nueva Clave de Anulación',
+        widget=forms.PasswordInput(attrs={'class': 'form-control resize-text onlyinput'}),
+        max_length=20,
+        required=False  # Puede ser opcional
+    )
+
+    class Meta:
+        model = Usuario
+        fields = ['nueva_clave_anulacion']

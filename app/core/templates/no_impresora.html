@@ -1,18 +1,32 @@
 {% extends 'base/nav.html' %}
-
+{% load static %}
 {% block body %}
-  <div class="container mt-5">
+  <div class="container mt-5 mb-5">
     <div class="row justify-content-center">
       <div class="col-md-6">
         <div class="card text-center">
           <div class="card-body solofondo">
             <h5 class="card-title">Impresora No Conectada</h5>
+            <a href="{% url 'impresora_si_conectada' %}" class="btn boton-dinamico mb-4">Volver a Intentar</a>
+
+                       <!-- Aquí se agrega el elemento de video -->
+                       <video width="100%" controls>
+                        <source src="{% static 'video/rickroll.mp4' %}" type="video/mp4">
+                        Tu navegador no soporta la etiqueta de video.
+                      </video>
             <p class="card-text">Lo sentimos, la impresora no está conectada. Por favor, verifique la conexión e inténtelo de nuevo.</p>
-            <a href="{% url 'impresora_si_conectada' %}" class="btn boton-dinamico">Volver a Intentar</a>
+            
           </div>
         </div>
       </div>
     </div>
   </div>
+
+{% include 'base/footer.html' %}
+<!-- End of Footer -->
+
+
+<!-- End of Content Wrapper -->
+{% include 'base/logout.html' %}
 
 {% endblock %}

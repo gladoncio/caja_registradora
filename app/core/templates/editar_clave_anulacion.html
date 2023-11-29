@@ -1,0 +1,41 @@
+{% extends 'base/nav.html' %}
+
+{% block body %}
+{% load static %}
+
+<div class="container mt-5 mb-4">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-body solofondo">
+          <h5 class="card-title">Cambiar Clave anulación</h5>
+          <form method="post">
+            {% csrf_token %}
+
+            {% if messages %}
+            <div class="alert alert-success">
+               <ul class="m-0">
+                  {% for message in messages %}
+                  <li>{{ message }}</li>
+                  {% endfor %}
+               </ul>
+            </div>
+            {% endif %}
+
+            {{ form.as_p }}
+            <button type="submit" class="btn boton-dinamico">Guardar Cambios</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% include 'base/footer.html' %}
+<!-- End of Footer -->
+
+
+<!-- End of Content Wrapper -->
+{% include 'base/logout.html' %}
+
+{% endblock %}

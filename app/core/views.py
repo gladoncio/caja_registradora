@@ -716,7 +716,17 @@ def crear_usuario(request):
     if request.method == 'POST':
         form = UsuarioCreationForm(request.POST)
         if form.is_valid():
-            form.save()
+            # Verificar si el permiso es "admin"
+            permiso = form.cleaned_data['permisos']
+            if permiso == 'admin':
+                Usuario.objects.create_superuser(
+                    username=form.cleaned_data['username'],
+                    password=form.cleaned_data['password1'],
+                    email='',  # Puedes dejarlo en blanco si no estás usando el campo de correo electrónico
+                )
+            else:
+                form.save()
+
             messages.success(request, 'Usuario creado exitosamente.')  # Mensaje de éxito
             return redirect('crear_usuario')  # Redirige a la página de éxito después de crear el usuario
         else:
@@ -1452,18 +1462,40 @@ def cambiar_clave_usuario(request, user_id):
 
 @login_required(login_url='/login')
 def lista_usuarios(request):
-    usuarios = Usuario.objects.all()
+    usuarios = Usuario.objects.filter(is_active=True)
     return render(request, 'lista_usuarios.html', {'usuarios': usuarios})
+
+@login_required(login_url='/login')
+def lista_usuarios_desabilitados(request):
+    usuarios = Usuario.objects.filter(is_active=False)
+    return render(request, 'lista_usuarios_desabilitados.html', {'usuarios': usuarios})
+
 
 @login_required(login_url='/login')
 def eliminar_usuario(request, user_id):
     usuario = get_object_or_404(Usuario, id=user_id)
     
-    usuario.delete()
+    usuario.is_active = False
+
+    usuario.save()
         
     messages.success(request, f'El usuario {usuario.username} ha sido eliminado.')
     
     return redirect('lista_usuarios')  # Siempre redirige a la vista de lista de usuarios, incluso si no se elimina el usuario.
+
+@login_required(login_url='/login')
+def activar_usuario(request, user_id):
+    usuario = get_object_or_404(Usuario, id=user_id)
+    
+    usuario.is_active = True
+
+    usuario.save()
+        
+    messages.success(request, f'El usuario {usuario.username} ha sido reactivado.')
+    
+    return redirect('lista_usuarios')
+
+
 
 
 
@@ -1752,3 +1784,53 @@ def impresora_no_conectada(request):
 
 def impresora_si_conectada(request):
     return render(request, 'si_impresora.html')
+
+@login_required
+def cambiar_usuario(request, usuario_id):
+    usuario = Usuario.objects.get(pk=usuario_id)
+
+    if request.method == 'POST':
+        form = UsuarioChangeForm(request.POST, instance=usuario)
+        if form.is_valid():
+            # Verificar si el nuevo valor de permisos es "admin"
+            nuevo_permiso = form.cleaned_data['permisos']
+            if nuevo_permiso == 'admin':
+                # Si el nuevo permiso es "admin", cambiar a superusuario
+                user_instance = form.save(commit=False)
+                user_instance.is_superuser = True
+                user_instance.is_staff = True
+                user_instance.save()
+            else:
+                # Si el nuevo permiso no es "admin", asegúrate de quitar el estado de superusuario
+                user_instance = form.save(commit=False)
+                user_instance.is_superuser = False
+                user_instance.is_staff = False
+                user_instance.save()
+
+            return redirect('lista_usuarios')
+    else:
+        form = UsuarioChangeForm(instance=usuario)
+
+    return render(request, 'editar_usuario.html', {'form': form})
+
+@login_required
+def cambiar_clave_anulacion(request, usuario_id):
+    usuario = Usuario.objects.get(pk=usuario_id)
+
+    if request.method == 'POST':
+        form = CambiarClaveAnulacionForm(request.POST, instance=usuario)
+        if form.is_valid():
+            clave_anulacion = form.cleaned_data['nueva_clave_anulacion']
+
+            # Verificar si la nueva clave de anulación ya está en uso por otro usuario
+            if Usuario.objects.exclude(pk=usuario_id).filter(clave_anulacion=clave_anulacion).exists():
+                messages.error(request, 'La nueva clave de anulación ya está en uso por otro usuario.')
+            else:
+                usuario.clave_anulacion = clave_anulacion
+                usuario.save()
+                messages.success(request, 'La nueva clave de anulación se guardo.')
+                return redirect('lista_usuarios')
+    else:
+        form = CambiarClaveAnulacionForm(instance=usuario)
+
+    return render(request, 'editar_clave_anulacion.html', {'form': form})

@@ -9,7 +9,7 @@
         {% csrf_token %}
         <div class="form-group">
           <label for="{{ form.contraseña.id_for_label }}" class="form-label">Contraseña</label>
-          <div class="input-group"> <!-- Utilizamos input-group para alinear a la izquierda -->
+          <div class="input-group"> 
             {{ form.contraseña }}
           </div>
         </div>
@@ -27,6 +27,13 @@
     </div>
   </div>
 </div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    // Enfocar automáticamente en el campo de contraseña cuando la página se carga
+    document.getElementById("id_contraseña").focus();
+  });
+</script>
 
 {% include 'base/footer.html' %}
 <!-- End of Footer -->

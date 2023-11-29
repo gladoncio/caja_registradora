@@ -44,7 +44,9 @@ urlpatterns = [
     path('configuracion/edit/', ConfiguracionUpdateView.as_view(), name='config'),
     path('cambiar_clave/<int:user_id>/', views.cambiar_clave_usuario, name='cambiar_clave_usuario'),
     path('usuarios/', views.lista_usuarios, name='lista_usuarios'),
+    path('lista_usuarios_desabilitados/', views.lista_usuarios_desabilitados, name='lista_usuarios_desabilitados'),
     path('usuarios/eliminar/<int:user_id>/', views.eliminar_usuario, name='eliminar_usuario'),
+    path('usuarios/activar/<int:user_id>/', views.activar_usuario, name='activar_usuario'),
     path('generar_codigo_ean13/', views.generar_y_imprimir_codigo_ean13, name='generar_codigo_ean13'),
     path('generar_venta/<parametro1>/<parametro2>/<parametro3>/<parametro4>', views.generar_venta, name='generar_venta'),
     path('vaciar_carrito/', views.vaciar_carrito, name='vaciar_carrito'),
@@ -52,6 +54,9 @@ urlpatterns = [
     path('producto/editar/<int:pk>/', ProductoEditarView.as_view(), name='producto-editar'),  # Define la URL de edición
     path('impresora-no-conectada/', impresora_no_conectada, name='impresora_no_conectada'),
     path('impresora-si-conectada/', impresora_si_conectada, name='impresora_si_conectada'),
+    path('cambiar_usuario/<int:usuario_id>/', cambiar_usuario, name='cambiar_usuario'),
+    path('cambiar_clave_anulacion/<int:usuario_id>/', cambiar_clave_anulacion, name='cambiar_clave_anulacion'),
+    
 ]
 
     

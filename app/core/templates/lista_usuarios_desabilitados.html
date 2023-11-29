@@ -1,0 +1,67 @@
+{% extends 'base/nav.html' %}
+
+{% block body %}
+<div class="container-fluid resize-text">
+   <div class="row">
+      <div class="col-md-12">
+         <h1 class="my-4">Lista de Usuarios Inactivos</h1>
+         <a href="{% url 'crear_usuario' %}" class="btn boton-dinamico mb-3">Crear Usuario</a>
+         <a href="{% url 'lista_usuarios' %}" class="btn boton-dinamico mb-3">Usuarios Activos</a>
+         {% if messages %}
+             <div class="alert alert-dismissible fade show" role="alert">
+                 {% for message in messages %}
+                     <div class="alert alert-{{ message.tags }}">
+                         {{ message }}
+                     </div>
+                 {% endfor %}
+             </div>
+         {% endif %}
+         <table class="table table-bordered">
+            <thead>
+               <tr>
+                  <th>Nombre de Usuario</th>
+                  <th>Acciones</th>
+               </tr>
+            </thead>
+            <tbody>
+               {% for usuario in usuarios %}
+               <tr>
+                  <td>{{ usuario.username }} - ( {{usuario.permisos}} )</td>
+                  <td>
+                     <a href="{% url 'cambiar_clave_usuario' user_id=usuario.id %}" class="btn boton-dinamico">Cambiar Clave</a>
+                     <a href="{% url 'cambiar_usuario' usuario_id=usuario.id %}" class="btn boton-dinamico">Editar Usuario</a>
+                     <a href="{% url 'cambiar_clave_anulacion' usuario_id=usuario.id %}" class="btn boton-dinamico">Editar Clave Anulación</a>
+                     <button type="button" class="btn btn-danger eliminar-usuario" data-toggle="modal" data-target="#eliminarModal{{ usuario.id }}">Activar Usuario</button>
+                  </td>
+               </tr>
+               <!-- Modal para eliminar usuario -->
+               <div class="modal fade" id="eliminarModal{{ usuario.id }}" tabindex="-1" role="dialog" aria-labelledby="eliminarModalLabel{{ usuario.id }}" aria-hidden="true">
+                  <div class="modal-dialog" role="document">
+                     <div class="modal-content solofondo">
+                        <div class="modal-header">
+                           <h5 class="modal-title" id="eliminarModalLabel{{ usuario.id }}">Confirmar Activación</h5>
+                           <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                              <span aria-hidden="true">&times;</span>
+                           </button>
+                        </div>
+                        <div class="modal-body solofondo">
+                           ¿Estás seguro de que deseas activar al usuario "{{ usuario.username }}"?
+                        </div>
+                        <div class="modal-footer solofondo">
+                           <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                           <a href="{% url 'activar_usuario' user_id=usuario.id %}" class="btn btn-danger">Activar</a>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+               {% endfor %}
+            </tbody>
+         </table>
+      </div>
+   </div>
+</div>
+
+{% include 'base/footer.html' %}
+{% include 'base/logout.html' %}
+
+{% endblock %}

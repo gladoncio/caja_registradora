@@ -63,7 +63,7 @@
                                     <div class="modal fade" id="eliminarModal{{ venta.id }}" tabindex="-1" role="dialog" aria-labelledby="eliminarModalLabel{{ venta.id }}" aria-hidden="true">
                                         <div class="modal-dialog resize-text" role="document">
                                             <div class="modal-content">
-                                                <div class="modal-header">
+                                                <div class="modal-header solofondo">
                                                     <h5 class="modal-title" id="eliminarModalLabel{{ venta.id }}">Confirmar Eliminación</h5>
                                                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                                         <span aria-hidden="true">&times;</span>
@@ -71,11 +71,11 @@
                                                 </div>
                                                 <form method="post" action="{% url 'eliminar_venta' venta.id %}">
                                                     {% csrf_token %}
-                                                    <div class="modal-body">
+                                                    <div class="modal-body solofondo">
                                                         <p>¿Estás seguro que deseas anular esta venta?</p>
-                                                        <input type="password" class="resize-text" name="contraseña" class="form-control" placeholder="Contraseña" required>
+                                                        <input type="password" class="resize-text form-control onlyinput" name="contraseña" class="form-control" placeholder="Contraseña" required>
                                                     </div>
-                                                    <div class="modal-footer">
+                                                    <div class="modal-footer solofondo">
                                                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
                                                         <button type="submit" class="btn btn-danger">Eliminar</button>
                                                     </div>

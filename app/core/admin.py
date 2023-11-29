@@ -3,6 +3,7 @@ from .models import *
 
 #admin.site.register(Usuario)
 admin.site.register(Departamento)
+admin.site.register(Usuario)
 admin.site.register(Marca)
 admin.site.register(Producto)
 admin.site.register(Stock)
