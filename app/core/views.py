@@ -1236,6 +1236,10 @@ def cuadrar(request):
                 estado = "sobrante"
 
             maquina_faltante = (monto_debito - maquinas_debito)
+            estado2 = "faltante"
+            if (maquina_faltante < 0 ):
+                estado2 = "sobrante"
+            
 
             context = {
                 'total_ventas_despues_ultima_fecha': total_gastos_despues_ultima_fecha,
@@ -1243,6 +1247,7 @@ def cuadrar(request):
                 'monto_credito': monto_credito,
                 'monto_debito': monto_debito,
                 'estado' : estado,
+                'estado2' : estado2,
                 'monto_transferencia': monto_transferencia,
                 'monto_retiro': caja_diaria.retiro,
                 'monto_caja': caja_diaria.monto,
@@ -1330,7 +1335,14 @@ def cuadrar(request):
                 else:
                     context['efectivo_faltante'] = abs(context['efectivo_faltante'])
                     content += "Efectivo Sobrante: ${:.{}f}\n".format(context['efectivo_faltante'] if context['efectivo_faltante'] is not None else 0, decimales)
-                content += "Débito Faltante en Máquinas: ${:.{}f}\n".format(context['monto_faltante_maquinas'] if context['monto_faltante_maquinas'] is not None else 0, decimales)
+
+                if context['monto_faltante_maquinas'] == 0:
+                    content += "El monto cuadra con las ventas ingresadas.\n"
+                elif context['monto_faltante_maquinas']>0:
+                    content += "Transbank Faltante: ${:.{}f}\n".format(context['monto_faltante_maquinas'] if context['monto_faltante_maquinas'] is not None else 0, decimales)
+                else:
+                    context['monto_faltante_maquinas'] = abs(context['monto_faltante_maquinas'])
+                    content += "Transbank Sobrante: ${:.{}f}\n".format(context['monto_faltante_maquinas'] if context['monto_faltante_maquinas'] is not None else 0, decimales)
                 content += "--------------------------\n"
 
                 return content

@@ -61,7 +61,14 @@
                     {% elif estado == "sobrante"  %}
                     <p>Monto sobrante: ${{ efectivo_faltante|floatformat:configuracion.decimales }}</p>
                     {% endif %}
-                    <p>Transbank Faltante: ${{ monto_debito|floatformat:configuracion.decimales }}</p>
+
+                    {% if efectivo_faltante == 0 %}
+                    <p>El monto de las Transbank cuadra sin diferencias.</p>
+                    {% elif estado2 == "faltante"  %}
+                    <p>Transbank faltante: ${{ monto_faltante_maquinas|floatformat:configuracion.decimales }}</p>
+                    {% elif estado2 == "sobrante"  %}
+                    <p>Transbank sobrante: ${{ monto_faltante_maquinas|floatformat:configuracion.decimales }}</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
