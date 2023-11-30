@@ -57,6 +57,7 @@ class Marca(models.Model):
 class Producto(models.Model):
     id_producto = models.AutoField(primary_key=True)
     nombre = models.CharField(max_length=100)
+    valor_costo = models.DecimalField(max_digits=10, decimal_places=2, default=0 )
     precio = models.DecimalField(max_digits=10, decimal_places=2)
     codigo_barras = models.CharField(max_length=20, unique=True, blank=True, null=True)
     gramaje = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)

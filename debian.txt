@@ -1,0 +1,5 @@
+nano /etc/group
+
+
+
+rm /home/tu usuario/.local/share/keyrings/login.keyring

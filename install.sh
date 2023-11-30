@@ -83,9 +83,24 @@ echo -e "xdg-open http://localhost:8000" >> "$DESKTOP_DIR/Iniciar_caja.sh"
 
 chmod +x "$DESKTOP_DIR/Iniciar_caja.sh"
 
-# Script para detener y reiniciar el contenedor
-echo -e "#!/bin/bash\n\ncd $RUTE\ndocker-compose down\nsleep 3\nzenity --info --text='El contenedor se ha detenido correctamente.'" > "$DESKTOP_DIR/Detener_caja.sh"
+# Script para iniciar el contenedor
+echo -e "#!/bin/bash\n\ncd $RUTE" > "$DESKTOP_DIR/restart.sh"
+echo -e "docker-compose down" >> "$DESKTOP_DIR/restart.sh"
+echo -e "sleep 2" >> "$DESKTOP_DIR/restart.sh"
+echo -e "docker-compose up" >> "$DESKTOP_DIR/restart.sh"
+echo -e "sleep 2" >> "$DESKTOP_DIR/restart.sh"
+echo -e "xdg-open http://localhost:8000" >> "$DESKTOP_DIR/restart.sh"
+
+chmod +x "$DESKTOP_DIR/restart.sh"
+
+
+echo -e "#!/bin/bash\n\ncd $RUTE" > "$DESKTOP_DIR/Detener_caja.sh"
+echo -e "docker-compose down" >> "$DESKTOP_DIR/Detener_caja.sh"
+echo -e "sleep 2" >> "$DESKTOP_DIR/Detener_caja.sh"
+echo -e "zenity --info --text='El contenedor se ha detenido correctamente.'" >> "$DESKTOP_DIR/Detener_caja.sh"
+
 chmod +x "$DESKTOP_DIR/Detener_caja.sh"
+
 
 PYTHON_PATH=$(which python3)
 

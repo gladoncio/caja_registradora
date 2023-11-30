@@ -50,10 +50,8 @@ document.addEventListener("DOMContentLoaded", function () {
         },
     };
 
-
-    // Función para aplicar estilos según el estado almacenado
     function aplicarEstilos(estado) {
-        document.body.classList.remove(...estilos.activado.body, ...estilos.desactivado.body);
+        document.body.className = '';  // Limpiar todas las clases del body
         document.body.classList.add(...estilos[estado].body);
         for (const elementoID in elementos) {
             if (elementos.hasOwnProperty(elementoID)) {

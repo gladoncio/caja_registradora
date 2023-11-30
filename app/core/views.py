@@ -636,7 +636,7 @@ def abrir_caja(request):
         form = ContraseñaForm(request.POST)
         if form.is_valid():
             # Verifica si la contraseña es correcta
-            contraseña = form.cleaned_data['contraseña']
+            contraseña = form.cleaned_data['password']
             if contraseña == configuracion.clave_anulacion or contraseña == request.user.clave_anulacion:
                 try:
                     # Abre una conexión con la impresora a través de USB (sustituye los valores con los adecuados)
@@ -1739,9 +1739,10 @@ class ProductoListView(ListView):
 class ProductoForm(forms.ModelForm):
     class Meta:
         model = Producto
-        fields = ['nombre', 'precio', 'codigo_barras', 'gramaje', 'foto', 'descripcion', 'departamento', 'marca', 'tipo_gramaje', 'tipo_venta']
+        fields = ['nombre', 'valor_costo', 'precio', 'codigo_barras', 'gramaje', 'foto', 'descripcion', 'departamento', 'marca', 'tipo_gramaje', 'tipo_venta']
         widgets = {
             'nombre': forms.TextInput(attrs={'class': 'form-control onlyinput'}),
+            'valor_costo': forms.NumberInput(attrs={'class': 'form-control onlyinput'}),
             'precio': forms.NumberInput(attrs={'class': 'form-control onlyinput'}),
             'codigo_barras': forms.TextInput(attrs={'class': 'form-control onlyinput'}),
             'gramaje': forms.NumberInput(attrs={'class': 'form-control onlyinput'}),
