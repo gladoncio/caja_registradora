@@ -96,14 +96,12 @@
                 </a>
             </li>
 
-            {% if request.user.permisos == 'admin' %}
             <li class="nav-item active">
                 <a class="nav-link" href="{% url "verificar-actualizaciones" %}">
                     <i class="fas fa-user-plus me-2"></i> <!-- Icono de agregar usuario -->
                     <span>Verificar Actualizaciones</span>
                 </a>
             </li>
-            {% endif %}
 
             <!-- Divider -->
             <hr class="sidebar-divider">
