@@ -1318,7 +1318,8 @@ def cuadrar(request):
 
                 
                 content += "Caja Diaria: ${:.{}f}\n".format(context['monto_caja'] if context['monto_caja'] is not None else 0, decimales)
-                content += "Total Neto General: ${:.{}f}\n".format(context['total_bruto_general']['total_neto'] if context['total_bruto_general']['total_neto'] is not None else 0, decimales)
+                content += "Efectivo en la Caja: ${:.{}f}\n".format(context['monto_en_la_caja'] if context.get('monto_en_la_caja') is not None else 0, decimales)
+                content += "Total Ventas: ${:.{}f}\n".format(context['total_bruto_general']['total_neto'] if context['total_bruto_general']['total_neto'] is not None else 0, decimales)
               
                 content += "Total de Ventas por Departamento:\n"
 
@@ -1327,7 +1328,6 @@ def cuadrar(request):
                     content += "    ${:.2f}\n".format(venta_por_departamento['total_ventas'] if venta_por_departamento['total_ventas'] is not None else 0.00)
 
                 content += "Total efectivo (restando gastos y retiros): ${:.{}f}\n".format(context['caja_que_deberia'] if context['caja_que_deberia'] is not None else 0, decimales)
-                content += "Efectivo en la Caja: ${:.{}f}\n".format(context['monto_en_la_caja'] if context.get('monto_en_la_caja') is not None else 0, decimales)
                 if context['efectivo_faltante'] == 0:
                     content += "El monto cuadra con las ventas ingresadas.\n"
                 elif context['efectivo_faltante']>0:
@@ -1339,10 +1339,10 @@ def cuadrar(request):
                 if context['monto_faltante_maquinas'] == 0:
                     content += "El monto cuadra con las ventas ingresadas.\n"
                 elif context['monto_faltante_maquinas']>0:
-                    content += "Transbank Faltante: ${:.{}f}\n".format(context['monto_faltante_maquinas'] if context['monto_faltante_maquinas'] is not None else 0, decimales)
+                    content += "Debito Faltante: ${:.{}f}\n".format(context['monto_faltante_maquinas'] if context['monto_faltante_maquinas'] is not None else 0, decimales)
                 else:
                     context['monto_faltante_maquinas'] = abs(context['monto_faltante_maquinas'])
-                    content += "Transbank Sobrante: ${:.{}f}\n".format(context['monto_faltante_maquinas'] if context['monto_faltante_maquinas'] is not None else 0, decimales)
+                    content += "Debito Sobrante: ${:.{}f}\n".format(context['monto_faltante_maquinas'] if context['monto_faltante_maquinas'] is not None else 0, decimales)
                 content += "--------------------------\n"
 
                 return content
