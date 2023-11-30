@@ -140,7 +140,12 @@ class Configuracion(models.Model):
         ('2', 'Registrar Stock con Descuento'),
         ('3', 'Registrar el stock de las ventas'),
     )
+    separador_opciones = (
+        ('1', 'Separar números por un < . > '),
+        ('2', 'Separar números por un < , >'),
+    )
     imprimir = models.CharField(max_length=20, choices=imprimir_opciones, default='no')
+    separador= models.CharField(max_length=20, choices=separador_opciones, default='1')
     tipo_venta = models.CharField(max_length=20, choices=tipo_de_venta, default='1')
     porcentaje_iva = models.DecimalField(max_digits=5, decimal_places=2, default=0.0)
     
@@ -160,6 +165,7 @@ def crear_configuracion(sender, **kwargs):  # Reemplaza 'tu_app_nombre' con el n
             porcentaje_iva = 0.0,
             tipo_venta = '1',
             tamano_letra = 30,
+            separador = '1',
         )
 
 
