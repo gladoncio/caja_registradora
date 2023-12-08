@@ -286,6 +286,21 @@ function promptUpdate() {
         });
         </script>
 
+        <script>
+            function formatNumber(input) {
+                // Obtener el valor del input
+                let value = input.value;
+          
+                // Quitar cualquier carácter que no sea un dígito
+                value = value.replace(/\D/g, '');
+          
+                // Formatear el número con separadores de miles
+                value = Number(value).toLocaleString('es-ES', { useGrouping: true });
+          
+                // Establecer el valor formateado en el input sin cambiar el valor numérico
+                input.value = value;
+              }
+          </script>
 
 
 </body>
