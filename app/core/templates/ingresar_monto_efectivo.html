@@ -11,7 +11,7 @@
         
         <div class="form-group">
             <label for="monto_efectivo">Monto en Efectivo:</label>
-            <input type="number" step="0.01" min="0.01" id="monto_efectivo" name="monto_efectivo" class="form-control" required>
+            <input type="text" id="monto_efectivo" name="monto_efectivo" class="form-control onlyinput resize-text" oninput="formatNumber(this)" required>
         </div>
         
         <p>Monto Restante: $<span id="monto_restante">{{ total|floatformat:configuracion.decimales }}</span></p>
@@ -28,15 +28,28 @@
 <!-- End of Content Wrapper -->
 {% include 'base/logout.html' %}
 <script>
+
     document.addEventListener("DOMContentLoaded", function() {
         const totalAmount = parseFloat({{ total|floatformat:configuracion.decimales }});
         const montoEfectivoInput = document.getElementById("monto_efectivo");
         const montoRestanteSpan = document.getElementById("monto_restante");
         const montoVueltoSpan = document.getElementById("monto_vuelto");
         const montoVueltoInput = document.getElementById("monto_vuelto_input"); // Campo oculto para el monto vuelto
+
+        function removeSeparatorsAndConvertToNumber(value) {
+            // Eliminar solo los puntos que son separadores de miles (no seguidos de decimales)
+            const cleanedValue = value.replace(/\.(?=\d{3}(?!\d))/g, '');
+        
+            // Eliminar cualquier otro carácter que no sea un dígito o un punto
+            const cleanedAndConvertedValue = cleanedValue.replace(/[^\d.]/g, '');
+        
+            // Convertir la cadena a un número
+            return parseFloat(cleanedAndConvertedValue);
+        }
     
         montoEfectivoInput.addEventListener("input", function() {
-            const montoIngresado = parseFloat(this.value) || 0;
+            const montoIngresado = removeSeparatorsAndConvertToNumber(this.value) || 0;
+            console.log(montoIngresado)
             const montoRestante = Math.max(totalAmount - montoIngresado, 0);
             const montoVuelto = Math.max(montoIngresado - totalAmount, 0);
     
@@ -54,5 +67,21 @@
             montoEfectivoInput.focus(); // Enfocar el input al cargar la página
         });
     </script>
+
+    <script>
+        function formatNumber(input) {
+            // Obtener el valor del input
+            let value = input.value;
+      
+            // Quitar cualquier carácter que no sea un dígito
+            value = value.replace(/\D/g, '');
+      
+            // Formatear el número con separadores de miles
+            value = Number(value).toLocaleString('es-ES', { useGrouping: true });
+      
+            // Establecer el valor formateado en el input sin cambiar el valor numérico
+            input.value = value;
+          }
+      </script>
 
 {% endblock %}

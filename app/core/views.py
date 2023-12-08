@@ -371,11 +371,13 @@ def generar_venta(request, parametro1, tipo_pago, parametro3, vuelto_inicial):
 # ██║░╚═╝░██║███████╗░░░██║░░░╚█████╔╝██████╔╝╚█████╔╝  ██████╔╝███████╗  ██║░░░░░██║░░██║╚██████╔╝╚█████╔╝
 # ╚═╝░░░░░╚═╝╚══════╝░░░╚═╝░░░░╚════╝░╚═════╝░░╚════╝░  ╚═════╝░╚══════╝  ╚═╝░░░░░╚═╝░░╚═╝░╚═════╝░░╚════╝░
 
+metodos_pago = ["Efectivo Justo", "Efectivo", "Transferencia", "Débito"]
+
 @login_required(login_url='/login')
 def seleccionar_metodo_pago(request):
     carrito_items = CarritoItem.objects.filter(usuario=request.user)
     total = sum(item.subtotal() for item in carrito_items)
-    metodos_pago = ["Efectivo Justo", "Efectivo", "Transferencia", "Débito"]
+    
     if not carrito_items:
         messages.error(request, 'No hay artículos en el carrito.')
         return redirect('caja')  # Reemplaza 'nombre_de_la_vista_caja' con la URL de la vista "caja".
@@ -390,7 +392,6 @@ def procesar_pago(request):
         metodo_pago_seleccionado = request.POST.get('metodoPago')
         
         if metodo_pago_seleccionado == 'Efectivo':
-
             return redirect('ingresar_monto_efectivo')
         elif metodo_pago_seleccionado == 'Transferencia':
             # Redirige a la vista generar_venta con los parámetros adecuados para Transferencia
@@ -843,8 +844,11 @@ def ingresar_monto_efectivo(request):
 
     if request.method == 'POST':
         monto_vuelto = request.POST.get('monto_vuelto', '0.00')
+        monto_vuelto = monto_vuelto.replace('.', '').replace(',', '')
         # Obtener el monto ingresado por el usuario
-        monto_efectivo = float(request.POST.get('monto_efectivo', '0'))
+        monto_efectivo = request.POST.get('monto_efectivo', '0')
+        monto_efectivo = monto_efectivo.replace('.', '').replace(',', '')
+        monto_efectivo = float(monto_efectivo)
         if monto_efectivo >= total:
             url_generar_venta = reverse('generar_venta', args=['venta_sin_restante', 'efectivo', monto_efectivo , monto_vuelto])
             return redirect(url_generar_venta)
