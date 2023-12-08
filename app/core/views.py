@@ -47,11 +47,6 @@ import json
 
 
 
-
-
-
-
-
 # ██╗░░░░░░█████╗░░██████╗░██╗███╗░░██╗  ██╗░░░██╗██╗███████╗░██╗░░░░░░░██╗░██████╗
 # ██║░░░░░██╔══██╗██╔════╝░██║████╗░██║  ██║░░░██║██║██╔════╝░██║░░██╗░░██║██╔════╝
 # ██║░░░░░██║░░██║██║░░██╗░██║██╔██╗██║  ╚██╗░██╔╝██║█████╗░░░╚██╗████╗██╔╝╚█████╗░
@@ -286,15 +281,14 @@ def eliminar_item(request, item_id):
 
 
 @login_required(login_url='/login')
-def generar_venta(request, parametro1, parametro2, parametro3, parametro4):
+def generar_venta(request, parametro1, tipo_pago, parametro3, vuelto_inicial):
     config = Configuracion.objects.get(id=1)
-
     try:
         carrito_items = CarritoItem.objects.filter(usuario=request.user)
         
         if carrito_items.exists():
             # Crear una nueva venta
-            nueva_venta = Venta(usuario=request.user, total=0, vuelto=parametro4)
+            nueva_venta = Venta(usuario=request.user, total=0, vuelto=vuelto_inicial)
             nueva_venta.save()
             
             # Variable para almacenar el total de la venta
@@ -316,20 +310,23 @@ def generar_venta(request, parametro1, parametro2, parametro3, parametro4):
             total_venta = float(nueva_venta.total)
             monto_efectivo = total_venta - parametro3
             monto_efectivo = abs(float(monto_efectivo))
-            if parametro2 == "efectivo":
+            if tipo_pago == "efectivo":
                 nueva_venta.vuelto=monto_efectivo
                 nueva_venta.save()
 
             
             if parametro1 == "venta_con_restante":
-                FormaPago.objects.create(venta=nueva_venta, tipo_pago=parametro2, monto=parametro3)
+                FormaPago.objects.create(venta=nueva_venta, tipo_pago=tipo_pago, monto=parametro3)
                 if monto_efectivo > 0:
                     FormaPago.objects.create(venta=nueva_venta, tipo_pago="efectivo", monto=monto_efectivo)
             elif parametro1 == "venta_sin_restante":
-                FormaPago.objects.create(venta=nueva_venta, tipo_pago=parametro2, monto=total_venta)
+                if tipo_pago == "Efectivo Justo":
+                    FormaPago.objects.create(venta=nueva_venta, tipo_pago="efectivo", monto=total_venta)
+                else:
+                    FormaPago.objects.create(venta=nueva_venta, tipo_pago=tipo_pago, monto=total_venta)
             
             # Verifica si el método de pago es efectivo y llama a la función abrir_caja_impresora
-            if parametro1 == "venta_con_restante" or parametro2 == "efectivo":
+            if parametro1 == "venta_con_restante" or tipo_pago == "efectivo":
                 if abrir_caja_impresora():
                     messages.success(request, 'Caja abierta exitosamente.')
                 else:
@@ -356,6 +353,61 @@ def generar_venta(request, parametro1, parametro2, parametro3, parametro4):
         
     # Redireccionar a la página del carrito si ocurre algún error
     return redirect('caja')  # Cambiar por la página del carrito
+
+
+
+
+# ░██████╗███████╗██╗░░░░░███████╗░█████╗░░█████╗░██╗░█████╗░███╗░░██╗░█████╗░██████╗░  ███████╗██╗░░░░░
+# ██╔════╝██╔════╝██║░░░░░██╔════╝██╔══██╗██╔══██╗██║██╔══██╗████╗░██║██╔══██╗██╔══██╗  ██╔════╝██║░░░░░
+# ╚█████╗░█████╗░░██║░░░░░█████╗░░██║░░╚═╝██║░░╚═╝██║██║░░██║██╔██╗██║███████║██████╔╝  █████╗░░██║░░░░░
+# ░╚═══██╗██╔══╝░░██║░░░░░██╔══╝░░██║░░██╗██║░░██╗██║██║░░██║██║╚████║██╔══██║██╔══██╗  ██╔══╝░░██║░░░░░
+# ██████╔╝███████╗███████╗███████╗╚█████╔╝╚█████╔╝██║╚█████╔╝██║░╚███║██║░░██║██║░░██║  ███████╗███████╗
+# ╚═════╝░╚══════╝╚══════╝╚══════╝░╚════╝░░╚════╝░╚═╝░╚════╝░╚═╝░░╚══╝╚═╝░░╚═╝╚═╝░░╚═╝  ╚══════╝╚══════╝
+
+# ███╗░░░███╗███████╗████████╗░█████╗░██████╗░░█████╗░  ██████╗░███████╗  ██████╗░░█████╗░░██████╗░░█████╗░
+# ████╗░████║██╔════╝╚══██╔══╝██╔══██╗██╔══██╗██╔══██╗  ██╔══██╗██╔════╝  ██╔══██╗██╔══██╗██╔════╝░██╔══██╗
+# ██╔████╔██║█████╗░░░░░██║░░░██║░░██║██║░░██║██║░░██║  ██║░░██║█████╗░░  ██████╔╝███████║██║░░██╗░██║░░██║
+# ██║╚██╔╝██║██╔══╝░░░░░██║░░░██║░░██║██║░░██║██║░░██║  ██║░░██║██╔══╝░░  ██╔═══╝░██╔══██║██║░░╚██╗██║░░██║
+# ██║░╚═╝░██║███████╗░░░██║░░░╚█████╔╝██████╔╝╚█████╔╝  ██████╔╝███████╗  ██║░░░░░██║░░██║╚██████╔╝╚█████╔╝
+# ╚═╝░░░░░╚═╝╚══════╝░░░╚═╝░░░░╚════╝░╚═════╝░░╚════╝░  ╚═════╝░╚══════╝  ╚═╝░░░░░╚═╝░░╚═╝░╚═════╝░░╚════╝░
+
+@login_required(login_url='/login')
+def seleccionar_metodo_pago(request):
+    carrito_items = CarritoItem.objects.filter(usuario=request.user)
+    total = sum(item.subtotal() for item in carrito_items)
+    metodos_pago = ["Efectivo Justo", "Efectivo", "Transferencia", "Débito"]
+    if not carrito_items:
+        messages.error(request, 'No hay artículos en el carrito.')
+        return redirect('caja')  # Reemplaza 'nombre_de_la_vista_caja' con la URL de la vista "caja".
+    context = {'metodos_pago': metodos_pago, 'total' : total}
+    return render(request, 'seleccionar_pago.html', context)
+
+
+
+@login_required(login_url='/login')
+def procesar_pago(request):
+    if request.method == 'POST':
+        metodo_pago_seleccionado = request.POST.get('metodoPago')
+        
+        if metodo_pago_seleccionado == 'Efectivo':
+
+            return redirect('ingresar_monto_efectivo')
+        elif metodo_pago_seleccionado == 'Transferencia':
+            # Redirige a la vista generar_venta con los parámetros adecuados para Transferencia
+            url_generar_venta = reverse('generar_venta', args=['venta_sin_restante', 'transferencia', '0', '0'])
+            return redirect(url_generar_venta)
+        elif metodo_pago_seleccionado == 'Débito':
+            # Redirige a la vista generar_venta con los parámetros adecuados para Débito
+            url_generar_venta = reverse('generar_venta', args=['venta_sin_restante', 'debito', '0', '0'])
+            return redirect(url_generar_venta)
+        elif metodo_pago_seleccionado == 'Efectivo Justo':
+            # Redirige a la vista generar_venta con los parámetros adecuados para efectivo justo
+            url_generar_venta = reverse('generar_venta', args=['venta_sin_restante', 'Efectivo Justo', '0', '0'])
+            return redirect(url_generar_venta)
+    
+    # Redirige a una vista predeterminada en caso de error o si no se seleccionó un método de pago válido
+    return redirect('caja')  # Cambiar por la página deseada
+
 
 
 # ██╗░░░░░██╗░██████╗████████╗░█████╗░██████╗░  ██╗░░░░░░█████╗░░██████╗
@@ -759,60 +811,6 @@ def imprimir_boleta(request, venta_id):
     return HttpResponse("Boleta impresa exitosamente")
 
 
-
-
-
-
-# ░██████╗███████╗██╗░░░░░███████╗░█████╗░░█████╗░██╗░█████╗░███╗░░██╗░█████╗░██████╗░  ███████╗██╗░░░░░
-# ██╔════╝██╔════╝██║░░░░░██╔════╝██╔══██╗██╔══██╗██║██╔══██╗████╗░██║██╔══██╗██╔══██╗  ██╔════╝██║░░░░░
-# ╚█████╗░█████╗░░██║░░░░░█████╗░░██║░░╚═╝██║░░╚═╝██║██║░░██║██╔██╗██║███████║██████╔╝  █████╗░░██║░░░░░
-# ░╚═══██╗██╔══╝░░██║░░░░░██╔══╝░░██║░░██╗██║░░██╗██║██║░░██║██║╚████║██╔══██║██╔══██╗  ██╔══╝░░██║░░░░░
-# ██████╔╝███████╗███████╗███████╗╚█████╔╝╚█████╔╝██║╚█████╔╝██║░╚███║██║░░██║██║░░██║  ███████╗███████╗
-# ╚═════╝░╚══════╝╚══════╝╚══════╝░╚════╝░░╚════╝░╚═╝░╚════╝░╚═╝░░╚══╝╚═╝░░╚═╝╚═╝░░╚═╝  ╚══════╝╚══════╝
-
-# ███╗░░░███╗███████╗████████╗░█████╗░██████╗░░█████╗░  ██████╗░███████╗  ██████╗░░█████╗░░██████╗░░█████╗░
-# ████╗░████║██╔════╝╚══██╔══╝██╔══██╗██╔══██╗██╔══██╗  ██╔══██╗██╔════╝  ██╔══██╗██╔══██╗██╔════╝░██╔══██╗
-# ██╔████╔██║█████╗░░░░░██║░░░██║░░██║██║░░██║██║░░██║  ██║░░██║█████╗░░  ██████╔╝███████║██║░░██╗░██║░░██║
-# ██║╚██╔╝██║██╔══╝░░░░░██║░░░██║░░██║██║░░██║██║░░██║  ██║░░██║██╔══╝░░  ██╔═══╝░██╔══██║██║░░╚██╗██║░░██║
-# ██║░╚═╝░██║███████╗░░░██║░░░╚█████╔╝██████╔╝╚█████╔╝  ██████╔╝███████╗  ██║░░░░░██║░░██║╚██████╔╝╚█████╔╝
-# ╚═╝░░░░░╚═╝╚══════╝░░░╚═╝░░░░╚════╝░╚═════╝░░╚════╝░  ╚═════╝░╚══════╝  ╚═╝░░░░░╚═╝░░╚═╝░╚═════╝░░╚════╝░
-
-@login_required(login_url='/login')
-def seleccionar_metodo_pago(request):
-    carrito_items = CarritoItem.objects.filter(usuario=request.user)
-    total = sum(item.subtotal() for item in carrito_items)
-    metodos_pago = ["Efectivo Justo", "Efectivo", "Transferencia", "Débito"]
-    if not carrito_items:
-        messages.error(request, 'No hay artículos en el carrito.')
-        return redirect('caja')  # Reemplaza 'nombre_de_la_vista_caja' con la URL de la vista "caja".
-    context = {'metodos_pago': metodos_pago, 'total' : total}
-    return render(request, 'seleccionar_pago.html', context)
-
-
-
-@login_required(login_url='/login')
-def procesar_pago(request):
-    if request.method == 'POST':
-        metodo_pago_seleccionado = request.POST.get('metodoPago')
-        
-        if metodo_pago_seleccionado == 'Efectivo':
-            # Redirige a la vista para ingresar el monto en efectivo
-            return redirect('ingresar_monto_efectivo')
-        elif metodo_pago_seleccionado == 'Transferencia':
-            # Redirige a la vista generar_venta con los parámetros adecuados para Transferencia
-            url_generar_venta = reverse('generar_venta', args=['venta_sin_restante', 'transferencia', '0', '0'])
-            return redirect(url_generar_venta)
-        elif metodo_pago_seleccionado == 'Débito':
-            # Redirige a la vista generar_venta con los parámetros adecuados para Débito
-            url_generar_venta = reverse('generar_venta', args=['venta_sin_restante', 'debito', '0', '0'])
-            return redirect(url_generar_venta)
-        elif metodo_pago_seleccionado == 'Efectivo Justo':
-            # Redirige a la vista generar_venta con los parámetros adecuados para Crédito
-            url_generar_venta = reverse('generar_venta', args=['venta_sin_restante', 'efectivo', '0', '0'])
-            return redirect(url_generar_venta)
-    
-    # Redirige a una vista predeterminada en caso de error o si no se seleccionó un método de pago válido
-    return redirect('caja')  # Cambiar por la página deseada
 
 
 

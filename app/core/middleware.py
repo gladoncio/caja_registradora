@@ -1,6 +1,8 @@
 from django.shortcuts import redirect
 import os
 
+impresora_validar = "no"
+
 def verificar_impresora_conectada():
     # Directorio donde se encuentran los dispositivos USB
     usb_directory = "/dev/usb/"
@@ -38,8 +40,9 @@ class ImpresoraMiddleware:
         USB = verificar_impresora_conectada()
 
         if not USB and not request.path.startswith('/impresora-no-conectada/'):
+            if impresora_validar!="no":
             # Si no hay impresora y no estás ya en la página de impresora no conectada, redirige
-            return redirect('impresora_no_conectada')
+                return redirect('impresora_no_conectada')
 
         response = self.get_response(request)
         return response
