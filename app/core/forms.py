@@ -255,7 +255,7 @@ class CambiarClaveForm(forms.Form):
 
 class ValorForm(forms.Form):
     valor = forms.DecimalField(
-        max_digits=7,
+        max_digits=12,
         decimal_places=2,
         widget=forms.NumberInput(attrs={'class': 'form-control resize-text onlyinput'})
     )

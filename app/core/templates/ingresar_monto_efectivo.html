@@ -4,7 +4,7 @@
 <div class="container-fluid resize-text">
     <h1>Ingresar Monto en Efectivo</h1>
     
-    <p>Total: ${{ total|floatformat:configuracion.decimales }}</p> <!-- Muestra el total -->
+    <p>Total: <span class="subtotal">{{ total|floatformat:configuracion.decimales }}</span></p> <!-- Muestra el total -->
 
     <form method="post" action="{% url 'ingresar_monto_efectivo' %}">
         {% csrf_token %}

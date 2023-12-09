@@ -52,7 +52,7 @@
                                 <tr>
                                     <td>{{ venta.id }}</td>
                                     <td>{{ venta.fecha_hora }}</td>
-                                    <td>${{ venta.total|floatformat:configuracion.decimales  }}</td>
+                                    <td class="subtotal">${{ venta.total|floatformat:configuracion.decimales  }}</td>
                                     <td>
                                         <!-- Agrega un botón para ver el detalle de la venta -->
                                         <a href="{% url 'detalle_venta' venta.id %}" class="btn boton-dinamico btn-sm">Ver Detalle</a>

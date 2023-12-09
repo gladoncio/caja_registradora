@@ -60,7 +60,7 @@ def login(request):
 
 def cerrar_sesion(request):
     logout(request)
-    return redirect(index)
+    return redirect(caja)
 
 
 
@@ -72,8 +72,8 @@ def cerrar_sesion(request):
 # ╚═════╝░░╚═════╝░╚═════╝░░╚════╝░╚═╝░░╚═╝╚═════╝░░╚════╝░╚═╝░░╚═╝  ╚═╝╚═╝░░╚══╝╚═════╝░╚══════╝╚═╝░░╚═╝
 
 @login_required(login_url='/login')
-def index(request):
-    return render(request, 'index.html')
+def busqueda(request):
+    return render(request, 'busqueda.html')
 
 
 # ░█████╗░░█████╗░░░░░░██╗░█████╗░
@@ -121,7 +121,6 @@ def caja(request):
                     form_valor = ValorForm(request.POST)
                     context = {'form': form,'carrito_items': carrito_items, 'total': total, 'accion' : accion, 'id_producto' : id_producto, 'form_valor' : form_valor}
                     return render(request, 'caja.html', context)
-                    print("articulo por valor")
                 else:
                     messages.success(request, 'El producto es por gramaje.')
             except Producto.DoesNotExist:
@@ -155,16 +154,18 @@ def agregar_producto_al_carrito(request, id_producto):
             valor = form.cleaned_data['valor']
             producto = Producto.objects.get(id_producto = id_producto)
 
+
             carrito_item, created = CarritoItem.objects.get_or_create(
                 usuario=request.user,
                 producto=producto,
                 defaults={'cantidad': 1},
-                valor = valor  # Cantidad predeterminada si no existe
+                valor = valor
             )
+
             if not created:
-                carrito_item.valor = carrito_item.valor + valor
                 carrito_item.cantidad += 1
                 carrito_item.save()
+
 
             return redirect('caja')
 
@@ -220,7 +221,6 @@ def agregar_al_carrito(request, producto_id):
                 carrito_item.cantidad = cantidad
                 carrito_item.gramaje = None  # Reiniciamos el gramaje si se agrega por cantidad
                 carrito_item.save()
-
         
     
     return redirect('caja')
@@ -245,11 +245,9 @@ def agregar_al_carrito(request, producto_id):
 def eliminar_item(request, item_id):
     try:
         config = Configuracion.objects.get(id=1)
-        producto = Producto.objects.get(id_producto=item_id)
-        carrito_item = CarritoItem.objects.get(producto=producto, usuario=request.user)
+        carrito_item = CarritoItem.objects.get(id=item_id, usuario=request.user)
 
         if carrito_item.cantidad > 1:
-            # Si la cantidad es mayor que 1, simplemente disminuye en 1 la cantidad
             carrito_item.cantidad -= 1
             carrito_item.save()
         else:
@@ -279,59 +277,44 @@ def eliminar_item(request, item_id):
 # ░░╚██╔╝░░███████╗██║░╚███║░░░██║░░░██║░░██║
 # ░░░╚═╝░░░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░╚═╝░░╚═╝
 
+metodos_pago = ["Efectivo Justo", "Efectivo", "Transferencia", "Débito"]
 
 @login_required(login_url='/login')
-def generar_venta(request, parametro1, tipo_pago, parametro3, vuelto_inicial):
+def generar_venta(request, tipo_pago, restante, vuelto_inicial):
+    restante = float(restante)
+    vuelto_inicial = float(vuelto_inicial)
     config = Configuracion.objects.get(id=1)
     try:
         carrito_items = CarritoItem.objects.filter(usuario=request.user)
         
         if carrito_items.exists():
-            # Crear una nueva venta
-            nueva_venta = Venta(usuario=request.user, total=0, vuelto=vuelto_inicial)
+            # aqui se genera la venta base
+            total = sum(item.subtotal() for item in carrito_items)
+            nueva_venta = Venta(usuario=request.user, total=total, vuelto=vuelto_inicial)
             nueva_venta.save()
             
-            # Variable para almacenar el total de la venta
-            total_venta = Decimal('0.00')
-
-            
-            # Agregar productos al modelo VentaProducto
+            # Agregar productos al modelo VentaProducto y vaciar el carrito
             for item in carrito_items:
                 subtotal = item.subtotal()
-                total_venta += subtotal
                 VentaProducto.objects.create(venta=nueva_venta, producto=item.producto, cantidad=item.cantidad, gramaje=item.gramaje, subtotal=subtotal)
-            nueva_venta.total = total_venta
             messages.success(request, 'VENTA INGRESADA CORRECTAMENTE.')
-            nueva_venta.save()
-            
-            # Vaciar el carrito del usuario
             carrito_items.delete()
-            parametro3 = float(parametro3)
-            total_venta = float(nueva_venta.total)
-            monto_efectivo = total_venta - parametro3
-            monto_efectivo = abs(float(monto_efectivo))
-            if tipo_pago == "efectivo":
-                nueva_venta.vuelto=monto_efectivo
-                nueva_venta.save()
 
-            
-            if parametro1 == "venta_con_restante":
-                FormaPago.objects.create(venta=nueva_venta, tipo_pago=tipo_pago, monto=parametro3)
-                if monto_efectivo > 0:
-                    FormaPago.objects.create(venta=nueva_venta, tipo_pago="efectivo", monto=monto_efectivo)
-            elif parametro1 == "venta_sin_restante":
-                if tipo_pago == "Efectivo Justo":
-                    FormaPago.objects.create(venta=nueva_venta, tipo_pago="efectivo", monto=total_venta)
-                else:
-                    FormaPago.objects.create(venta=nueva_venta, tipo_pago=tipo_pago, monto=total_venta)
-            
-            # Verifica si el método de pago es efectivo y llama a la función abrir_caja_impresora
-            if parametro1 == "venta_con_restante" or tipo_pago == "efectivo" or tipo_pago=="Efectivo Justo":
+            if restante > 0: #EL monto se divide en dos tipos de pagos
+                restante = float(restante)
+                monto_efectivo_restante = total - restante
+                monto_efectivo_restante = abs(float(monto_efectivo_restante))
+                FormaPago.objects.create(venta=nueva_venta, tipo_pago=tipo_pago, monto=restante)
+                FormaPago.objects.create(venta=nueva_venta, tipo_pago="efectivo", monto=monto_efectivo_restante)
+            elif tipo_pago == "Efectivo" or tipo_pago =="Efectivo Justo": #si la venta contiene efectivo
+                FormaPago.objects.create(venta=nueva_venta, tipo_pago="efectivo", monto=total)
                 if abrir_caja_impresora():
                     messages.success(request, 'Caja abierta exitosamente.')
                 else:
                     messages.error(request, 'Error al abrir la caja. Inténtalo de nuevo.')
-
+            else: # cualquier otro tipo de venta
+                FormaPago.objects.create(venta=nueva_venta, tipo_pago=tipo_pago, monto=total)
+            
             if config.imprimir != 'no':
                 imprimir_ultima_id()
 
@@ -371,13 +354,10 @@ def generar_venta(request, parametro1, tipo_pago, parametro3, vuelto_inicial):
 # ██║░╚═╝░██║███████╗░░░██║░░░╚█████╔╝██████╔╝╚█████╔╝  ██████╔╝███████╗  ██║░░░░░██║░░██║╚██████╔╝╚█████╔╝
 # ╚═╝░░░░░╚═╝╚══════╝░░░╚═╝░░░░╚════╝░╚═════╝░░╚════╝░  ╚═════╝░╚══════╝  ╚═╝░░░░░╚═╝░░╚═╝░╚═════╝░░╚════╝░
 
-metodos_pago = ["Efectivo Justo", "Efectivo", "Transferencia", "Débito"]
-
 @login_required(login_url='/login')
 def seleccionar_metodo_pago(request):
     carrito_items = CarritoItem.objects.filter(usuario=request.user)
     total = sum(item.subtotal() for item in carrito_items)
-    
     if not carrito_items:
         messages.error(request, 'No hay artículos en el carrito.')
         return redirect('caja')  # Reemplaza 'nombre_de_la_vista_caja' con la URL de la vista "caja".
@@ -389,25 +369,119 @@ def seleccionar_metodo_pago(request):
 @login_required(login_url='/login')
 def procesar_pago(request):
     if request.method == 'POST':
+        #traigo el metodo de pago
         metodo_pago_seleccionado = request.POST.get('metodoPago')
-        
+
         if metodo_pago_seleccionado == 'Efectivo':
             return redirect('ingresar_monto_efectivo')
+        
         elif metodo_pago_seleccionado == 'Transferencia':
             # Redirige a la vista generar_venta con los parámetros adecuados para Transferencia
-            url_generar_venta = reverse('generar_venta', args=['venta_sin_restante', 'transferencia', '0', '0'])
+            url_generar_venta = reverse('generar_venta', args=['transferencia', '0', '0'])
             return redirect(url_generar_venta)
+        
         elif metodo_pago_seleccionado == 'Débito':
             # Redirige a la vista generar_venta con los parámetros adecuados para Débito
-            url_generar_venta = reverse('generar_venta', args=['venta_sin_restante', 'debito', '0', '0'])
+            url_generar_venta = reverse('generar_venta', args=['debito', '0', '0'])
             return redirect(url_generar_venta)
+        
         elif metodo_pago_seleccionado == 'Efectivo Justo':
             # Redirige a la vista generar_venta con los parámetros adecuados para efectivo justo
-            url_generar_venta = reverse('generar_venta', args=['venta_sin_restante', 'Efectivo Justo', '0', '0'])
+            url_generar_venta = reverse('generar_venta', args=['Efectivo Justo', '0', '0'])
             return redirect(url_generar_venta)
     
     # Redirige a una vista predeterminada en caso de error o si no se seleccionó un método de pago válido
-    return redirect('caja')  # Cambiar por la página deseada
+    return redirect('caja')
+
+
+
+# ██╗░░░██╗██╗░██████╗████████╗░█████╗░  ██████╗░░█████╗░██████╗░░█████╗░
+# ██║░░░██║██║██╔════╝╚══██╔══╝██╔══██╗  ██╔══██╗██╔══██╗██╔══██╗██╔══██╗
+# ╚██╗░██╔╝██║╚█████╗░░░░██║░░░███████║  ██████╔╝███████║██████╔╝███████║
+# ░╚████╔╝░██║░╚═══██╗░░░██║░░░██╔══██║  ██╔═══╝░██╔══██║██╔══██╗██╔══██║
+# ░░╚██╔╝░░██║██████╔╝░░░██║░░░██║░░██║  ██║░░░░░██║░░██║██║░░██║██║░░██║
+# ░░░╚═╝░░░╚═╝╚═════╝░░░░╚═╝░░░╚═╝░░╚═╝  ╚═╝░░░░░╚═╝░░╚═╝╚═╝░░╚═╝╚═╝░░╚═╝
+
+# ██╗░░░██╗███████╗███╗░░██╗████████╗░█████╗░░██████╗  ███████╗███╗░░██╗
+# ██║░░░██║██╔════╝████╗░██║╚══██╔══╝██╔══██╗██╔════╝  ██╔════╝████╗░██║
+# ╚██╗░██╔╝█████╗░░██╔██╗██║░░░██║░░░███████║╚█████╗░  █████╗░░██╔██╗██║
+# ░╚████╔╝░██╔══╝░░██║╚████║░░░██║░░░██╔══██║░╚═══██╗  ██╔══╝░░██║╚████║
+# ░░╚██╔╝░░███████╗██║░╚███║░░░██║░░░██║░░██║██████╔╝  ███████╗██║░╚███║
+# ░░░╚═╝░░░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░╚═╝░░╚═╝╚═════╝░  ╚══════╝╚═╝░░╚══╝
+
+# ███████╗███████╗███████╗░█████╗░████████╗██╗██╗░░░██╗░█████╗░
+# ██╔════╝██╔════╝██╔════╝██╔══██╗╚══██╔══╝██║██║░░░██║██╔══██╗
+# █████╗░░█████╗░░█████╗░░██║░░╚═╝░░░██║░░░██║╚██╗░██╔╝██║░░██║
+# ██╔══╝░░██╔══╝░░██╔══╝░░██║░░██╗░░░██║░░░██║░╚████╔╝░██║░░██║
+# ███████╗██║░░░░░███████╗╚█████╔╝░░░██║░░░██║░░╚██╔╝░░╚█████╔╝
+# ╚══════╝╚═╝░░░░░╚══════╝░╚════╝░░░░╚═╝░░░╚═╝░░░╚═╝░░░░╚════╝░
+
+
+@login_required(login_url='/login')
+def ingresar_monto_efectivo(request):
+    carrito_items = CarritoItem.objects.filter(usuario=request.user)
+    total = sum(item.subtotal() for item in carrito_items)
+
+    if request.method == 'POST':
+        # Obtener el monto ingresado por el usuario
+        monto_efectivo = request.POST.get('monto_efectivo', '0')
+        monto_efectivo = monto_efectivo.replace('.', '').replace(',', '')
+        monto_efectivo = float(monto_efectivo)
+        if monto_efectivo >= total:
+            monto_vuelto = monto_efectivo - total
+            url_generar_venta = reverse('generar_venta', args=['efectivo', '0' , monto_vuelto])
+            return redirect(url_generar_venta)
+        else:
+            # Redirigir a la vista seleccionar_metodo_pago_resto
+            url_seleccionar_metodo_pago_resto = reverse('seleccionar_metodo_pago_resto', args=[total, monto_efectivo])
+            return redirect(url_seleccionar_metodo_pago_resto)
+
+    context = {'total': total}
+    return render(request, 'ingresar_monto_efectivo.html', context)
+
+
+
+# ██╗░░░██╗███████╗███╗░░██╗████████╗░█████╗░  ░█████╗░░█████╗░███╗░░██╗  ███████╗██╗░░░░░
+# ██║░░░██║██╔════╝████╗░██║╚══██╔══╝██╔══██╗  ██╔══██╗██╔══██╗████╗░██║  ██╔════╝██║░░░░░
+# ╚██╗░██╔╝█████╗░░██╔██╗██║░░░██║░░░███████║  ██║░░╚═╝██║░░██║██╔██╗██║  █████╗░░██║░░░░░
+# ░╚████╔╝░██╔══╝░░██║╚████║░░░██║░░░██╔══██║  ██║░░██╗██║░░██║██║╚████║  ██╔══╝░░██║░░░░░
+# ░░╚██╔╝░░███████╗██║░╚███║░░░██║░░░██║░░██║  ╚█████╔╝╚█████╔╝██║░╚███║  ███████╗███████╗
+# ░░░╚═╝░░░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░╚═╝░░╚═╝  ░╚════╝░░╚════╝░╚═╝░░╚══╝  ╚══════╝╚══════╝
+
+# ██████╗░███████╗░██████╗████████╗░█████╗░███╗░░██╗████████╗███████╗
+# ██╔══██╗██╔════╝██╔════╝╚══██╔══╝██╔══██╗████╗░██║╚══██╔══╝██╔════╝
+# ██████╔╝█████╗░░╚█████╗░░░░██║░░░███████║██╔██╗██║░░░██║░░░█████╗░░
+# ██╔══██╗██╔══╝░░░╚═══██╗░░░██║░░░██╔══██║██║╚████║░░░██║░░░██╔══╝░░
+# ██║░░██║███████╗██████╔╝░░░██║░░░██║░░██║██║░╚███║░░░██║░░░███████╗
+# ╚═╝░░╚═╝╚══════╝╚═════╝░░░░╚═╝░░░╚═╝░░╚═╝╚═╝░░╚══╝░░░╚═╝░░░╚══════╝
+
+
+@login_required(login_url='/login')
+def seleccionar_metodo_pago_resto(request, total, monto_efectivo):
+    total = float(total)
+    monto_efectivo = float(monto_efectivo)
+    # Verifica si hay un restante por pagar (restante > 0)
+    restante = total - monto_efectivo
+    context = {'total': total, 'monto_efectivo': monto_efectivo, 'restante': restante}
+    if restante <= 0:
+        # Si no hay restante, redirige a la página de éxito o la que prefieras
+        return redirect('caja')  # Cambia 'pagina_exito' por la URL deseada
+
+    if request.method == 'POST':
+        # Obtén el método de pago seleccionado por el usuario
+        metodo_pago_seleccionado = request.POST.get('metodoPagoResto')
+        if metodo_pago_seleccionado == 'volver':
+            return redirect('seleccionar_metodo_pago')
+        
+        return redirect('procesar_pago_restante', metodo_pago=metodo_pago_seleccionado, restante=restante)
+
+    # De lo contrario, renderiza la página de selección de método de pago
+    return render(request, 'seleccionar_metodo_pago_resto.html', context)
+
+@login_required(login_url='/login')
+def procesar_pago_restante(request, metodo_pago, restante):
+    url_generar_venta = reverse('generar_venta', args=[metodo_pago, restante ,'0'])
+    return redirect(url_generar_venta)
 
 
 
@@ -810,103 +884,6 @@ def imprimir_boleta(request, venta_id):
 
     # Devuelve una respuesta vacía o un mensaje de éxito
     return HttpResponse("Boleta impresa exitosamente")
-
-
-
-
-
-# ██╗░░░██╗██╗░██████╗████████╗░█████╗░  ██████╗░░█████╗░██████╗░░█████╗░
-# ██║░░░██║██║██╔════╝╚══██╔══╝██╔══██╗  ██╔══██╗██╔══██╗██╔══██╗██╔══██╗
-# ╚██╗░██╔╝██║╚█████╗░░░░██║░░░███████║  ██████╔╝███████║██████╔╝███████║
-# ░╚████╔╝░██║░╚═══██╗░░░██║░░░██╔══██║  ██╔═══╝░██╔══██║██╔══██╗██╔══██║
-# ░░╚██╔╝░░██║██████╔╝░░░██║░░░██║░░██║  ██║░░░░░██║░░██║██║░░██║██║░░██║
-# ░░░╚═╝░░░╚═╝╚═════╝░░░░╚═╝░░░╚═╝░░╚═╝  ╚═╝░░░░░╚═╝░░╚═╝╚═╝░░╚═╝╚═╝░░╚═╝
-
-# ██╗░░░██╗███████╗███╗░░██╗████████╗░█████╗░░██████╗  ███████╗███╗░░██╗
-# ██║░░░██║██╔════╝████╗░██║╚══██╔══╝██╔══██╗██╔════╝  ██╔════╝████╗░██║
-# ╚██╗░██╔╝█████╗░░██╔██╗██║░░░██║░░░███████║╚█████╗░  █████╗░░██╔██╗██║
-# ░╚████╔╝░██╔══╝░░██║╚████║░░░██║░░░██╔══██║░╚═══██╗  ██╔══╝░░██║╚████║
-# ░░╚██╔╝░░███████╗██║░╚███║░░░██║░░░██║░░██║██████╔╝  ███████╗██║░╚███║
-# ░░░╚═╝░░░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░╚═╝░░╚═╝╚═════╝░  ╚══════╝╚═╝░░╚══╝
-
-# ███████╗███████╗███████╗░█████╗░████████╗██╗██╗░░░██╗░█████╗░
-# ██╔════╝██╔════╝██╔════╝██╔══██╗╚══██╔══╝██║██║░░░██║██╔══██╗
-# █████╗░░█████╗░░█████╗░░██║░░╚═╝░░░██║░░░██║╚██╗░██╔╝██║░░██║
-# ██╔══╝░░██╔══╝░░██╔══╝░░██║░░██╗░░░██║░░░██║░╚████╔╝░██║░░██║
-# ███████╗██║░░░░░███████╗╚█████╔╝░░░██║░░░██║░░╚██╔╝░░╚█████╔╝
-# ╚══════╝╚═╝░░░░░╚══════╝░╚════╝░░░░╚═╝░░░╚═╝░░░╚═╝░░░░╚════╝░
-
-
-@login_required(login_url='/login')
-def ingresar_monto_efectivo(request):
-    carrito_items = CarritoItem.objects.filter(usuario=request.user)
-    total = sum(item.subtotal() for item in carrito_items)
-
-    if request.method == 'POST':
-        monto_vuelto = request.POST.get('monto_vuelto', '0.00')
-        monto_vuelto = monto_vuelto.replace('.', '').replace(',', '')
-        # Obtener el monto ingresado por el usuario
-        monto_efectivo = request.POST.get('monto_efectivo', '0')
-        monto_efectivo = monto_efectivo.replace('.', '').replace(',', '')
-        monto_efectivo = float(monto_efectivo)
-        if monto_efectivo >= total:
-            url_generar_venta = reverse('generar_venta', args=['venta_sin_restante', 'efectivo', monto_efectivo , monto_vuelto])
-            return redirect(url_generar_venta)
-        else:
-            # Redirigir a la vista seleccionar_metodo_pago_resto
-            url_seleccionar_metodo_pago_resto = reverse('seleccionar_metodo_pago_resto', args=[total, monto_efectivo])
-            return redirect(url_seleccionar_metodo_pago_resto)
-
-    context = {'total': total}
-    return render(request, 'ingresar_monto_efectivo.html', context)
-
-
-
-# ██╗░░░██╗███████╗███╗░░██╗████████╗░█████╗░  ░█████╗░░█████╗░███╗░░██╗  ███████╗██╗░░░░░
-# ██║░░░██║██╔════╝████╗░██║╚══██╔══╝██╔══██╗  ██╔══██╗██╔══██╗████╗░██║  ██╔════╝██║░░░░░
-# ╚██╗░██╔╝█████╗░░██╔██╗██║░░░██║░░░███████║  ██║░░╚═╝██║░░██║██╔██╗██║  █████╗░░██║░░░░░
-# ░╚████╔╝░██╔══╝░░██║╚████║░░░██║░░░██╔══██║  ██║░░██╗██║░░██║██║╚████║  ██╔══╝░░██║░░░░░
-# ░░╚██╔╝░░███████╗██║░╚███║░░░██║░░░██║░░██║  ╚█████╔╝╚█████╔╝██║░╚███║  ███████╗███████╗
-# ░░░╚═╝░░░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░╚═╝░░╚═╝  ░╚════╝░░╚════╝░╚═╝░░╚══╝  ╚══════╝╚══════╝
-
-# ██████╗░███████╗░██████╗████████╗░█████╗░███╗░░██╗████████╗███████╗
-# ██╔══██╗██╔════╝██╔════╝╚══██╔══╝██╔══██╗████╗░██║╚══██╔══╝██╔════╝
-# ██████╔╝█████╗░░╚█████╗░░░░██║░░░███████║██╔██╗██║░░░██║░░░█████╗░░
-# ██╔══██╗██╔══╝░░░╚═══██╗░░░██║░░░██╔══██║██║╚████║░░░██║░░░██╔══╝░░
-# ██║░░██║███████╗██████╔╝░░░██║░░░██║░░██║██║░╚███║░░░██║░░░███████╗
-# ╚═╝░░╚═╝╚══════╝╚═════╝░░░░╚═╝░░░╚═╝░░╚═╝╚═╝░░╚══╝░░░╚═╝░░░╚══════╝
-
-
-@login_required(login_url='/login')
-def seleccionar_metodo_pago_resto(request, total, monto_efectivo):
-    total = float(total)
-    monto_efectivo = float(monto_efectivo)
-    # Verifica si hay un restante por pagar (restante > 0)
-    restante = total - monto_efectivo
-    context = {'total': total, 'monto_efectivo': monto_efectivo, 'restante': restante}
-    if restante <= 0:
-        # Si no hay restante, redirige a la página de éxito o la que prefieras
-        return redirect('caja')  # Cambia 'pagina_exito' por la URL deseada
-
-    if request.method == 'POST':
-        # Obtén el método de pago seleccionado por el usuario
-        metodo_pago_seleccionado = request.POST.get('metodoPagoResto')
-        print(metodo_pago_seleccionado)
-        if metodo_pago_seleccionado == 'volver':
-            return redirect('seleccionar_metodo_pago')
-
-
-        
-        # Redirige a la vista para procesar el pago con los parámetros necesarios
-        return redirect('procesar_pago_restante', metodo_pago=metodo_pago_seleccionado, restante=restante)
-
-    # De lo contrario, renderiza la página de selección de método de pago
-    return render(request, 'seleccionar_metodo_pago_resto.html', context)
-
-@login_required(login_url='/login')
-def procesar_pago_restante(request, metodo_pago, restante):
-    url_generar_venta = reverse('generar_venta', args=['venta_con_restante', metodo_pago, restante ,'0'])
-    return redirect(url_generar_venta)
 
 
 # ██╗░░░░░██╗░██████╗████████╗░█████╗░██████╗░  ██╗░░░██╗███████╗███╗░░██╗████████╗░█████╗░░██████╗

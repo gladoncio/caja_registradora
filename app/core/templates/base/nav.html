@@ -39,7 +39,7 @@
         <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
             <!-- Sidebar - Brand -->
-            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{% url "index" %}">
+            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{% url "caja" %}">
                 <div class="sidebar-brand-icon rotate-n-15">
                     <i class="fas fa-fw fa-cash-register"></i>
                 </div>
@@ -50,7 +50,7 @@
             <hr class="sidebar-divider my-0">
 {% if user.is_authenticated %}
             <li class="nav-item active">
-                <a class="nav-link" href="{% url "index" %}">
+                <a class="nav-link" href="{% url "busqueda" %}">
                     <i class="fas fa-search me-2"></i> <!-- Icono de búsqueda -->
                     <span>Buscador de Precios</span>
                 </a>
@@ -300,6 +300,29 @@ function promptUpdate() {
                 // Establecer el valor formateado en el input sin cambiar el valor numérico
                 input.value = value;
               }
+
+
+              function numberWithCommas(x) {
+                if ({{configuracion.separador}} == "1"){
+                    var separador = ".";
+                    var decimales = ",";
+                }else{
+                    var separador = ",";
+                    var decimales = ".";
+                }
+                var parts = x.toString().split(".");
+                parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, separador);
+                return parts.join(decimales);
+                }
+
+                document.addEventListener('DOMContentLoaded', function() {
+                    var subtotalElements = document.querySelectorAll('.subtotal'); // Asigna una clase adecuada al elemento subtotal
+                    subtotalElements.forEach(function(element) {
+                        var subtotalValue = parseFloat(element.textContent.replace(/\D/g, ''));
+                        var formattedSubtotal = numberWithCommas(subtotalValue);
+                        element.textContent = "$" + formattedSubtotal;
+                    });
+                });
           </script>
 
 

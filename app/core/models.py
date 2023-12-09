@@ -57,8 +57,8 @@ class Marca(models.Model):
 class Producto(models.Model):
     id_producto = models.AutoField(primary_key=True)
     nombre = models.CharField(max_length=100)
-    valor_costo = models.DecimalField(max_digits=10, decimal_places=2, default=0 )
-    precio = models.DecimalField(max_digits=10, decimal_places=2)
+    valor_costo = models.DecimalField(max_digits=12, decimal_places=2, default=0 )
+    precio = models.DecimalField(max_digits=12, decimal_places=2)
     codigo_barras = models.CharField(max_length=20, unique=True, blank=True, null=True)
     gramaje = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
     foto = models.ImageField(upload_to='productos/', null=True, blank=True, default='productos/default.jpg')
@@ -78,6 +78,7 @@ class Producto(models.Model):
         ('gramaje', 'Artículo por gramaje'),
         ('valor', 'Articulo por valor')
     )
+    
     tipo_venta = models.CharField(max_length=10, choices=TIPO_VENTA_CHOICES, blank=False, null=False,default="unidad")
     
 
@@ -106,7 +107,7 @@ class CarritoItem(models.Model):
     cantidad = models.PositiveIntegerField(default=1)
     gramaje = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
     fecha_agregado = models.DateTimeField(auto_now_add=True)
-    valor =  models.DecimalField(max_digits=7, decimal_places=2, blank=True, null=True)
+    valor =  models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
         
     def subtotal(self):
         if self.producto.tipo_venta == 'gramaje':
@@ -116,7 +117,7 @@ class CarritoItem(models.Model):
             else:
                 subtotal = peso_en_gramos * self.producto.precio
         elif self.producto.tipo_venta == 'valor':
-            subtotal = self.valor
+            subtotal = self.valor * self.cantidad
         else:
             subtotal = self.cantidad * self.producto.precio
 

@@ -49,7 +49,7 @@
                 </div>
                 <div class="card-body release-card">
                     <div class="mt-4 resize-text" id="productList">
-                        <p class="h3 mb-4">Total: <span id="totalAmountDisplay">${{ total|floatformat:configuracion.decimales }}</span></p>
+                        <p class="h3 mb-4">Total: <span id="totalAmountDisplay" class="subtotal">${{ total|floatformat:configuracion.decimales }}</span></p>
                         <div class="d-flex">
                             <button id="generarBoletaBtn" class="btn boton-dinamico mr-2" onclick="redirectToSeleccionarMetodoPago()" {% if total <= 0 %}disabled{% endif %}>Generar Boleta</button>
                         
@@ -75,7 +75,7 @@
                                 {% for item in carrito_items %}
                                 <tr>
                                   <td>{{ item.producto.nombre }}</td>
-                                  <td>${{ item.subtotal|floatformat:configuracion.decimales }}</td>
+                                  <td class="subtotal">${{ item.subtotal|floatformat:configuracion.decimales|safe }}</td>
                                   {% if item.producto.codigo_barras %}
                                   <td>{{ item.producto.codigo_barras}}</td>
                                   {% else %}
@@ -87,7 +87,7 @@
                                   <td>{{ item.gramaje }} Gr</td>
                                     {% endif %}
                                     <td>
-                                        <a href="{% url 'eliminar_item' item_id=item.producto.id_producto %}" class="btn btn-danger btn-sm">Eliminar</a>
+                                        <a href="{% url 'eliminar_item' item_id=item.id %}" class="btn btn-danger btn-sm">Eliminar</a>
                                     </td>
                                 </tr>
                                 <!-- Modal para confirmar eliminación -->
@@ -223,9 +223,10 @@
     });
 </script>
 
+
 <!-- Footer -->
 {% include 'base/footer.html' %}
-<!-- End of Footer -->
+
 
 </div>
 <!-- End of Content Wrapper -->
@@ -241,9 +242,10 @@
     document.addEventListener("DOMContentLoaded", function() {
         // Obtiene el input por su ID o nombre, asegúrate de ajustarlo según tu formulario.
         var barcodeInput = document.getElementById("id_barcode");
-
         // Enfoca automáticamente en el input cuando se carga la página.
         barcodeInput.focus();
+
+        barcodeInput.value = '';
     });
 </script>
 
@@ -254,7 +256,7 @@
 </script>
 <script>
     function redirectToGenerarVenta() {
-        window.location.href = "{% url 'seleccionar_metodo_pago' %}";  // Reemplaza 'generar_venta' con la URL de tu vista.
+        window.location.href = "{% url 'seleccionar_metodo_pago' %}";  // Reemplaza 'generar_venta' con la URL 
     }
 </script>
 
