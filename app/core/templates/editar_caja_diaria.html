@@ -16,8 +16,8 @@
                       </ul>
                   </div>
                   {% endif %}
-                    <h2 class="resize-text">Monto Actual: ${{ form.instance.monto|floatformat:configuracion.decimales  }}</h2> <!-- Muestra el monto actual -->
-                    <h2 class="resize-text">Retiro Actual: ${{ form.instance.retiro|floatformat:configuracion.decimales  }}</h2> <!-- Muestra el retiro actual -->
+                    <h2 class="resize-text">Monto Actual: <span class="subtotal">{{ form.instance.monto|floatformat:configuracion.decimales  }}</span></h2> <!-- Muestra el monto actual -->
+                    <h2 class="resize-text">Retiro Actual: <span class="subtotal">{{ form.instance.retiro|floatformat:configuracion.decimales  }}</span></h2> <!-- Muestra el retiro actual -->
                     <form method="post">
                         {% csrf_token %}
                         <div class="form-group resize-text">

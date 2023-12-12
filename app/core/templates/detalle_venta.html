@@ -10,19 +10,19 @@
                 <div class="card-body resize-text solofondo">
                     <h5>ID de Venta: {{ venta.id }}</h5>
                     <p>Fecha y Hora: {{ venta.fecha_hora }}</p>
-                    <p>Vuelto: {{ venta.vuelto|floatformat:configuracion.decimales }}</p>
+                    <p>Vuelto: <span class="subtotal">{{ venta.vuelto|floatformat:configuracion.decimales }}</span></p>
 
-                    <p>Total: ${{ venta.total|floatformat:configuracion.decimales  }}</p>
+                    <p>Total: <span class="subtotal">{{ venta.total|floatformat:configuracion.decimales  }}</span></p>
 
                     <h3>Productos Vendidos:</h3>
                     <ul>
                         {% for producto_vendido in productos_vendidos %}
                             {% if producto_vendido.cantidad != 0 %}
                             <li>{{ producto_vendido.producto.nombre }} - Cantidad: {{ producto_vendido.cantidad }}
-                            <br>Subtotal: {{ producto_vendido.subtotal|floatformat:configuracion.decimales }}</li>
+                            <br>Subtotal: <span class="subtotal">{{ producto_vendido.subtotal|floatformat:configuracion.decimales }}</span></li>
                             {% else %}
                             <li>{{ producto_vendido.producto.nombre }} - Cantidad: {{ producto_vendido.gramaje|floatformat:configuracion.decimales }} Gramos
-                            <br>Subtotal: {{ producto_vendido.subtotal|floatformat:configuracion.decimales }}</li>
+                            <br>Subtotal: <span class="subtotal">{{ producto_vendido.subtotal|floatformat:configuracion.decimales }}</span></li>
                             {% endif %}
                             <!-- Puedes agregar más detalles del producto vendido si es necesario -->
                         {% endfor %}
@@ -31,7 +31,7 @@
                     <h3>Información de Pago:</h3>
                     <ul>
                         {% for forma_pago in formas_pago %}
-                            <li>Tipo de Pago: {{ forma_pago.get_tipo_pago_display }} - Monto: ${{ forma_pago.monto|floatformat:configuracion.decimales  }}</li>
+                            <li>Tipo de Pago: {{ forma_pago.get_tipo_pago_display }} - Monto: <span class="subtotal">{{ forma_pago.monto|floatformat:configuracion.decimales  }}</span></li>
                             <!-- Puedes agregar más detalles de la forma de pago si es necesario -->
                         {% endfor %}
                     </ul>

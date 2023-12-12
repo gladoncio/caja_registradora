@@ -306,7 +306,7 @@ def generar_venta(request, tipo_pago, restante, vuelto_inicial):
                 monto_efectivo_restante = abs(float(monto_efectivo_restante))
                 FormaPago.objects.create(venta=nueva_venta, tipo_pago=tipo_pago, monto=restante)
                 FormaPago.objects.create(venta=nueva_venta, tipo_pago="efectivo", monto=monto_efectivo_restante)
-            elif tipo_pago == "Efectivo" or tipo_pago =="Efectivo Justo": #si la venta contiene efectivo
+            elif tipo_pago == "efectivo" or tipo_pago =="Efectivo Justo": #si la venta contiene efectivo
                 FormaPago.objects.create(venta=nueva_venta, tipo_pago="efectivo", monto=total)
                 if abrir_caja_impresora():
                     messages.success(request, 'Caja abierta exitosamente.')

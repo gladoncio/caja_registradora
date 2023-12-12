@@ -25,7 +25,7 @@
                                     <td>{{ gasto.usuario }}</td>
                                     <td>{{ gasto.fecha_hora }}</td>
                                     <td>{{ gasto.descripcion }}</td>
-                                    <td>${{ gasto.monto|floatformat:2 }}</td>
+                                    <td class="subtotal">${{ gasto.monto|floatformat:configuracion.decimales }}</td>
                                 </tr>
                             {% endfor %}
                         </tbody>

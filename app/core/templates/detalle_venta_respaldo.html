@@ -9,7 +9,7 @@
                 <div class="card-body resize-text solofondo">
                     <h5>ID de Venta Respaldo: {{ venta_respaldo.id }}</h5>
                     <p>Fecha y Hora: {{ venta_respaldo.fecha_hora }}</p>
-                    <p>Total: ${{ venta_respaldo.total|floatformat:configuracion.decimales }}</p>
+                    <p>Total: <span class="subtotal">{{ venta_respaldo.total|floatformat:configuracion.decimales }}</span></p>
 
                     <h3>Productos Vendidos:</h3>
                     <ul>

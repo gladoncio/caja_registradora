@@ -16,12 +16,12 @@
                 
                 <div class="card-body resize-text solofondo">
                 
-                    <p>Total en Efectivo: ${{ monto_efectivo|floatformat:configuracion.decimales }}</p>
-                    <p>Total en Débito: ${{ monto_debito|floatformat:configuracion.decimales }}</p>
-                    <p>Total en Transferencia: ${{ monto_transferencia|floatformat:configuracion.decimales }}</p>
-                    <p>Total de Retiro: ${{ monto_retiro|floatformat:configuracion.decimales }}</p>
-                    <p>Total de gastos: ${{ gastos|floatformat:configuracion.decimales }}</p>
-                    <p>Caja diaria: ${{ monto_caja|floatformat:configuracion.decimales }}</p>     
+                    <p>Total en Efectivo: <span class="subtotal">{{ monto_efectivo|floatformat:configuracion.decimales }}</span></p>
+                    <p>Total en Débito: <span class="subtotal">{{ monto_debito|floatformat:configuracion.decimales }}</span></p>
+                    <p>Total en Transferencia: <span class="subtotal">{{ monto_transferencia|floatformat:configuracion.decimales }}</span></p>
+                    <p>Total de Retiro: <span class="subtotal">{{ monto_retiro|floatformat:configuracion.decimales }}</span></p>
+                    <p>Total de gastos: <span class="subtotal">{{ gastos|floatformat:configuracion.decimales }}</span></p>
+                    <p>Caja diaria: <span class="subtotal">{{ monto_caja|floatformat:configuracion.decimales }}</span></p>     
                     <p>Total efectivo ( Descontando Retiro, Gastos y Caja Diaria): ${{ caja_que_deberia|floatformat:configuracion.decimales }}</p>
 
                 </div>
