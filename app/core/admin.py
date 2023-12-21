@@ -20,6 +20,7 @@ admin.site.register(VentaRespaldo)
 #admin.site.register(VentaProductoRespaldo)
 #admin.site.register(FormaPagoRespaldo)
 admin.site.register(GastoCaja)
+admin.site.register(ProductoRapido)
 
 
 

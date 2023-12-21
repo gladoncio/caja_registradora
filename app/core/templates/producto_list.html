@@ -32,6 +32,16 @@
             <td>{{ producto.marca }}</td>
             <td>
               <a href="{% url 'producto-editar' producto.id_producto %}" class="btn boton-dinamico btn-sm">Editar</a>
+              {% if not producto.productorapido_count %}
+              {# El producto no existe en ProductoRapido, mostrar el botón para agregar #}
+              <a href="{% url 'agregar_producto_rapido' producto.id_producto %}" class="btn boton-dinamico btn-sm">Agregar como producto rapido</a>
+              {% elif producto.productorapido_count >= 3 %}
+              {# Ya hay 3 productos rápidos asociados, no mostrar el botón para agregar más #}
+              <p>Ya has alcanzado el límite de productos rápidos para este producto.</p>
+            {% else %}
+              {# El producto existe en ProductoRapido, mostrar el botón para eliminar #}
+              <a href="{% url 'eliminar_producto_rapido' producto.id_producto %}" class="btn btn-danger btn-sm">Eliminar de producto rapido</a>
+            {% endif %}
             </td>
           </tr>
         {% empty %}

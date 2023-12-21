@@ -85,6 +85,12 @@ class Producto(models.Model):
     def __str__(self):
         return self.nombre
 
+class ProductoRapido(models.Model):
+    producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"Producto rapido id {self.id} - {self.producto.nombre}"
+
 
 class Stock(models.Model):
     producto = models.OneToOneField(Producto, on_delete=models.CASCADE, primary_key=True)

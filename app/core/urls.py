@@ -56,7 +56,8 @@ urlpatterns = [
     path('impresora-si-conectada/', impresora_si_conectada, name='impresora_si_conectada'),
     path('cambiar_usuario/<int:usuario_id>/', cambiar_usuario, name='cambiar_usuario'),
     path('cambiar_clave_anulacion/<int:usuario_id>/', cambiar_clave_anulacion, name='cambiar_clave_anulacion'),
-    
+    path('agregar_producto_rapido/<int:producto_id>/', agregar_producto_rapido, name='agregar_producto_rapido'),
+    path('eliminar_producto_rapido/<int:producto_id>/', eliminar_producto_rapido, name='eliminar_producto_rapido'),
 ]
 
     

@@ -43,6 +43,7 @@ from .impresora import abrir_caja_impresora, imprimir, imprimir_en_xprinter, gen
 import locale
 from django.utils.formats import date_format
 import json
+from django.db.models import Count
 
 
 
@@ -84,11 +85,14 @@ def busqueda(request):
 # ░╚════╝░╚═╝░░╚═╝░╚════╝░╚═╝░░╚═╝
 @login_required(login_url='/login')
 def caja(request):
+    #Definiendo variables
     accion = "nada"
     id = 0
     config = Configuracion.objects.get(id=1)
     carrito_items = CarritoItem.objects.filter(usuario=request.user).order_by('-fecha_agregado')
     total = sum(item.subtotal() for item in carrito_items)
+    productos_rapidos = ProductoRapido.objects.all()
+
     if request.method == 'POST':
         form = BarcodeForm(request.POST)
         if form.is_valid():
@@ -100,7 +104,7 @@ def caja(request):
                         try:
                             stock = producto.stock
                         except ObjectDoesNotExist:
-                        # Si el objeto Stock no existe, maneja la situación aquí
+                            # Si el objeto Stock no existe, maneja la situación aquí
                             messages.success(request, 'El producto no tiene Stock.')
                             return redirect(caja)
                     # Busca si ya existe un carrito_item con el mismo producto y usuario
@@ -119,14 +123,14 @@ def caja(request):
                     id_producto = producto.id_producto
                     accion = "variable"
                     form_valor = ValorForm(request.POST)
-                    context = {'form': form,'carrito_items': carrito_items, 'total': total, 'accion' : accion, 'id_producto' : id_producto, 'form_valor' : form_valor}
+                    context = {'form': form,'carrito_items': carrito_items, 'total': total, 'accion' : accion, 'id_producto' : id_producto, 'form_valor' : form_valor, 'productos_rapidos' : productos_rapidos,}
                     return render(request, 'caja.html', context)
                 else:
                     messages.success(request, 'El producto es por gramaje.')
             except Producto.DoesNotExist:
                 productos_similares = Producto.objects.filter(nombre__icontains=barcode)
                 if productos_similares.exists():
-                    return render(request, 'caja.html', {'form': form, 'carrito_items': carrito_items, 'total': total, 'productos_similares': productos_similares, 'id_producto' : id})
+                    return render(request, 'caja.html', {'form': form, 'carrito_items': carrito_items, 'total': total, 'productos_similares': productos_similares, 'id_producto' : id ,'productos_rapidos' : productos_rapidos,})
                     pass
                 else:
                     print("no confidencias ni existencias")
@@ -139,10 +143,11 @@ def caja(request):
         'form': form,
         'carrito_items': carrito_items,
         'total' : total,
-        'id_producto' : id
-        # Otros datos de contexto que necesites
+        'id_producto' : id,
+        'productos_rapidos' : productos_rapidos,
     }
     return render(request, 'caja.html', context)
+
 
 @login_required(login_url='/login')
 def agregar_producto_al_carrito(request, id_producto):
@@ -1676,30 +1681,33 @@ def ingresar_gasto(request):
     return render(request, 'ingresar_gasto.html', {'form': form})
 
 class ProductoListView(ListView):
-    model = Producto  # Modelo a utilizar
-    template_name = 'producto_list.html'  # Nombre de la plantilla HTML para mostrar la lista de productos
-    context_object_name = 'productos'  # Nombre de la variable de contexto en la plantilla
-    paginate_by = 10  # Cantidad de productos por página
+    model = Producto
+    template_name = 'producto_list.html'
+    context_object_name = 'productos'
+    paginate_by = 10
 
     def get_queryset(self):
         query = self.request.GET.get('q')
-        departamento_id = self.request.GET.get('departamento_id')  # Obtener el ID del departamento de la URL
+        departamento_id = self.request.GET.get('departamento_id')
+
         if query == "None":
             return Producto.objects.filter(departamento__isnull=True)
+
+        queryset = Producto.objects.annotate(productorapido_count=Count('productorapido'))
+
         if query:
-            # Realizar la búsqueda por nombre, descripción, código de barras y departamento
-            return Producto.objects.filter(
+            queryset = queryset.filter(
                 Q(nombre__icontains=query) |
                 Q(descripcion__icontains=query) |
                 Q(codigo_barras__icontains=query) |
-                Q(departamento__nombre__icontains=query)  # Reemplaza 'nombre' por el campo correcto de Departamento
+                Q(departamento__nombre__icontains=query)
             )
 
         elif departamento_id:
-            # Filtrar por departamento si se proporciona el ID del departamento en la URL
-            return Producto.objects.filter(departamento_id=departamento_id)
-        else:
-            return Producto.objects.all()
+            queryset = queryset.filter(departamento_id=departamento_id)
+
+        return queryset
+
         
 
 
@@ -1796,3 +1804,28 @@ def cambiar_clave_anulacion(request, usuario_id):
         form = CambiarClaveAnulacionForm(instance=usuario)
 
     return render(request, 'editar_clave_anulacion.html', {'form': form})
+
+
+def agregar_producto_rapido(request, producto_id):
+    producto = get_object_or_404(Producto, id_producto=producto_id)
+
+    # Crea un nuevo ProductoRapido asociado al producto
+    producto_rapido = ProductoRapido.objects.create(producto=producto)
+
+    # Puedes devolver una respuesta JSON indicando el éxito
+    messages.success(request, 'El producto se agrego como producto rapido.')
+    return redirect('producto-list')
+
+
+
+def eliminar_producto_rapido(request, producto_id):
+    # Busca el ProductoRapido asociado al Producto por su ID
+    producto_rapido = get_object_or_404(ProductoRapido, producto_id=producto_id)
+
+    # Elimina el ProductoRapido
+    producto_rapido.delete()
+
+    # Puedes devolver una respuesta JSON indicando el éxito
+    messages.success(request, 'El producto se eliminó de producto rapido.')
+    return redirect('producto-list')
+

@@ -7,13 +7,13 @@
 <div class="container-fluid">
     <!-- Page Heading -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0" id="titulo">Caja{{accion}}</h1>
+        <h1 class="h3 mb-0" id="titulo">Caja</h1>
     </div>
 
 <!-- Barcode Input -->
     <div class="row mb-3">
         <div class="col-lg-6">
-            <form method="post">
+            <form method="post" id="barcodeForm">
                 {% csrf_token %}
                 <div class="input-group">
                     {{ form.barcode }}
@@ -25,12 +25,28 @@
         </div>
     </div>
 
+    {% if productos_rapidos %}
+    <h1>Productos Rápidos</h1>
+    <div class="row">
+        {% for producto_rapido in productos_rapidos %}
+            <div class="col-lg-2 mb-2">
+                <button class="btn btn-block btn-producto-rapido boton-dinamico" data-codigo-barras="{{ producto_rapido.producto.codigo_barras }}" data-numero="{{ forloop.counter }}">
+                    {{ forloop.counter }}. {{ producto_rapido.producto.nombre }}
+                </button>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
 
 
 
 
-        <!-- Messages -->
-        {% if messages %}
+
+
+
+<!-- Messages -->
+<div id="messages">
+    {% if messages %}
         <div class="alert alert-dismissible fade show" role="alert">
             {% for message in messages %}
                 <div class="alert alert-{{ message.tags }} resize-text">
@@ -38,7 +54,9 @@
                 </div>
             {% endfor %}
         </div>
-        {% endif %}
+    {% endif %}
+</div>
+
     
     <div class="row">
         <!-- Product Management -->
@@ -74,17 +92,17 @@
                             <tbody id="productListBody">
                                 {% for item in carrito_items %}
                                 <tr>
-                                  <td>{{ item.producto.nombre }}</td>
-                                  <td class="subtotal">${{ item.subtotal|floatformat:configuracion.decimales|safe }}</td>
-                                  {% if item.producto.codigo_barras %}
-                                  <td>{{ item.producto.codigo_barras}}</td>
-                                  {% else %}
-                                  <td>No tiene codigo de Barras</td>
-                                  {% endif %}
-                                  {% if item.cantidad != 0 %}
-                                  <td>{{ item.cantidad }}</td>
-                                  {% else %}
-                                  <td>{{ item.gramaje }} Gr</td>
+                                    <td>{{ item.producto.nombre }}</td>
+                                    <td class="subtotal">${{ item.subtotal|floatformat:configuracion.decimales|safe }}</td>
+                                    {% if item.producto.codigo_barras %}
+                                    <td>{{ item.producto.codigo_barras}}</td>
+                                    {% else %}
+                                    <td>No tiene codigo de Barras</td>
+                                    {% endif %}
+                                    {% if item.cantidad != 0 %}
+                                    <td>{{ item.cantidad }}</td>
+                                    {% else %}
+                                    <td>{{ item.gramaje }} Gr</tdd>
                                     {% endif %}
                                     <td>
                                         <a href="{% url 'eliminar_item' item_id=item.id %}" class="btn btn-danger btn-sm">Eliminar</a>
@@ -197,9 +215,6 @@
     });
   </script>
   
-  
-  
-  
 <!-- Agrega un script JavaScript al final de la página para abrir el modal automáticamente -->
 <script>
     document.addEventListener("DOMContentLoaded", function() {
@@ -270,23 +285,93 @@
 </script>
 
     
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Maneja el evento de hacer clic en los botones de productos rápidos
+        $('.btn-producto-rapido').on('click', function() {
+            var codigoBarras = $(this).data('codigo-barras');
+            var numeroProducto = $(this).data('numero');
 
+            // Establece el valor en el campo de formulario
+            $('#id_barcode').val(codigoBarras);
 
+            // Puedes usar el número del producto (numeroProducto) en tu lógica aquí
+            console.log("Número del producto:", numeroProducto);
 
+            // Envía automáticamente el formulario
+            $('form#barcodeForm').submit();
+        });
+    });
+</script>
 
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Variable para indicar si ya se ha presionado la tecla "-"
+        var teclaMenosPresionada = false;
 
+        // Variable para almacenar el elemento del mensaje
+        var mensajeElemento = null;
 
+        // Diccionario de códigos de barras para productos rápidos
+        var codigosBarrasProductosRapidos = {
+            {% for producto_rapido in productos_rapidos %}
+                "{{ forloop.counter }}": "{{ producto_rapido.producto.codigo_barras }}",
+            {% endfor %}
+        };
 
+        // Función para activar la escucha de teclas
+        document.addEventListener("keydown", function(event) {
+            // Verifica si la tecla presionada es "-"
+            if (event.key === "-" && !teclaMenosPresionada) {
+                // Muestra un mensaje al usuario en la sección de mensajes
+                var nuevoMensaje = '<div class="alert alert-warning resize-text" id="mensajeTeclaMenos">Por favor, presiona un número después de "-"</div>';
+                $('#messages').append(nuevoMensaje);
 
+                // Almacena el elemento del mensaje
+                mensajeElemento = $('#mensajeTeclaMenos');
 
+                // Establece la variable para indicar que se ha mostrado el mensaje
+                teclaMenosPresionada = true;
+            } else if (teclaMenosPresionada) {
+                // Verifica si la tecla presionada es un número válido
+                var numeroPresionado = event.key;
 
+                // Verifica si el número presionado está en el diccionario de códigos de barras
+                if (codigosBarrasProductosRapidos.hasOwnProperty(numeroPresionado)) {
+                    // Obtiene el código de barras del diccionario
+                    var codigoBarrasSeleccionado = codigosBarrasProductosRapidos[numeroPresionado];
 
+                    // Obtiene el valor actual del campo de formulario
+                    var valorActual = $('#id_barcode').val();
 
+                    // Elimina el último dígito del valor actual (si existe)
+                    var nuevoValor = valorActual.substring(0, valorActual.length - 1);
 
+                    // Agrega el código de barras al valor actual
+                    nuevoValor += codigoBarrasSeleccionado;
 
+                    // Asigna el nuevo valor al campo de formulario
+                    $('#id_barcode').val(nuevoValor);
 
+                    console.log("Número presionado:", numeroPresionado);
 
+                    // Restablece la variable para volver a escuchar la tecla "-"
+                    teclaMenosPresionada = false;
 
+                    $('form#barcodeForm').submit();
+                } else {
+                    // Si el número no es válido, elimina el mensaje y reinicia el proceso
+                    teclaMenosPresionada = false;
+
+                    // Elimina el mensaje
+                    if (mensajeElemento) {
+                        mensajeElemento.remove();
+                    }
+                }
+            }
+        });
+    });
+</script>
 
 
 
