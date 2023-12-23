@@ -1927,12 +1927,12 @@ def general_dia_especifico(request):
 
         # imprimir_en_xprinter(content)
         # return response
-        if request.method == 'POST':
-            print("imprimiendo reporte")
-            try:
-                imprimir_en_xprinter(content)
-            except:
-                pass
+            if request.method == 'POST':
+                print("imprimiendo reporte")
+                try:
+                    imprimir_en_xprinter(content)
+                except:
+                    pass
 
         else:
             # Si no hay transacciones posteriores, establecer context como un diccionario vacío
