@@ -1905,10 +1905,10 @@ def general_dia_especifico(request):
                 content += "--------------------------\n"
                 
                 content += "Ventas del día.\n"
-                content += "Total en Efectivo: ${:.{}f}\n".format(context['monto_efectivo'] if context['monto_efectivo'] is not None else 0, decimales)
-                content += "Total en Débito: ${:.{}f}\n".format(context['monto_debito'] if context['monto_debito'] is not None else 0, decimales)
-                content += "Total en Transferencia: ${:.{}f}\n".format(context['monto_transferencia'] if context['monto_transferencia'] is not None else 0, decimales)
-                content += "Total de Retiro: ${:.{}f}\n".format(context['monto_retiro'] if context['monto_retiro'] is not None else 0, decimales)
+                content += "Total en Efectivo: ${:.{}f}\n".format(context['total_efectivo'] if context['total_efectivo'] is not None else 0, decimales)
+                content += "Total en Débito: ${:.{}f}\n".format(context['total_debito'] if context['total_debito'] is not None else 0, decimales)
+                content += "Total en Transferencia: ${:.{}f}\n".format(context['total_transferencia'] if context['total_transferencia'] is not None else 0, decimales)
+                content += "Total de Retiro: ${:.{}f}\n".format(context['total_retiro'] if context['total_retiro'] is not None else 0, decimales)
                 content += "Total de gastos: ${:.{}f}\n".format(context['total_gastos'] if context['total_gastos'] is not None else 0, decimales)
                 content += "Caja Diaria: ${:.{}f}\n".format(context['valor_caja_diaria'] if context['valor_caja_diaria'] is not None else 0, decimales)
                 content += "Total Neto General: ${:.{}f}\n".format(context['total'] if context['total'] is not None else 0, decimales)
