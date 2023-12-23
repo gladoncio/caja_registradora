@@ -1,0 +1,89 @@
+{% extends 'base/nav.html' %}
+
+{% block body %}
+{% if messages %}
+<div class="messages">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}" role="alert">
+        {{ message }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="container-fluid">
+    <h1 class="h3 mb-4" id="titulo">Lista de Ventas</h1>
+    
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow mb-4">
+                <div class="card-body solofondo">
+                    <div class="table-responsive">
+                        <table class="table table-bordered resize-text texto" id="dataTable" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Fecha y Hora</th>
+                                    <th>Total</th>
+                                    <th>Acciones</th>  <!-- Columna para botones de acción -->
+                                    <th>Anular</th>  
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if ventas %}
+                                {% for venta in ventas %}
+                                <tr>
+                                    <td>{{ venta.id }}</td>
+                                    <td>{{ venta.fecha_hora }}</td>
+                                    <td class="subtotal">${{ venta.total|floatformat:configuracion.decimales  }}</td>
+                                    <td>
+                                        <!-- Agrega un botón para ver el detalle de la venta -->
+                                        <a href="{% url 'detalle_venta' venta.id %}" class="btn boton-dinamico btn-sm">Ver Detalle</a>
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-danger btn-sm" data-toggle="modal" data-target="#eliminarModal{{ venta.id }}">Eliminar</button>
+                                    </td>
+                                    <div class="modal fade" id="eliminarModal{{ venta.id }}" tabindex="-1" role="dialog" aria-labelledby="eliminarModalLabel{{ venta.id }}" aria-hidden="true">
+                                        <div class="modal-dialog resize-text" role="document">
+                                            <div class="modal-content">
+                                                <div class="modal-header solofondo">
+                                                    <h5 class="modal-title" id="eliminarModalLabel{{ venta.id }}">Confirmar Eliminación</h5>
+                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button>
+                                                </div>
+                                                <form method="post" action="{% url 'eliminar_venta' venta.id %}">
+                                                    {% csrf_token %}
+                                                    <div class="modal-body solofondo">
+                                                        <p>¿Estás seguro que deseas anular esta venta?</p>
+                                                        <input type="password" class="resize-text form-control onlyinput" name="contraseña" class="form-control" placeholder="Contraseña" required>
+                                                    </div>
+                                                    <div class="modal-footer solofondo">
+                                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                                                        <button type="submit" class="btn btn-danger">Eliminar</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>                                    
+                                    
+                                </tr>
+                                {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% include 'base/footer.html' %}
+<!-- End of Footer -->
+
+
+<!-- End of Content Wrapper -->
+{% include 'base/logout.html' %}
+{% endblock %}

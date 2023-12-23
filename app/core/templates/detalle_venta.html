@@ -35,9 +35,9 @@
                             <!-- Puedes agregar más detalles de la forma de pago si es necesario -->
                         {% endfor %}
                     </ul>
-
-                    <a href="{% url 'listar_ventas' %}" class="btn btn-secondary">Volver</a>
-                    <a href="#" id="imprimir-venta" class="btn btn-primary">Imprimir Venta</a>
+                    
+                    <a id="botonVolver" class="btn btn-secondary">Volver</a>
+                    <a href="#" id="imprimir-venta" class="btn boton-dinamico">Imprimir Venta</a>
                     <div id="resultado-impresion"></div>
                 </div>
             </div>
@@ -72,5 +72,13 @@
         });
     });
     </script>
+
+    <script>
+        document.getElementById('botonVolver').addEventListener('click', function() {
+            // Utiliza el historial del navegador para volver a la página anterior
+            window.history.back();
+        });
+    </script>
+    
 
 {% endblock %}

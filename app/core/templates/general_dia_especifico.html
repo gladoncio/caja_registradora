@@ -2,12 +2,38 @@
 
 {% block body %}
 
+
+
 <div class="container-fluid">
-    <h1 class="h3 resize-text" id="titulo">Informe General</h1>
+    <h1 class="h3 mb-4" id="titulo">General Dia especifico</h1>
+    <form method="GET" action="#" class="mb-4">
+        <div class="form-row resize-text">
+            <div class="col">
+                <input type="date" name="fecha" class="form-control resize-text onlyinput" placeholder="Fecha" value="{{ request.GET.fecha }}">
+            </div>
+            <div class="col">
+                <input type="time" name="hora" class="form-control resize-text onlyinput" placeholder="Hora" value="{{ request.GET.hora }}">
+            </div>
+            <div class="col">
+                <button type="submit" class="btn boton-dinamico resize-text">Buscar</button>
+            </div>
+        </div>
+    </form>
+    
+
+
     <form id="imprimir-form" method="post">
         {% csrf_token %}
         <button type="submit" class="btn boton-dinamico mb-4">Imprimir</button>
     </form>
+    <div class="row">
+        <div class="col-lg-12">
+            {% if request.GET.fecha and request.GET.hora %}
+                <a href="{% url 'ventas_dia_especifico' %}?fecha={{ request.GET.fecha }}&hora={{ request.GET.hora }}" class="btn boton-dinamico mb-4">Ir a Detalle de Ventas</a>
+            {% endif %}
+        </div>
+    </div>
+    {% if request.GET.fecha and request.GET.hora %}    
     <div class="row">
         
         <div class="col-lg-12">
@@ -16,26 +42,25 @@
                 
                 <div class="card-body resize-text solofondo">
                 
-                    <p>Total en Efectivo: <span class="subtotal">{{ monto_efectivo|floatformat:configuracion.decimales }}</span></p>
-                    <p>Total en Débito: <span class="subtotal">{{ monto_debito|floatformat:configuracion.decimales }}</span></p>
-                    <p>Total en Transferencia: <span class="subtotal">{{ monto_transferencia|floatformat:configuracion.decimales }}</span></p>
-                    <p>Total de Retiro: <span class="subtotal">{{ monto_retiro|floatformat:configuracion.decimales }}</span></p>
-                    <p>Total de gastos: <span class="subtotal">{{ gastos|floatformat:configuracion.decimales }}</span></p>
-                    <p>Caja diaria: <span class="subtotal">{{ monto_caja|floatformat:configuracion.decimales }}</span></p>     
-                    <p>Total efectivo ( Descontando Retiro, Gastos y Caja Diaria): ${{ caja_que_deberia|floatformat:configuracion.decimales }}</p>
+                    <p>Total en Efectivo: <span class="subtotal">{{total_efectivo|floatformat:configuracion.decimales}}</span></p>
+                    <p>Total en Débito: <span class="subtotal">{{total_debito|floatformat:configuracion.decimales}}</span></p>
+                    <p>Total en Transferencia: <span class="subtotal">{{total_transferencia|floatformat:configuracion.decimales}}</span></p>
+                    <p>Total de Retiro: <span class="subtotal">{{total_retiro|floatformat:configuracion.decimales}}</span></p>
+                    <p>Total de gastos: <span class="subtotal">{{total_gastos|floatformat:configuracion.decimales}}</span></p>
+                    <p>Caja diaria: <span class="subtotal">{{valor_caja_diaria|floatformat:configuracion.decimales}}</span></p>     
                 </div>
             </div>
         </div>
     </div>
 
-    {% if total_bruto_general.total_bruto >= 0 %}
+    {% if total >= 0 %}
     <div class="row">
         <div class="col-lg-12">
             <div class="card shadow mb-4">
                 <div class="card-body resize-text solofondo">
                     <h3>Totales Generales</h3>
                     {% comment %} <p>Total Bruto General: ${{ total_bruto_general.total_bruto|floatformat:configuracion.decimales }}</p> {% endcomment %}
-                    <p>Total Neto General: <span class="subtotal">{{ total_bruto_general.total_neto|floatformat:configuracion.decimales }}</span></p>
+                    <p>Total Neto General: <span class="subtotal">{{total|floatformat:configuracion.decimales}}</span></p>
                 </div>
             </div>
         </div>
@@ -64,8 +89,8 @@
                                 {% else %}
                                 <td>{{ venta_por_departamento.departamento }}</td>
                                 {% endif %}
-                                <td>${{ venta_por_departamento.total_ventas|floatformat:configuracion.decimales }}</td>
-                                <td>${{ venta_por_departamento.total_ventas|floatformat:configuracion.decimales }}</td>
+                                <td>$</td>
+                                <td>$</td>
                             </tr>
                         {% endfor %}
                         </tbody>
@@ -76,7 +101,7 @@
     </div>
 
 </div>
-
+{% endif %}
 
 
 {% include 'base/footer.html' %}

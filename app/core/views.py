@@ -8,7 +8,7 @@ from django.views import View
 from django.contrib import messages
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
-from django.db.models import F,Q,Max
+from django.db.models import F,Q,Max, Min
 from decimal import Decimal
 import datetime
 from escpos.printer import Usb
@@ -19,7 +19,7 @@ import os
 import shutil
 import subprocess
 import zipfile
-from datetime import datetime
+from datetime import datetime, timedelta
 from .funciones import check_github_version
 import barcode
 from barcode import generate
@@ -1829,3 +1829,109 @@ def eliminar_producto_rapido(request, producto_id):
     messages.success(request, 'El producto se eliminó de producto rapido.')
     return redirect('producto-list')
 
+def general_dia_especifico(request):
+  # Obtener la fecha y la hora del formulario
+    fecha = request.GET.get('fecha')
+    hora = request.GET.get('hora')
+
+    # Obtener todos los gastos del día seleccionado en el rango de tiempo especificado
+
+
+    # Verificar si tanto fecha como hora están presentes
+    if fecha and hora:
+        # Combinar fecha y hora para obtener un objeto DateTime
+        fecha_hora_inicio = datetime.strptime(f"{fecha} {hora}", "%Y-%m-%d %H:%M")
+
+        # Obtener la fecha anterior
+        fecha_anterior = RegistroTransaccion.objects.filter(fecha_ingreso__lt=fecha_hora_inicio).aggregate(Max('fecha_ingreso'))['fecha_ingreso__max']
+
+        # Obtener la fecha siguiente
+        fecha_siguiente = RegistroTransaccion.objects.filter(fecha_ingreso__gt=fecha_hora_inicio).aggregate(Min('fecha_ingreso'))['fecha_ingreso__min']
+
+                # Verificar si hay al menos una transacción después de la fecha actual
+        if fecha_siguiente is None:
+            fecha_siguiente = datetime.max
+
+        if fecha_anterior is None:
+            fecha_anterior = datetime.min
+        # Obtener la fecha de inicio del día
+        fecha_inicio_dia = datetime.strptime(f"{fecha} 00:00", "%Y-%m-%d %H:%M")
+
+        # Obtener todas las transacciones del día seleccionado
+        transacciones = RegistroTransaccion.objects.filter(fecha_ingreso__gte=fecha_inicio_dia, fecha_ingreso__lt=fecha_inicio_dia + timedelta(days=1))
+
+        # Filtrar las transacciones para obtener el registro más cercano posterior a la hora especificada
+        transaccion_posterior = transacciones.filter(fecha_ingreso__gt=fecha_hora_inicio).order_by('fecha_ingreso').first()
+        
+        gastos_filtrados = GastoCaja.objects.filter(
+                fecha_hora__gte=fecha_anterior,
+                fecha_hora__lt=fecha_siguiente
+            )
+        
+        
+
+        # Calcular el total de los gastos
+        total_gastos = gastos_filtrados.aggregate(Sum('monto'))['monto__sum'] or 0
+
+
+
+        if transaccion_posterior:
+            # Calcular las cantidades totales para cada tipo de pago del registro encontrado
+            total_efectivo = transaccion_posterior.monto_efectivo
+            total_debito = transaccion_posterior.monto_debito
+            total_transferencia = transaccion_posterior.monto_transferencia
+            total_retiro = transaccion_posterior.monto_retiro
+            total_valor_caja = transaccion_posterior.valor_caja_diaria
+            total = transaccion_posterior.monto_total
+
+            # Pasar los resultados al contexto
+            context = {
+                'total_efectivo': total_efectivo,
+                'total_debito': total_debito,
+                'total_transferencia': total_transferencia,
+                'total_retiro': total_retiro,
+                'valor_caja_diaria': total_valor_caja,
+                'total_gastos': total_gastos,
+                'total' : total,
+            }
+        else:
+            # Si no hay transacciones posteriores, establecer context como un diccionario vacío
+            context = {}
+    else:
+        # Si fecha o hora es None, establecer context como un diccionario vacío
+        context = {}
+
+    # Renderizar la plantilla con el contexto
+    return render(request, 'general_dia_especifico.html', context)
+
+def ventas_dia_especifico(request):
+      # Obtener la fecha y la hora del formulario
+    fecha = request.GET.get('fecha')
+    hora = request.GET.get('hora')
+            # Combinar fecha y hora para obtener un objeto DateTime
+    fecha_hora_inicio = datetime.strptime(f"{fecha} {hora}", "%Y-%m-%d %H:%M")
+    # Obtener la fecha anterior
+    fecha_anterior = RegistroTransaccion.objects.filter(fecha_ingreso__lt=fecha_hora_inicio).aggregate(Max('fecha_ingreso'))['fecha_ingreso__max']
+    # Obtener la fecha siguiente
+    fecha_siguiente = RegistroTransaccion.objects.filter(fecha_ingreso__gt=fecha_hora_inicio).aggregate(Min('fecha_ingreso'))['fecha_ingreso__min']
+            # Verificar si hay al menos una transacción después de la fecha actual
+    if fecha_siguiente is None:
+        fecha_siguiente = datetime.max
+    if fecha_anterior is None:
+        fecha_anterior = datetime.min
+
+    ventas = Venta.objects.filter(
+        fecha_hora__gte=fecha_anterior,
+        fecha_hora__lt=fecha_siguiente
+    )
+        
+    
+
+    context = {
+        'ventas' : ventas
+    }
+
+    
+
+
+    return render(request, 'ventas_dia_especifico.html', context)
