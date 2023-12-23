@@ -1830,6 +1830,8 @@ def eliminar_producto_rapido(request, producto_id):
     return redirect('producto-list')
 
 def general_dia_especifico(request):
+    config = Configuracion.objects.get(id=1)
+    decimales = config.decimales
   # Obtener la fecha y la hora del formulario
     fecha = request.GET.get('fecha')
     hora = request.GET.get('hora')
@@ -1894,6 +1896,44 @@ def general_dia_especifico(request):
                 'total_gastos': total_gastos,
                 'total' : total,
             }
+            def generar_comandos_de_impresion(context, decimales):
+                # Inicializa una cadena vacía para almacenar los comandos de impresión
+                content = ""
+                content += "--------------------------\n"
+                content += "Reporte\n"
+                content += "Fecha: {}\n".format(timezone.now().strftime('%Y-%m-%d %H:%M:%S'))
+                content += "--------------------------\n"
+                
+                content += "Ventas del día.\n"
+                content += "Total en Efectivo: ${:.{}f}\n".format(context['monto_efectivo'] if context['monto_efectivo'] is not None else 0, decimales)
+                content += "Total en Débito: ${:.{}f}\n".format(context['monto_debito'] if context['monto_debito'] is not None else 0, decimales)
+                content += "Total en Transferencia: ${:.{}f}\n".format(context['monto_transferencia'] if context['monto_transferencia'] is not None else 0, decimales)
+                content += "Total de Retiro: ${:.{}f}\n".format(context['monto_retiro'] if context['monto_retiro'] is not None else 0, decimales)
+                content += "Total de gastos: ${:.{}f}\n".format(context['total_gastos'] if context['total_gastos'] is not None else 0, decimales)
+                content += "Caja Diaria: ${:.{}f}\n".format(context['valor_caja_diaria'] if context['valor_caja_diaria'] is not None else 0, decimales)
+                content += "Total Neto General: ${:.{}f}\n".format(context['total'] if context['total'] is not None else 0, decimales)
+            
+                # content += "Total de Ventas por Depto:\n"
+                # for venta_por_departamento in ventas_por_departamento:
+                #     content += "{}:\n".format(venta_por_departamento['departamento'] if venta_por_departamento['departamento'] is not None else "sin departamento")
+                #     content += "    ${:.2f}\n".format(venta_por_departamento['total_ventas'] if venta_por_departamento['total_ventas'] is not None else 0.00)
+            
+                content += "--------------------------\n"
+                return content
+            
+            content = generar_comandos_de_impresion(context, decimales)
+
+    # response = HttpResponse(content, content_type='text/plain')
+
+        # imprimir_en_xprinter(content)
+        # return response
+        if request.method == 'POST':
+            print("imprimiendo reporte")
+            try:
+                imprimir_en_xprinter(content)
+            except:
+                pass
+
         else:
             # Si no hay transacciones posteriores, establecer context como un diccionario vacío
             context = {}
@@ -1930,8 +1970,6 @@ def ventas_dia_especifico(request):
     context = {
         'ventas' : ventas
     }
-
-    
 
 
     return render(request, 'ventas_dia_especifico.html', context)
