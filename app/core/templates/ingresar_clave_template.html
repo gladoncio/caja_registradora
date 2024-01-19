@@ -1,0 +1,41 @@
+{% extends 'base/nav.html' %}
+
+{% block body %}
+
+<div class="container mt-5 mb-3">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body solofondo">
+                    <h5 class="card-title">Ingresar Clave de Anulación</h5>
+
+                    <form method="post" action="">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="clave_anulacion" class="form-label">Clave de anulación:</label>
+                            <input type="password" name="clave_anulacion" class="form-control onlyinput" required>
+                        </div>
+
+                        <button type="submit" class="btn boton-dinamico">Continuar</button>
+                    </form>
+
+                    {% if messages %}
+                        <div class="mt-3">
+                            {% for message in messages %}
+                                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include 'base/footer.html' %}
+{% include 'base/logout.html' %}
+
+{% endblock %}

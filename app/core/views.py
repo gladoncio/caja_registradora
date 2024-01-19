@@ -44,7 +44,7 @@ import locale
 from django.utils.formats import date_format
 import json
 from django.db.models import Count
-
+from django.http import HttpResponseForbidden
 
 
 
@@ -1973,3 +1973,21 @@ def ventas_dia_especifico(request):
 
 
     return render(request, 'ventas_dia_especifico.html', context)
+
+@login_required
+def ingresar_clave(request):
+    if request.method == 'POST':
+        clave_anulacion_ingresada = request.POST.get('clave_anulacion', '')
+
+        # Verifica la clave de anulación
+        usuario_actual = request.user
+        if not Usuario.objects.filter(id=usuario_actual.id, clave_anulacion=clave_anulacion_ingresada).exists():
+            messages.error(request, "Clave de anulación incorrecta.")
+            return render(request, 'ingresar_clave_template.html')  # Muestra la misma vista de contraseña
+
+        # Si la clave es correcta, redirige a la vista 'cuadrar'
+        return redirect('cuadrar')
+
+    return render(request, 'ingresar_clave_template.html')
+
+
