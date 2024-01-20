@@ -7,12 +7,12 @@
         <div class="col-md-6">
             <div class="card">
                 <div class="card-body solofondo">
-                    <h5 class="card-title">Ingresar Clave de Anulación</h5>
+                    <h5 class="card-title">Ingresar Clave Personal</h5>
 
                     <form method="post" action="">
                         {% csrf_token %}
                         <div class="mb-3">
-                            <label for="clave_anulacion" class="form-label">Clave de anulación:</label>
+                            <label for="clave_anulacion" class="form-label">Clave Personal:</label>
                             <input type="password" name="clave_anulacion" class="form-control onlyinput" required>
                         </div>
 
