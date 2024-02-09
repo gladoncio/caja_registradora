@@ -1,0 +1,23 @@
+<!-- eliminar_producto.html -->
+
+{% extends 'base/nav.html' %}
+
+{% block body %}
+  <div class="container mb-4">
+    <h1>Confirmar Eliminación de Producto</h1>
+    <p>¿Estás seguro de que deseas eliminar el producto "{{ producto.nombre }}"?</p>
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" name="confirmar" value="Si" class="btn btn-danger">Sí, Eliminar</button>
+      <a href="{% url 'producto-list' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+  </div>
+
+  {% include 'base/footer.html' %}
+  <!-- End of Footer -->
+  
+  
+  <!-- End of Content Wrapper -->
+  {% include 'base/logout.html' %}
+  
+  {% endblock %}

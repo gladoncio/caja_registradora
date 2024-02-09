@@ -45,6 +45,7 @@ from django.utils.formats import date_format
 import json
 from django.db.models import Count
 from django.http import HttpResponseForbidden
+from django.utils import timezone
 
 
 
@@ -97,6 +98,7 @@ def caja(request):
         form = BarcodeForm(request.POST)
         if form.is_valid():
             barcode = form.cleaned_data['barcode']
+            cantidad = form.cleaned_data['cantidad']  # Obtener la cantidad del formulario
             try:
                 producto = Producto.objects.get(codigo_barras=barcode)
                 if producto.tipo_venta == 'unidad':
@@ -111,11 +113,11 @@ def caja(request):
                     carrito_item, created = CarritoItem.objects.get_or_create(
                         usuario=request.user,
                         producto=producto,
-                        defaults={'cantidad': 1}  # Cantidad predeterminada si no existe
+                        defaults={'cantidad': cantidad}  # Cantidad predeterminada si no existe
                     )
                     if not created:
                         # Si el carrito_item ya existe, simplemente aumenta la cantidad en 1
-                        carrito_item.cantidad += 1
+                        carrito_item.cantidad += cantidad
                         carrito_item.save()
                     # Redirige a la misma vista
                     return redirect('caja')
@@ -123,7 +125,7 @@ def caja(request):
                     id_producto = producto.id_producto
                     accion = "variable"
                     form_valor = ValorForm(request.POST)
-                    context = {'form': form,'carrito_items': carrito_items, 'total': total, 'accion' : accion, 'id_producto' : id_producto, 'form_valor' : form_valor, 'productos_rapidos' : productos_rapidos,}
+                    context = {'form': form,'carrito_items': carrito_items, 'total': total, 'accion' : accion, 'id_producto' : id_producto, 'form_valor' : form_valor, 'productos_rapidos' : productos_rapidos, 'cantidad' : cantidad}
                     return render(request, 'caja.html', context)
                 else:
                     messages.success(request, 'El producto es por gramaje.')
@@ -145,12 +147,13 @@ def caja(request):
         'total' : total,
         'id_producto' : id,
         'productos_rapidos' : productos_rapidos,
+        'cantidad' : 1
     }
     return render(request, 'caja.html', context)
 
 
 @login_required(login_url='/login')
-def agregar_producto_al_carrito(request, id_producto):
+def agregar_producto_al_carrito(request, id_producto,cantidad):
     config = Configuracion.objects.get(id=1)
     carrito_items = CarritoItem.objects.filter(usuario=request.user).order_by('-fecha_agregado')
     if request.method == 'POST':
@@ -163,12 +166,12 @@ def agregar_producto_al_carrito(request, id_producto):
             carrito_item, created = CarritoItem.objects.get_or_create(
                 usuario=request.user,
                 producto=producto,
-                defaults={'cantidad': 1},
+                defaults={'cantidad': cantidad},
                 valor = valor
             )
 
             if not created:
-                carrito_item.cantidad += 1
+                carrito_item.cantidad += cantidad
                 carrito_item.save()
 
 
@@ -1061,6 +1064,7 @@ def informe_general(request):
         ),
         total_neto=Sum(F('subtotal'), output_field=DecimalField(max_digits=10, decimal_places=2))
     )
+
     
     monto_que_deberia_dar = monto_efectivo + caja_diaria.monto - caja_diaria.retiro - total_gastos_despues_ultima_fecha
 
@@ -1836,6 +1840,7 @@ def general_dia_especifico(request):
     fecha = request.GET.get('fecha')
     hora = request.GET.get('hora')
 
+
     # Obtener todos los gastos del día seleccionado en el rango de tiempo especificado
 
 
@@ -1857,10 +1862,10 @@ def general_dia_especifico(request):
         if fecha_anterior is None:
             fecha_anterior = datetime.min
         # Obtener la fecha de inicio del día
-        fecha_inicio_dia = datetime.strptime(f"{fecha} 00:00", "%Y-%m-%d %H:%M")
+        fecha_inicio_dia = datetime.strptime(f"{fecha} {hora}", "%Y-%m-%d %H:%M")
 
         # Obtener todas las transacciones del día seleccionado
-        transacciones = RegistroTransaccion.objects.filter(fecha_ingreso__gte=fecha_inicio_dia, fecha_ingreso__lt=fecha_inicio_dia + timedelta(days=1))
+        transacciones = RegistroTransaccion.objects.filter(fecha_ingreso__gte=fecha_siguiente, fecha_ingreso__lt=fecha_inicio_dia + timedelta(days=1))
 
         # Filtrar las transacciones para obtener el registro más cercano posterior a la hora especificada
         transaccion_posterior = transacciones.filter(fecha_ingreso__gt=fecha_hora_inicio).order_by('fecha_ingreso').first()
@@ -1869,12 +1874,17 @@ def general_dia_especifico(request):
                 fecha_hora__gte=fecha_anterior,
                 fecha_hora__lt=fecha_siguiente
             )
-        
-        
 
         # Calcular el total de los gastos
         total_gastos = gastos_filtrados.aggregate(Sum('monto'))['monto__sum'] or 0
-
+            # Pasar los resultados al contexto
+        context = {
+                'fecha_anterior' : fecha_anterior,
+                'fecha_siguiente' : fecha_siguiente,
+                'fecha' : fecha_inicio_dia,
+                'fecha_ingresada' : fecha_hora_inicio,
+                'test' : transacciones
+            }
 
 
         if transaccion_posterior:
@@ -1895,7 +1905,12 @@ def general_dia_especifico(request):
                 'valor_caja_diaria': total_valor_caja,
                 'total_gastos': total_gastos,
                 'total' : total,
+                'fecha_anterior' : fecha,
+                'fecha_siguiente' : fecha_siguiente,
+                'fecha' : fecha_inicio_dia,
+                'fecha_ingresada' : fecha_hora_inicio,
             }
+
             def generar_comandos_de_impresion(context, decimales):
                 # Inicializa una cadena vacía para almacenar los comandos de impresión
                 content = ""
@@ -1923,16 +1938,18 @@ def general_dia_especifico(request):
             
             content = generar_comandos_de_impresion(context, decimales)
 
-    # response = HttpResponse(content, content_type='text/plain')
+            # response = HttpResponse(content, content_type='text/plain')
 
-        # imprimir_en_xprinter(content)
-        # return response
+            # # imprimir_en_xprinter(content)
+            # # return response
             if request.method == 'POST':
                 print("imprimiendo reporte")
                 try:
                     imprimir_en_xprinter(content)
                 except:
                     pass
+            else:
+                print("No imprime")
 
         else:
             # Si no hay transacciones posteriores, establecer context como un diccionario vacío
@@ -1991,3 +2008,18 @@ def ingresar_clave(request):
     return render(request, 'ingresar_clave_template.html')
 
 
+def eliminar_producto(request, producto_id):
+    producto = get_object_or_404(Producto, id_producto=producto_id)
+    if request.method == 'POST':
+        # Verifica si se ha enviado el formulario de confirmación de eliminación
+        if request.POST.get('confirmar') == 'Si':
+            # Elimina el producto
+            producto.delete()
+            # Redirige a la lista de productos
+            return redirect('producto-list')
+        else:
+            # Redirige a la lista de productos sin eliminar el producto
+            return redirect('producto-list')
+
+    # Si no se ha enviado el formulario de confirmación, renderiza la página de confirmación
+    return render(request, 'eliminar_producto.html', {'producto': producto})

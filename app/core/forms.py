@@ -206,6 +206,7 @@ class BarcodeForm(forms.Form):
         label='Código de Barras',
         widget=forms.TextInput(attrs={'class': 'form-control resize-text'})
     )
+    cantidad = forms.IntegerField(label='Cantidad', initial=1, min_value=1, widget=forms.NumberInput(attrs={'class': 'form-control resize-text onlyinput'}))
 
 class GastoCajaForm(forms.ModelForm):
     clave_anulacion = forms.CharField(

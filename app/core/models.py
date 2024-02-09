@@ -6,6 +6,11 @@ from django.dispatch import receiver
 from django.db.models.signals import pre_delete,post_migrate
 from django.db.utils import IntegrityError
 from math import ceil
+# models.py
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Usuario(AbstractUser):
@@ -357,3 +362,13 @@ def crear_fecha_inicial(sender, **kwargs):
         # Crear una instancia con la fecha inicial
         fecha_inicial = timezone.now()
         ActualizacionModel.objects.create(fecha_actualizacion=fecha_inicial)
+
+
+@receiver(pre_delete, sender=Producto)
+def log_producto_deletion(sender, instance, **kwargs):
+    # Obtiene el usuario que realizó la eliminación del producto (si está disponible)
+    user = None
+    if hasattr(instance, 'user'):
+        user = instance.user.username
+
+    logger.info(f"Producto eliminado: {instance.nombre} (ID: {instance.id_producto}), Eliminado por: {user}")

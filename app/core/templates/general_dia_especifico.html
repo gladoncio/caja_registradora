@@ -47,7 +47,7 @@
                     <p>Total en Transferencia: <span class="subtotal">{{total_transferencia|floatformat:configuracion.decimales}}</span></p>
                     <p>Total de Retiro: <span class="subtotal">{{total_retiro|floatformat:configuracion.decimales}}</span></p>
                     <p>Total de gastos: <span class="subtotal">{{total_gastos|floatformat:configuracion.decimales}}</span></p>
-                    <p>Caja diaria: <span class="subtotal">{{valor_caja_diaria|floatformat:configuracion.decimales}}</span></p>     
+                    <p>Caja diaria: <span class="subtotal">{{valor_caja_diaria|floatformat:configuracion.decimales}}</span></p> 
                 </div>
             </div>
         </div>
@@ -68,7 +68,7 @@
     {% endif %}
 
     <!-- Totales por departamento -->
-    <div class="row">
+    {% comment %} <div class="row">
         <div class="col-lg-12">
             <div class="card shadow mb-4">
                 <div class="card-body resize-text solofondo">
@@ -98,7 +98,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> {% endcomment %}
 
 </div>
 {% endif %}

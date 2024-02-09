@@ -9,21 +9,32 @@
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 mb-0" id="titulo">Caja</h1>
     </div>
-
 <!-- Barcode Input -->
-    <div class="row mb-3">
-        <div class="col-lg-6">
-            <form method="post" id="barcodeForm">
-                {% csrf_token %}
-                <div class="input-group">
-                    {{ form.barcode }}
-                    <div class="input-group-append">
-                        <button type="submit" class="btn boton-dinamico">Agregar</button>
+<div class="row mb-3">
+    <div class="col-lg-6">
+        <form method="post" id="barcodeForm">
+            {% csrf_token %}
+            <div class="form-row">
+                <div class="form-group col-md-8">
+                    <label for="barcodeInput">Código de barras:</label>
+                    <div class="input-group">
+                        {{ form.barcode }}
+                        <div class="input-group-append">
+                            <button type="submit" class="btn boton-dinamico">Agregar</button>
+                        </div>
                     </div>
                 </div>
-            </form>
-        </div>
+                <div class="form-group col-md-2">
+                    <label for="cantidadInput">Cantidad:</label>
+                    {{ form.cantidad }}
+                </div>
+            </div>
+        </form>
     </div>
+</div>
+
+
+
 
     {% if productos_rapidos %}
     <h1>Productos Rápidos</h1>
@@ -186,9 +197,12 @@
           </button>
         </div>
         <div class="modal-body solofondo">
-        <form method="post" action="{% url 'agregar_producto_al_carrito' id_producto %}">
+        <form method="post" action="{% url 'agregar_producto_al_carrito' id_producto cantidad %}">
         {% csrf_token %}
-        {{ form_valor.as_p }}
+        <label for="valor">Cantidad:  {{cantidad}}</label>
+        <br>
+        <label for="valor">Valor:</label>
+        {{ form_valor.valor }}
         </div>
         <div class="modal-footer solofondo">
           <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
@@ -198,6 +212,8 @@
       </div>
     </div>
   </div>
+
+
   
   <script>
     // Agregar un script para abrir el modal cuando 'accion' sea igual a "variable"
@@ -271,7 +287,7 @@
 </script>
 <script>
     function redirectToGenerarVenta() {
-        window.location.href = "{% url 'seleccionar_metodo_pago' %}";  // Reemplaza 'generar_venta' con la URL 
+        window.location.href = "{% url 'seleccionar_metodo_pago' %}";  
     }
 </script>
 

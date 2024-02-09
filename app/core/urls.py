@@ -16,7 +16,7 @@ urlpatterns = [
     path('busqueda', views.busqueda, name='busqueda'),
     path('', views.caja, name='caja'),
     path('agregar_al_carrito/<int:producto_id>/', views.agregar_al_carrito, name='agregar_al_carrito'),
-    path('agregar_producto_al_carrito/<id_producto>/', views.agregar_producto_al_carrito, name='agregar_producto_al_carrito'),
+    path('agregar_producto_al_carrito/<int:id_producto>/<int:cantidad>/', views.agregar_producto_al_carrito, name='agregar_producto_al_carrito'),
     path('eliminar/<int:item_id>/', views.eliminar_item, name='eliminar_item'),
     path('ventas/', views.listar_ventas, name='listar_ventas'),  # Agrega esta línea
     path('venta/<int:venta_id>/', views.detalle_venta, name='detalle_venta'),
@@ -61,6 +61,8 @@ urlpatterns = [
     path('general_dia_especifico/', general_dia_especifico, name='general_dia_especifico'),
     path('ventas_dia_especifico/', ventas_dia_especifico, name='ventas_dia_especifico'),
     path('ingresar_clave/', ingresar_clave, name='ingresar_clave'),
+    path('eliminar-producto/<int:producto_id>/', views.eliminar_producto, name='eliminar_producto'),
+    
 ]
 
     

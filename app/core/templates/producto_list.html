@@ -32,6 +32,7 @@
             <td>{{ producto.marca }}</td>
             <td>
               <a href="{% url 'producto-editar' producto.id_producto %}" class="btn boton-dinamico btn-sm">Editar</a>
+              <a href="{% url 'eliminar_producto' producto.id_producto %}" class="btn btn-danger btn-sm">Eliminar</a>
               {% if not producto.productorapido_count %}
               {# El producto no existe en ProductoRapido, mostrar el botón para agregar #}
               <a href="{% url 'agregar_producto_rapido' producto.id_producto %}" class="btn boton-dinamico btn-sm">Agregar como producto rapido</a>
@@ -42,7 +43,9 @@
               {# El producto existe en ProductoRapido, mostrar el botón para eliminar #}
               <a href="{% url 'eliminar_producto_rapido' producto.id_producto %}" class="btn btn-danger btn-sm">Eliminar de producto rapido</a>
             {% endif %}
+            
             </td>
+          
           </tr>
         {% empty %}
           <tr>
@@ -83,10 +86,7 @@
 
   
   {% include 'base/footer.html' %}
-  <!-- End of Footer -->
-  
-  
-  <!-- End of Content Wrapper -->
+
   {% include 'base/logout.html' %}
 
 
