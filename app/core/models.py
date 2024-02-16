@@ -275,11 +275,11 @@ class Cuadre(models.Model):
         return f'Cierre de caja por {self.usuario.username} el {self.fecha_ingreso}'
     
 
-
 class ActualizacionModel(models.Model):
     id = models.AutoField(primary_key=True)
     fecha_actualizacion = models.DateTimeField()
-    version = models.CharField(max_length=150, default="v1.0.1")
+    version = models.CharField(max_length=150)
+
 
 
 # Modelos de copia de seguridad
