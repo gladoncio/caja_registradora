@@ -279,7 +279,7 @@ class Cuadre(models.Model):
 class ActualizacionModel(models.Model):
     id = models.AutoField(primary_key=True)
     fecha_actualizacion = models.DateTimeField()
-    version = models.CharField(max_length=60, default="version recién instalada")
+    version = models.CharField(max_length=150, default="version recién instalada")
 
 
 # Modelos de copia de seguridad

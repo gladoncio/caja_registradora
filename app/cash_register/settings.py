@@ -92,7 +92,7 @@ DATABASES = {
         'NAME': 'caja_registradora',
         'USER': 'caja',
         'PASSWORD': '123',
-        'HOST': 'localhost',   # O la dirección de tu servidor MySQL
+        'HOST': '192.168.0.14',   # O la dirección de tu servidor MySQL
         'PORT': '3306',        # El puerto por defecto de MySQL
     }
 }
