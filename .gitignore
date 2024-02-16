@@ -9,3 +9,5 @@ registro.log
 Iniciar_caja.sh
 registro_servicio.log
 products.log
+data/
+datos.json
