@@ -88,12 +88,12 @@ WSGI_APPLICATION = 'cash_register.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
+        'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'caja_registradora',
         'USER': 'caja',
         'PASSWORD': '123',
-        'HOST': '192.168.0.14',   # O la dirección de tu servidor MySQL
-        'PORT': '3306',        # El puerto por defecto de MySQL
+        'HOST': 'db',   # O la dirección de tu servidor MySQL
+        'PORT': '5432',        # El puerto por defecto de MySQL
     }
 }
 

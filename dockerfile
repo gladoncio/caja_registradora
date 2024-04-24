@@ -6,7 +6,6 @@ WORKDIR /app
 
 # Copy the entire project into the container
 COPY . /app
-
 # Copy only the requirements file initially to leverage Docker cache
 COPY ./requirements.txt /app/requirements.txt
 
