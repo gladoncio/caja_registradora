@@ -359,9 +359,9 @@ def generar_venta(request, tipo_pago, restante, vuelto_inicial, id_carro ):
             for item in carrito_items:
                 subtotal = item.subtotal()
                 VentaProducto.objects.create(venta=nueva_venta, producto=item.producto, cantidad=item.cantidad, gramaje=item.gramaje, subtotal=subtotal)
-            if request.user.ventas == "normales":
+            if request.user.ventas_config == "normales":
                 messages.success(request, 'VENTA INGRESADA CORRECTAMENTE.')
-            elif request.user.ventas == "pruebas":
+            elif request.user.ventas_config == "pruebas":
                  messages.success(request, 'VENTA TESTING CORRECTAMENTE.')
 
             carrito_items.delete()
@@ -396,7 +396,7 @@ def generar_venta(request, tipo_pago, restante, vuelto_inicial, id_carro ):
                 vuelto = '{:.{}f}'.format(vuelto, config.decimales)
                 messages.success(request, f'El vuelto de la venta es {vuelto}')
 
-            if request.user.ventas == "pruebas":
+            if request.user.ventas_config == "pruebas":
                 ultima_venta.delete()
                 # Obtener la última ID desde tu modelo
                 ultima_id = VentaRespaldo.objects.latest('id')
