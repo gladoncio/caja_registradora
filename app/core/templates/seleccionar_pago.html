@@ -7,7 +7,7 @@
          <!-- Tu encabezado y contenido aquí -->
          <h1 class="card-title">Seleccionar Método de Pago</h1>
          <p class="card-text">Total: <span class="subtotal">{{ total|floatformat:configuracion.decimales }}</span></p>
-         <form method="post" action="{% url 'procesar_pago' %}">
+         <form method="post" action="{% url 'procesar_pago' id_carro=id_carro %}">
             {% csrf_token %}
             <div class="form-group">
                <label for="metodoPago">Seleccione el método de pago:</label>
@@ -52,7 +52,7 @@
            // Crear un formulario oculto
            var form = document.createElement("form");
            form.setAttribute("method", "post");
-           form.setAttribute("action", "{% url 'procesar_pago' %}");
+           form.setAttribute("action", "{% url 'procesar_pago' id_carro=id_carro %}");
 
            // Obtener el token CSRF de las cookies
            var csrfToken = document.cookie.match(/csrftoken=([^;]+)/)[1];

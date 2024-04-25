@@ -29,8 +29,17 @@ class UsuarioCreationForm(UserCreationForm):
         self.fields['clave_anulacion'].widget = forms.PasswordInput(attrs={'class': 'form-control resize-text onlyinput'})
         self.fields['permisos'].widget.attrs.update({'class': 'form-control resize-text onlyinput'})
 
-
-        
+class UsuarioForm(forms.ModelForm):
+    class Meta:
+        model = Usuario
+        fields = ['username', 'email', 'foto_perfil', 'ventas_config', 'rut']
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control resize-text onlyinput'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control resize-text onlyinput'}),
+            'foto_perfil': forms.ClearableFileInput(attrs={'class': 'form-control-file'}),
+            'ventas_config': forms.Select(attrs={'class': 'form-control resize-text onlyinput'}),
+            'rut': forms.TextInput(attrs={'class': 'form-control resize-text onlyinput'}),
+        }
 class MyAuthForm(AuthenticationForm):
     class Meta:
         model = Usuario
@@ -317,5 +326,4 @@ class ConfiguracionForm(forms.ModelForm):
             'porcentaje_iva': forms.TextInput(attrs={'class': 'form-control resize-text onlyinput'}),
             'tamano_letra': forms.TextInput(attrs={'class': 'form-control resize-text onlyinput'}),
             'separador': forms.Select(attrs={'class': 'form-control resize-text onlyinput'}),
-
         }

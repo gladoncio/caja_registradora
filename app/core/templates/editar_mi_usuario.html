@@ -1,0 +1,41 @@
+{% extends 'base/nav.html' %}
+
+{% block body %}
+<div class="container mt-4 mb-4">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card solofondo">
+        <div class="card-header solofondo">Editar Usuario</div>
+
+        <div class="card-body">
+          <div class="text-center mb-3">
+            {% if form.instance.foto_perfil %}
+            <img src="{{ form.instance.foto_perfil.url }}" class="rounded-circle" width="150" height="150" alt="Foto de perfil">
+            {% endif %}
+          </div>
+
+          <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.as_p }}
+
+            <div class="form-group row mb-0">
+              <div class="col-md-6 offset-md-4">
+                <button type="submit" class="btn boton-dinamico">
+                  Guardar Cambios
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% include 'base/footer.html' %}
+<!-- End of Footer -->
+
+
+<!-- End of Content Wrapper -->
+{% include 'base/logout.html' %}
+{% endblock %}

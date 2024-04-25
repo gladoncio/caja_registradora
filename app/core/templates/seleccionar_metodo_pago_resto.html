@@ -49,7 +49,7 @@
             // Crear un formulario oculto
             var form = document.createElement("form");
             form.setAttribute("method", "post");
-            form.setAttribute("action", `{% url 'seleccionar_metodo_pago_resto' total monto_efectivo %}`); // Agrega los valores total y monto_efectivo
+            form.setAttribute("action", `{% url 'seleccionar_metodo_pago_resto' total monto_efectivo id_carro %}`); // Agrega los valores total y monto_efectivo
  
             // Obtener el token CSRF de las cookies
             var csrfToken = document.cookie.match(/csrftoken=([^;]+)/)[1];

@@ -16,12 +16,18 @@
                       </ul>
                   </div>
                   {% endif %}
+                    {% if request.user.permisos == 'admin' %}
                     <h2 class="resize-text">Monto Actual: <span class="subtotal">{{ form.instance.monto|floatformat:configuracion.decimales  }}</span></h2> <!-- Muestra el monto actual -->
+                    {% endif %}
                     <h2 class="resize-text">Retiro Actual: <span class="subtotal">{{ form.instance.retiro|floatformat:configuracion.decimales  }}</span></h2> <!-- Muestra el retiro actual -->
+
+
+
+                    {% if request.user.permisos == 'admin' %}
                     <form method="post">
                         {% csrf_token %}
                         <div class="form-group resize-text">
-                            <label for="monto">Agregar o Restar Monto:</label>
+                            <label for="monto">Agregar o Restar Monto:</label>                   
                             <div class="input-group">
                                 <input type="number" id="monto" name="monto" class="form-control resize-text solofondo texto" min="0" step="0.01" value="0">
                                 <div class="input-group-append">
@@ -31,6 +37,10 @@
                             </div>
                         </div>
                     </form>
+                    {% endif %} 
+
+
+                    
                     <form method="post">
                         {% csrf_token %}
                         <div class="form-group resize-text">

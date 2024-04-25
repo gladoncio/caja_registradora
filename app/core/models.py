@@ -12,7 +12,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
 class Usuario(AbstractUser):
     # Define las opciones de permisos como una tupla de tuplas
     PERMISOS_CHOICES = (
@@ -20,18 +19,17 @@ class Usuario(AbstractUser):
         ('admin', 'Administrador'),
         ('bodeguero', 'Bodeguero'),
     )
-    
-    permisos = models.CharField(
-        max_length=40,
-        null=True,
-        verbose_name="Permiso",
-        default="Cajero",
-        choices=PERMISOS_CHOICES,  # Asigna las opciones como choices
+    VENTAS_CHOICES = (
+        ('pruebas', 'Ventas de Pruebas'),
+        ('normales', 'Sistema de Ventas Normales (Se registran)'),
     )
+    
+    foto_perfil = models.ImageField(upload_to='fotos_perfil/', null=True, blank=True)
+    ventas_config = models.CharField(max_length=40, choices=VENTAS_CHOICES, default='normales')
+    permisos = models.CharField(max_length=40, choices=PERMISOS_CHOICES, default='cajero')
     
     rut = models.CharField(max_length=40, null=True, verbose_name="Rut", default="", blank=True)
     clave_anulacion = models.CharField(max_length=20, default="", unique=True)  # Hacer la clave única
-
 
 
 # Define la función para crear el usuario admin
@@ -114,6 +112,7 @@ class Stock(models.Model):
 
 class CarritoItem(models.Model):
     usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)
+    carrito_numero = models.PositiveIntegerField(default=1)
     producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
     cantidad = models.PositiveIntegerField(default=1)
     gramaje = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)

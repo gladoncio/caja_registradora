@@ -6,7 +6,7 @@
     
     <p>Total: <span class="subtotal">{{ total|floatformat:configuracion.decimales }}</span></p> <!-- Muestra el total -->
 
-    <form method="post" action="{% url 'ingresar_monto_efectivo' %}">
+    <form method="post" action="{% url 'ingresar_monto_efectivo' id_carro=id_carro %} ">
         {% csrf_token %}
         
         <div class="form-group">

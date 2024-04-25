@@ -5,10 +5,39 @@
 <!-- Begin Page Content -->
 
 <div class="container-fluid">
-    <!-- Page Heading -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0" id="titulo">Caja</h1>
+        <h1 class="h3 mb-0" id="titulo">Caja Número: {{ id_carro }}</h1>
     </div>
+    
+    <!-- Mini navbar con botones -->
+    <nav class="navbar navbar-expand-sm navbar-light mb-4">
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item ml-2">
+                    <!-- Botón para la primera caja -->
+                    <a href="{% url 'caja' id_carro=1 %}" class="btn boton-dinamico{% if id_carro == 1 %} active{% endif %}">[ 1 ]</a>
+                </li>
+                {% for numero_carrito in numeros_carrito_unicos %}
+                    <li class="nav-item ml-2">
+                        {% if numero_carrito != 1 %}
+                            <!-- Botones para otras cajas -->
+                            <a href="{% url 'caja' id_carro=numero_carrito %}" class="btn boton-dinamico{% if id_carro == numero_carrito %} active{% endif %}">[ {{ numero_carrito }} ]</a>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+                <li class="nav-item ml-2">
+                    <!-- Botón para agregar nueva caja -->
+                    <a href="{% url 'agregar_instancia' %}" class="btn btn-success">Agregar Nueva</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    
+    
+    
+    
+    
+    
 <!-- Barcode Input -->
 <div class="row mb-3">
     <div class="col-lg-6">
@@ -82,7 +111,7 @@
                         <div class="d-flex">
                             <button id="generarBoletaBtn" class="btn boton-dinamico mr-2" onclick="redirectToSeleccionarMetodoPago()" {% if total <= 0 %}disabled{% endif %}>Generar Boleta</button>
                         
-                            <form method="post" action="{% url 'vaciar_carrito' %}" class="pd-3">
+                            <form method="post" action="{% url 'vaciar_carrito' id_carro=id_carro %}" class="pd-3">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-danger">Vaciar Carrito</button>
                             </form>
@@ -94,6 +123,7 @@
                             <thead>
                                 <tr>
                                     <th>Nombre</th>
+                                    <th>Valor Unidad</th>
                                     <th>Subtotal</th>
                                     <th>Código de Barras</th>
                                     <th>Cantidad</th>
@@ -104,6 +134,15 @@
                                 {% for item in carrito_items %}
                                 <tr>
                                     <td>{{ item.producto.nombre }}</td>
+                                    <td class="subtotal">
+                                        {% if item.producto.tipo_venta == 'valor' %}
+                                            ${{ item.valor|floatformat:configuracion.decimales|safe }}
+                                        {% elif item.producto.tipo_venta == 'gramaje' %}
+                                            ${{ item.producto.precio|floatformat:configuracion.decimales|safe }}/g
+                                        {% else %}
+                                            ${{ item.producto.precio|floatformat:configuracion.decimales|safe }}/unidad
+                                        {% endif %}
+                                    </td>                                    
                                     <td class="subtotal">${{ item.subtotal|floatformat:configuracion.decimales|safe }}</td>
                                     {% if item.producto.codigo_barras %}
                                     <td>{{ item.producto.codigo_barras}}</td>
@@ -116,7 +155,7 @@
                                     <td>{{ item.gramaje }} Gr</tdd>
                                     {% endif %}
                                     <td>
-                                        <a href="{% url 'eliminar_item' item_id=item.id %}" class="btn btn-danger btn-sm">Eliminar</a>
+                                        <a href="{% url 'eliminar_item' item_id=item.id id_carro=id_carro %}" class="btn btn-danger btn-sm">Eliminar</a>
                                     </td>
                                 </tr>
                                 <!-- Modal para confirmar eliminación -->
@@ -197,7 +236,7 @@
           </button>
         </div>
         <div class="modal-body solofondo">
-        <form method="post" action="{% url 'agregar_producto_al_carrito' id_producto cantidad %}">
+        <form method="post" action="{% url 'agregar_producto_al_carrito' id_producto cantidad id_carro %}">
         {% csrf_token %}
         <label for="valor">Cantidad:  {{cantidad}}</label>
         <br>
@@ -282,12 +321,12 @@
 
 <script>
     function redirectToSeleccionarMetodoPago() {
-        window.location.href = "{% url 'seleccionar_metodo_pago' %}";
+        window.location.href = "{% url 'seleccionar_metodo_pago' id_carro=id_carro %}";
     }
 </script>
 <script>
     function redirectToGenerarVenta() {
-        window.location.href = "{% url 'seleccionar_metodo_pago' %}";  
+        window.location.href = "{% url 'seleccionar_metodo_pago' id_carro=id_carro %}";  
     }
 </script>
 
@@ -388,6 +427,7 @@
         });
     });
 </script>
+
 
 
 

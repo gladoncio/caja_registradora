@@ -62,7 +62,18 @@ def login(request):
 
 def cerrar_sesion(request):
     logout(request)
-    return redirect(caja)
+    return redirect(caja, 1)
+
+@login_required(login_url='/login')
+def editar_usuario(request):
+    if request.method == 'POST':
+        form = UsuarioForm(request.POST, request.FILES, instance=request.user)
+        if form.is_valid():
+            form.save()
+            return redirect('editar_usuario')  # Redirige a la página de perfil después de la actualización
+    else:
+        form = UsuarioForm(instance=request.user)
+    return render(request, 'editar_mi_usuario.html', {'form': form})
 
 
 
@@ -84,15 +95,54 @@ def busqueda(request):
 # ██║░░██╗██╔══██║██╗░░██║██╔══██║
 # ╚█████╔╝██║░░██║╚█████╔╝██║░░██║
 # ░╚════╝░╚═╝░░╚═╝░╚════╝░╚═╝░░╚═╝
+
+def agregar_instancia(request):
+    # Obtener los números de carrito únicos
+    numeros_carrito = CarritoItem.objects.filter(usuario=request.user).values('carrito_numero').annotate(total=Count('carrito_numero'))
+    numeros_carrito_unicos = [item['carrito_numero'] for item in numeros_carrito]
+    
+    # Ordenar la lista de números de carrito
+    numeros_carrito_unicos.sort()
+
+    # Encontrar el primer número de carrito que no está en la lista, excluyendo 1 y los números mayores a 8
+    nuevo_id_carro = 1
+    for numero in range(2, 10):
+        if numero not in numeros_carrito_unicos:
+            if numero == 9:
+                messages.success(request, 'Se ha alcanzado el límite máximo de cajas abiertas.')
+                return redirect('caja', id_carro=8)
+            nuevo_id_carro = numero
+            break
+    return redirect('caja', id_carro=nuevo_id_carro)
+    # Redirigir a la página de caja con el nuevo número de carrito
+
+
+
+
 @login_required(login_url='/login')
-def caja(request):
+def caja(request,id_carro):
     #Definiendo variables
     accion = "nada"
     id = 0
     config = Configuracion.objects.get(id=1)
-    carrito_items = CarritoItem.objects.filter(usuario=request.user).order_by('-fecha_agregado')
+    carrito_items = CarritoItem.objects.filter(usuario=request.user, carrito_numero=id_carro).order_by('-fecha_agregado')
     total = sum(item.subtotal() for item in carrito_items)
     productos_rapidos = ProductoRapido.objects.all()
+
+
+    numeros_carrito = CarritoItem.objects.filter(usuario=request.user).values('carrito_numero').annotate(total=Count('carrito_numero'))
+
+    # Extrae los números de carrito únicos
+    numeros_carrito_unicos = [item['carrito_numero'] for item in numeros_carrito]
+
+    if id_carro not in numeros_carrito_unicos:
+        numeros_carrito_unicos.append(id_carro)
+
+    numeros_carrito_unicos.sort()  
+
+        # Si el número de carrito actual no está en la lista, agrégalo
+
+
 
     if request.method == 'POST':
         form = BarcodeForm(request.POST)
@@ -108,11 +158,12 @@ def caja(request):
                         except ObjectDoesNotExist:
                             # Si el objeto Stock no existe, maneja la situación aquí
                             messages.success(request, 'El producto no tiene Stock.')
-                            return redirect(caja)
+                            return redirect(caja, id_carro)
                     # Busca si ya existe un carrito_item con el mismo producto y usuario
                     carrito_item, created = CarritoItem.objects.get_or_create(
                         usuario=request.user,
                         producto=producto,
+                        carrito_numero=id_carro,
                         defaults={'cantidad': cantidad}  # Cantidad predeterminada si no existe
                     )
                     if not created:
@@ -120,19 +171,19 @@ def caja(request):
                         carrito_item.cantidad += cantidad
                         carrito_item.save()
                     # Redirige a la misma vista
-                    return redirect('caja')
+                    return redirect('caja', id_carro=id_carro)
                 elif producto.tipo_venta == 'valor':
                     id_producto = producto.id_producto
                     accion = "variable"
                     form_valor = ValorForm(request.POST)
-                    context = {'form': form,'carrito_items': carrito_items, 'total': total, 'accion' : accion, 'id_producto' : id_producto, 'form_valor' : form_valor, 'productos_rapidos' : productos_rapidos, 'cantidad' : cantidad}
+                    context = {'form': form,'carrito_items': carrito_items, 'total': total, 'accion' : accion, 'id_producto' : id_producto, 'form_valor' : form_valor, 'productos_rapidos' : productos_rapidos, 'cantidad' : cantidad,'id_carro' : id_carro, 'numeros_carrito_unicos' : numeros_carrito_unicos}
                     return render(request, 'caja.html', context)
                 else:
                     messages.success(request, 'El producto es por gramaje.')
             except Producto.DoesNotExist:
                 productos_similares = Producto.objects.filter(nombre__icontains=barcode)
                 if productos_similares.exists():
-                    return render(request, 'caja.html', {'form': form, 'carrito_items': carrito_items, 'total': total, 'productos_similares': productos_similares, 'id_producto' : id ,'productos_rapidos' : productos_rapidos,})
+                    return render(request, 'caja.html', {'form': form, 'carrito_items': carrito_items, 'total': total, 'productos_similares': productos_similares, 'id_producto' : id ,'productos_rapidos' : productos_rapidos,'id_carro' : id_carro, 'numeros_carrito_unicos' : numeros_carrito_unicos})
                     pass
                 else:
                     print("no confidencias ni existencias")
@@ -147,15 +198,17 @@ def caja(request):
         'total' : total,
         'id_producto' : id,
         'productos_rapidos' : productos_rapidos,
-        'cantidad' : 1
+        'cantidad' : 1,
+        'id_carro' : id_carro,
+        'numeros_carrito_unicos' : numeros_carrito_unicos
     }
     return render(request, 'caja.html', context)
 
 
 @login_required(login_url='/login')
-def agregar_producto_al_carrito(request, id_producto,cantidad):
+def agregar_producto_al_carrito(request, id_producto,cantidad, id_carro):
     config = Configuracion.objects.get(id=1)
-    carrito_items = CarritoItem.objects.filter(usuario=request.user).order_by('-fecha_agregado')
+    carrito_items = CarritoItem.objects.filter(usuario=request.user, carrito_numero=id_carro).order_by('-fecha_agregado')
     if request.method == 'POST':
         form = ValorForm(request.POST)  # Crear una instancia del formulario con los datos POST
         if form.is_valid():
@@ -167,7 +220,8 @@ def agregar_producto_al_carrito(request, id_producto,cantidad):
                 usuario=request.user,
                 producto=producto,
                 defaults={'cantidad': cantidad},
-                valor = valor
+                valor = valor,
+                carrito_numero= id_carro,
             )
 
             if not created:
@@ -175,9 +229,9 @@ def agregar_producto_al_carrito(request, id_producto,cantidad):
                 carrito_item.save()
 
 
-            return redirect('caja')
+            return redirect('caja', id_carro=id_carro)
 
-    return redirect('caja')
+    return redirect('caja', id_carro=id_carro)
 
 
 
@@ -197,7 +251,7 @@ def agregar_producto_al_carrito(request, id_producto,cantidad):
 # ░╚════╝░╚═╝░░╚═╝╚═╝░░╚═╝╚═╝░░╚═╝╚═╝░░░╚═╝░░░░╚════╝░
 
 @login_required(login_url='/login')
-def agregar_al_carrito(request, producto_id):
+def agregar_al_carrito(request, producto_id, id_carro):
     config = Configuracion.objects.get(id=1)
     producto = get_object_or_404(Producto, id_producto=producto_id)
     if request.method == 'POST':
@@ -231,7 +285,7 @@ def agregar_al_carrito(request, producto_id):
                 carrito_item.save()
         
     
-    return redirect('caja')
+    return redirect('caja', id_carro=id_carro)
 
 
 
@@ -250,7 +304,7 @@ def agregar_al_carrito(request, producto_id):
 # ░╚════╝░╚═╝░░╚═╝╚═╝░░╚═╝╚═╝░░╚═╝░╚════╝░
 
 @login_required(login_url='/login')
-def eliminar_item(request, item_id):
+def eliminar_item(request, item_id , id_carro ):
     try:
         config = Configuracion.objects.get(id=1)
         carrito_item = CarritoItem.objects.get(id=item_id, usuario=request.user)
@@ -266,7 +320,7 @@ def eliminar_item(request, item_id):
     except CarritoItem.DoesNotExist:
         print("El ítem no existe")
 
-    return redirect('caja')
+    return redirect('caja', id_carro=id_carro)
 
 
 
@@ -288,15 +342,15 @@ def eliminar_item(request, item_id):
 metodos_pago = ["Efectivo Justo", "Efectivo", "Transferencia", "Débito"]
 
 @login_required(login_url='/login')
-def generar_venta(request, tipo_pago, restante, vuelto_inicial):
+def generar_venta(request, tipo_pago, restante, vuelto_inicial, id_carro ):
     restante = float(restante)
     vuelto_inicial = float(vuelto_inicial)
     config = Configuracion.objects.get(id=1)
     try:
-        carrito_items = CarritoItem.objects.filter(usuario=request.user)
+        carrito_items = CarritoItem.objects.filter(usuario=request.user, carrito_numero=id_carro)
         
         if carrito_items.exists():
-            # aqui se genera la venta base
+            # aquí se genera la venta base
             total = sum(item.subtotal() for item in carrito_items)
             nueva_venta = Venta(usuario=request.user, total=total, vuelto=vuelto_inicial)
             nueva_venta.save()
@@ -305,7 +359,11 @@ def generar_venta(request, tipo_pago, restante, vuelto_inicial):
             for item in carrito_items:
                 subtotal = item.subtotal()
                 VentaProducto.objects.create(venta=nueva_venta, producto=item.producto, cantidad=item.cantidad, gramaje=item.gramaje, subtotal=subtotal)
-            messages.success(request, 'VENTA INGRESADA CORRECTAMENTE.')
+            if request.user.ventas == "normales":
+                messages.success(request, 'VENTA INGRESADA CORRECTAMENTE.')
+            elif request.user.ventas == "pruebas":
+                 messages.success(request, 'VENTA TESTING CORRECTAMENTE.')
+
             carrito_items.delete()
 
             if restante > 0: #EL monto se divide en dos tipos de pagos
@@ -314,6 +372,10 @@ def generar_venta(request, tipo_pago, restante, vuelto_inicial):
                 monto_efectivo_restante = abs(float(monto_efectivo_restante))
                 FormaPago.objects.create(venta=nueva_venta, tipo_pago=tipo_pago, monto=restante)
                 FormaPago.objects.create(venta=nueva_venta, tipo_pago="efectivo", monto=monto_efectivo_restante)
+                if abrir_caja_impresora():
+                    messages.success(request, 'Caja abierta exitosamente.')
+                else:
+                    messages.error(request, 'Error al abrir la caja. Inténtalo de nuevo.')
             elif tipo_pago == "efectivo" or tipo_pago =="Efectivo Justo": #si la venta contiene efectivo
                 FormaPago.objects.create(venta=nueva_venta, tipo_pago="efectivo", monto=total)
                 if abrir_caja_impresora():
@@ -325,15 +387,30 @@ def generar_venta(request, tipo_pago, restante, vuelto_inicial):
             
             if config.imprimir != 'no':
                 imprimir_ultima_id()
-
+            
             ultima_venta = obtener_ultima_venta()
+
+
             vuelto = ultima_venta.vuelto
             if vuelto > 0:
                 vuelto = '{:.{}f}'.format(vuelto, config.decimales)
                 messages.success(request, f'El vuelto de la venta es {vuelto}')
 
+            if request.user.ventas == "pruebas":
+                ultima_venta.delete()
+                # Obtener la última ID desde tu modelo
+                ultima_id = VentaRespaldo.objects.latest('id')
+                # Convertir la ID a una cadena (si es necesario)
+                ultima_id_str = str(ultima_id.id)
+                venta_respaldo = VentaRespaldo.objects.get(id=ultima_id_str)
+                venta_respaldo.delete()
+                
 
-            return redirect('caja')  # Cambiar por la página deseada
+
+
+
+
+            return redirect('caja', id_carro=id_carro)
         else:
             # Manejar el caso donde el carrito del usuario está vacío
             pass
@@ -343,7 +420,7 @@ def generar_venta(request, tipo_pago, restante, vuelto_inicial):
         messages.error(request, f"Ocurrió un error en generar la venta: {e}")
         
     # Redireccionar a la página del carrito si ocurre algún error
-    return redirect('caja')  # Cambiar por la página del carrito
+    return redirect('caja', id_carro=id_carro)  # Cambiar por la página del carrito
 
 
 
@@ -363,43 +440,43 @@ def generar_venta(request, tipo_pago, restante, vuelto_inicial):
 # ╚═╝░░░░░╚═╝╚══════╝░░░╚═╝░░░░╚════╝░╚═════╝░░╚════╝░  ╚═════╝░╚══════╝  ╚═╝░░░░░╚═╝░░╚═╝░╚═════╝░░╚════╝░
 
 @login_required(login_url='/login')
-def seleccionar_metodo_pago(request):
-    carrito_items = CarritoItem.objects.filter(usuario=request.user)
+def seleccionar_metodo_pago(request, id_carro):
+    carrito_items = CarritoItem.objects.filter(usuario=request.user, carrito_numero=id_carro )
     total = sum(item.subtotal() for item in carrito_items)
     if not carrito_items:
         messages.error(request, 'No hay artículos en el carrito.')
-        return redirect('caja')  # Reemplaza 'nombre_de_la_vista_caja' con la URL de la vista "caja".
-    context = {'metodos_pago': metodos_pago, 'total' : total}
+        return redirect('caja', id_carro=id_carro)  # Reemplaza 'nombre_de_la_vista_caja' con la URL de la vista "caja".
+    context = {'metodos_pago': metodos_pago, 'total' : total, 'id_carro' : id_carro}
     return render(request, 'seleccionar_pago.html', context)
 
 
 
 @login_required(login_url='/login')
-def procesar_pago(request):
+def procesar_pago(request,id_carro):
     if request.method == 'POST':
         #traigo el metodo de pago
         metodo_pago_seleccionado = request.POST.get('metodoPago')
 
         if metodo_pago_seleccionado == 'Efectivo':
-            return redirect('ingresar_monto_efectivo')
+            return redirect('ingresar_monto_efectivo', id_carro)
         
         elif metodo_pago_seleccionado == 'Transferencia':
             # Redirige a la vista generar_venta con los parámetros adecuados para Transferencia
-            url_generar_venta = reverse('generar_venta', args=['transferencia', '0', '0'])
+            url_generar_venta = reverse('generar_venta', args=['transferencia', '0', '0',id_carro])
             return redirect(url_generar_venta)
         
         elif metodo_pago_seleccionado == 'Débito':
             # Redirige a la vista generar_venta con los parámetros adecuados para Débito
-            url_generar_venta = reverse('generar_venta', args=['debito', '0', '0'])
+            url_generar_venta = reverse('generar_venta', args=['debito', '0', '0',id_carro])
             return redirect(url_generar_venta)
         
         elif metodo_pago_seleccionado == 'Efectivo Justo':
             # Redirige a la vista generar_venta con los parámetros adecuados para efectivo justo
-            url_generar_venta = reverse('generar_venta', args=['Efectivo Justo', '0', '0'])
+            url_generar_venta = reverse('generar_venta', args=['Efectivo Justo', '0', '0', id_carro])
             return redirect(url_generar_venta)
     
     # Redirige a una vista predeterminada en caso de error o si no se seleccionó un método de pago válido
-    return redirect('caja')
+    return redirect('caja', id_carro=id_carro)
 
 
 
@@ -426,8 +503,8 @@ def procesar_pago(request):
 
 
 @login_required(login_url='/login')
-def ingresar_monto_efectivo(request):
-    carrito_items = CarritoItem.objects.filter(usuario=request.user)
+def ingresar_monto_efectivo(request,id_carro):
+    carrito_items = CarritoItem.objects.filter(usuario=request.user, carrito_numero=id_carro )
     total = sum(item.subtotal() for item in carrito_items)
 
     if request.method == 'POST':
@@ -437,14 +514,14 @@ def ingresar_monto_efectivo(request):
         monto_efectivo = float(monto_efectivo)
         if monto_efectivo >= total:
             monto_vuelto = monto_efectivo - total
-            url_generar_venta = reverse('generar_venta', args=['efectivo', '0' , monto_vuelto])
+            url_generar_venta = reverse('generar_venta', args=['efectivo', '0' , monto_vuelto, id_carro])
             return redirect(url_generar_venta)
         else:
             # Redirigir a la vista seleccionar_metodo_pago_resto
-            url_seleccionar_metodo_pago_resto = reverse('seleccionar_metodo_pago_resto', args=[total, monto_efectivo])
-            return redirect(url_seleccionar_metodo_pago_resto)
+            url_seleccionar_metodo_pago_resto = reverse('seleccionar_metodo_pago_resto', args=[total, monto_efectivo, id_carro])
+            return redirect(url_seleccionar_metodo_pago_resto,id_carro)
 
-    context = {'total': total}
+    context = {'total': total, 'id_carro' : id_carro }
     return render(request, 'ingresar_monto_efectivo.html', context)
 
 
@@ -465,15 +542,15 @@ def ingresar_monto_efectivo(request):
 
 
 @login_required(login_url='/login')
-def seleccionar_metodo_pago_resto(request, total, monto_efectivo):
+def seleccionar_metodo_pago_resto(request, total, monto_efectivo, id_carro):
     total = float(total)
     monto_efectivo = float(monto_efectivo)
     # Verifica si hay un restante por pagar (restante > 0)
     restante = total - monto_efectivo
-    context = {'total': total, 'monto_efectivo': monto_efectivo, 'restante': restante}
+    context = {'total': total, 'monto_efectivo': monto_efectivo, 'restante': restante,'id_carro' : id_carro}
     if restante <= 0:
         # Si no hay restante, redirige a la página de éxito o la que prefieras
-        return redirect('caja')  # Cambia 'pagina_exito' por la URL deseada
+        return redirect('caja', id_carro=id_carro)  # Cambia 'pagina_exito' por la URL deseada
 
     if request.method == 'POST':
         # Obtén el método de pago seleccionado por el usuario
@@ -481,15 +558,15 @@ def seleccionar_metodo_pago_resto(request, total, monto_efectivo):
         if metodo_pago_seleccionado == 'volver':
             return redirect('seleccionar_metodo_pago')
         
-        return redirect('procesar_pago_restante', metodo_pago=metodo_pago_seleccionado, restante=restante)
+        return redirect('procesar_pago_restante', metodo_pago=metodo_pago_seleccionado, restante=restante, id_carro=id_carro)
 
     # De lo contrario, renderiza la página de selección de método de pago
     return render(request, 'seleccionar_metodo_pago_resto.html', context)
 
 @login_required(login_url='/login')
-def procesar_pago_restante(request, metodo_pago, restante):
-    url_generar_venta = reverse('generar_venta', args=[metodo_pago, restante ,'0'])
-    return redirect(url_generar_venta)
+def procesar_pago_restante(request, metodo_pago, restante, id_carro):
+    url_generar_venta = reverse('generar_venta', args=[metodo_pago, restante ,'0', id_carro])
+    return redirect(url_generar_venta, id_carro)
 
 
 
@@ -1560,14 +1637,14 @@ def vista_boleta_venta_texto(request, venta_id):
 # ░░░╚═╝░░░╚═╝░░╚═╝░╚════╝░╚═╝╚═╝░░╚═╝╚═╝░░╚═╝  ░╚════╝░╚═╝░░╚═╝╚═╝░░╚═╝╚═╝░░╚═╝╚═╝░░░╚═╝░░░░╚════╝░
 
 @login_required(login_url='/login')
-def vaciar_carrito(request):
-    carrito_items = CarritoItem.objects.filter(usuario=request.user)
+def vaciar_carrito(request, id_carro):
+    carrito_items = CarritoItem.objects.filter(usuario=request.user, carrito_numero=id_carro)
 
     for item in carrito_items:
         item.delete()
 
     # Redirige de nuevo a la página del carrito (o a donde desees).
-    return redirect('caja')  # Ajusta 'nombre_de_la_vista_del_carrito'.
+    return redirect('caja', id_carro=1)  # Ajusta 'nombre_de_la_vista_del_carrito'.
 
 
 # ███████╗██████╗░██╗████████╗░█████╗░██████╗░  ███╗░░░███╗░█████╗░███╗░░██╗████████╗░█████╗░  ██████╗░███████╗
@@ -1752,6 +1829,8 @@ def obtener_ultima_venta():
         return venta
     except:
         pass
+
+
 
 def impresora_no_conectada(request):
     return render(request, 'no_impresora.html')
