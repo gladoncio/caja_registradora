@@ -10,7 +10,7 @@ COPY . /app
 COPY ./requirements.txt /app/requirements.txt
 
 # Install dependencies
-RUN apk add --no-cache build-base libffi-dev openssl-dev \
+RUN apk add --no-cache build-base libffi-dev openssl-dev mariadb-dev\
     && pip install --no-cache-dir -r /app/requirements.txt
 
 # Instalar Git
