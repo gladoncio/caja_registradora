@@ -251,7 +251,8 @@ def agregar_producto_al_carrito(request, id_producto,cantidad, id_carro):
 # ░╚════╝░╚═╝░░╚═╝╚═╝░░╚═╝╚═╝░░╚═╝╚═╝░░░╚═╝░░░░╚════╝░
 
 @login_required(login_url='/login')
-def agregar_al_carrito(request, producto_id, id_carro):
+def agregar_al_carrito(request, producto_id):
+    id_carro = 1
     config = Configuracion.objects.get(id=1)
     producto = get_object_or_404(Producto, id_producto=producto_id)
     if request.method == 'POST':
@@ -263,25 +264,29 @@ def agregar_al_carrito(request, producto_id, id_carro):
                 peso_en_gramos = peso * 1000
             else:
                 peso_en_gramos = peso
-            carrito_item, created = CarritoItem.objects.get_or_create(usuario=request.user, producto=producto)
+            carrito_item, created = CarritoItem.objects.get_or_create(usuario=request.user, producto=producto, carrito_numero= id_carro,)
             if not created:
                 carrito_item.gramaje = F('gramaje') + peso_en_gramos
-                carrito_item.cantidad = 0  # Reiniciamos la cantidad si se agrega por peso
+                carrito_item.cantidad = 0  
+                carrito_numero= id_carro,
                 carrito_item.save()
             else:
                 carrito_item.gramaje = peso_en_gramos
-                carrito_item.cantidad = 0  # Reiniciamos la cantidad si se agrega por peso
+                carrito_item.cantidad = 0
+                carrito_numero= id_carro,  # Reiniciamos la cantidad si se agrega por peso
                 carrito_item.save()
         else:
             cantidad = int(request.POST.get('cantidad', 1))
-            carrito_item, created = CarritoItem.objects.get_or_create(usuario=request.user, producto=producto)
+            carrito_item, created = CarritoItem.objects.get_or_create(usuario=request.user, producto=producto, carrito_numero= id_carro,)
             if not created:
                 carrito_item.cantidad = F('cantidad') + cantidad
-                carrito_item.gramaje = None  # Reiniciamos el gramaje si se agrega por cantidad
+                carrito_item.gramaje = None
+                carrito_numero= id_carro,  # Reiniciamos el gramaje si se agrega por cantidad
                 carrito_item.save()
             else:
                 carrito_item.cantidad = cantidad
                 carrito_item.gramaje = None  # Reiniciamos el gramaje si se agrega por cantidad
+                carrito_numero= id_carro,
                 carrito_item.save()
         
     

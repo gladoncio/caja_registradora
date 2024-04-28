@@ -67,7 +67,14 @@
                 <form id="agregarCarritoForm">
                     <!-- Campo oculto para la ID del producto -->
                     <input type="hidden" id="productoIdInput" name="producto_id">
-                    <input type="number" id="cantidadInput" class="form-control resize-text" placeholder="Cantidad" min="1">
+                    <div class="form-group">
+                        <label for="cantidadInput">Cantidad</label>
+                        <input type="number" id="cantidadInput" class="form-control resize-text" placeholder="Cantidad" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="numeroCajaInput">Número de caja</label>
+                        <input type="number" id="numeroCajaInput" class="form-control resize-text" placeholder="Número de caja" min="1" max="8" default:"1">
+                    </div>
                 </form>
             </div>
             <div class="modal-footer solofondo">
