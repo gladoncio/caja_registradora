@@ -1,9 +1,14 @@
 # Caja Registradora
 
+
 [![Contributors][contributors-shield]][contributors-url]
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
+[![MIT License][license-shield]][license-url]
+[![LinkedIn][linkedin-shield]][linkedin-url]
+
+[![codecov][codecov-shield]][codecov-url]
 
 La Caja Registradora es un proyecto Django diseñado para gestionar ventas y conectar impresoras POS. Este proyecto facilita la administración de transacciones comerciales de manera eficiente y conecta hardware de punto de venta para una experiencia más integrada.
 
