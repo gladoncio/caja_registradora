@@ -1,9 +1,8 @@
-# Caja Registradora
 
 <div align="center">
-  <h1><code>tf2_stats_2024</code></h1>
+  <h1><code>Caja registradora</code></h1>
   <p>
-    <strong>Short Description</strong>
+    <strong>Admistración de ventas Pos</strong>
   </p>
   <p style="margin-bottom: 0.5ex;">
     <img
