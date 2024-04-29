@@ -1,11 +1,31 @@
 # Caja Registradora
 
-[![Contributors][contributors-shield]][contributors-url]
-[![Forks][forks-shield]][forks-url]
-[![Stargazers][stars-shield]][stars-url]
-[![Issues][issues-shield]][issues-url]
-[![MIT License][license-shield]][license-url]
-[![LinkedIn][linkedin-shield]][linkedin-url]
+<div align="center">
+  <h1><code>tf2_stats_2024</code></h1>
+  <p>
+    <strong>Short Description</strong>
+  </p>
+  <p style="margin-bottom: 0.5ex;">
+    <img
+        src="https://img.shields.io/github/downloads/gladoncio/caja_registradora/total"
+    />
+    <img
+        src="https://img.shields.io/github/last-commit/gladoncio/caja_registradora"
+    />
+    <img
+        src="https://img.shields.io/github/issues/gladoncio/caja_registradora"
+    />
+    <img
+        src="https://img.shields.io/github/issues-closed/gladoncio/caja_registradora"
+    />
+    <img
+        src="https://img.shields.io/github/repo-size/gladoncio/caja_registradora"
+    />
+    <img
+        src="https://img.shields.io/github/workflow/status/gladoncio/caja_registradora/Compile%20and%20release"
+    />
+  </p>
+</div>
 
 La Caja Registradora es un proyecto Django diseñado para gestionar ventas y conectar impresoras POS. Este proyecto facilita la administración de transacciones comerciales de manera eficiente y conecta hardware de punto de venta para una experiencia más integrada.
 
