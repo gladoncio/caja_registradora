@@ -1,7 +1,7 @@
 from django.shortcuts import redirect
 import os
 
-impresora_validar = "no"
+impresora_validar = "si"
 
 def verificar_impresora_conectada():
     # Directorio donde se encuentran los dispositivos USB

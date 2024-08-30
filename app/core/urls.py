@@ -63,7 +63,7 @@ urlpatterns = [
     path('eliminar_producto_rapido/<int:producto_id>/', eliminar_producto_rapido, name='eliminar_producto_rapido'),
     path('general_dia_especifico/', general_dia_especifico, name='general_dia_especifico'),
     path('ventas_dia_especifico/', ventas_dia_especifico, name='ventas_dia_especifico'),
-    path('ingresar_clave/', ingresar_clave, name='ingresar_clave'),
+    path('ingresar_clave/<str:vista>/', ingresar_clave, name='ingresar_clave'),
     path('eliminar-producto/<int:producto_id>/', views.eliminar_producto, name='eliminar_producto'),
     
 ]

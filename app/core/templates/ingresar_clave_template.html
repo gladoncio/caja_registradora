@@ -13,7 +13,7 @@
                         {% csrf_token %}
                         <div class="mb-3">
                             <label for="clave_anulacion" class="form-label">Clave Personal:</label>
-                            <input type="password" name="clave_anulacion" class="form-control onlyinput" required>
+                            <input type="password" name="clave_anulacion" class="form-control onlyinput" required id="id_password">
                         </div>
 
                         <button type="submit" class="btn boton-dinamico">Continuar</button>
@@ -34,6 +34,14 @@
         </div>
     </div>
 </div>
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+      // Enfocar automáticamente en el campo de contraseña cuando la página se carga
+      document.getElementById("id_password").focus();
+    });
+  </script>
 
 {% include 'base/footer.html' %}
 {% include 'base/logout.html' %}

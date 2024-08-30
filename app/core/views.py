@@ -2076,7 +2076,7 @@ def ventas_dia_especifico(request):
     return render(request, 'ventas_dia_especifico.html', context)
 
 @login_required
-def ingresar_clave(request):
+def ingresar_clave(request,vista):
     if request.method == 'POST':
         clave_anulacion_ingresada = request.POST.get('clave_anulacion', '')
 
@@ -2087,7 +2087,7 @@ def ingresar_clave(request):
             return render(request, 'ingresar_clave_template.html')  # Muestra la misma vista de contraseña
 
         # Si la clave es correcta, redirige a la vista 'cuadrar'
-        return redirect('cuadrar')
+        return redirect(vista)
 
     return render(request, 'ingresar_clave_template.html')
 

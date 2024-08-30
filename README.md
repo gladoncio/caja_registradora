@@ -26,7 +26,9 @@
   </p>
 </div>
 
-La Caja Registradora es un proyecto Django diseñado para gestionar ventas y conectar impresoras POS. Este proyecto facilita la administración de transacciones comerciales de manera eficiente y conecta hardware de punto de venta para una experiencia más integrada.
+![Sistema](sistema.png)
+
+### La Caja Registradora es un proyecto Django diseñado para gestionar ventas y conectar impresoras POS. Este proyecto facilita la administración de transacciones comerciales de manera eficiente y conecta hardware de punto de venta para una experiencia más integrada.
 
 ## Características Principales
 
@@ -35,7 +37,7 @@ La Caja Registradora es un proyecto Django diseñado para gestionar ventas y con
 - **Interfaz Intuitiva:** Interfaz de usuario fácil de usar para una experiencia de caja registradora intuitiva.
 
 ## Requisitos del Sistema
-- Sistema operativo Lubuntu (otros sistemas operativos serán compatibles en futuras versiones).
+- Sistema operativo basado en Debian (otros sistemas operativos serán compatibles en futuras versiones).
 - Conexión a internet para la descarga de dependencias.
 
 ## Instrucciones de Instalación
