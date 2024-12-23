@@ -2000,7 +2000,7 @@ def general_dia_especifico(request):
                 content = ""
                 content += "--------------------------\n"
                 content += "Reporte\n"
-                content += "Fecha que se imprime el reporte: {}\n".format(timezone.now().strftime('%Y-%m-%d %H:%M:%S'))
+                content += "Fecha de hoy: {}\n".format(timezone.now().strftime('%Y-%m-%d %H:%M:%S'))
                 content += "Fecha del detalle: {}\n".format(context['fecha_ingresada'].strftime('%Y-%m-%d') if 'fecha_ingresada' in context and context['fecha_ingresada'] else "No disponible")
                 content += "--------------------------\n"
                 
