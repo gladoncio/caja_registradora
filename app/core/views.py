@@ -46,7 +46,10 @@ import json
 from django.db.models import Count
 from django.http import HttpResponseForbidden
 from django.utils import timezone
-
+# views.py
+from django.shortcuts import render
+from django.contrib import messages
+import pandas as pd
 
 
 # ██╗░░░░░░█████╗░░██████╗░██╗███╗░░██╗  ██╗░░░██╗██╗███████╗░██╗░░░░░░░██╗░██████╗
@@ -2108,3 +2111,96 @@ def eliminar_producto(request, producto_id):
 
     # Si no se ha enviado el formulario de confirmación, renderiza la página de confirmación
     return render(request, 'eliminar_producto.html', {'producto': producto})
+
+
+def exportar_productos(request):
+    # Consulta los productos
+    productos = Producto.objects.select_related('marca', 'departamento').all()
+
+    # Estructura de los datos para el Excel
+    data = []
+    for producto in productos:
+        data.append({
+            'ID Producto': producto.id_producto,
+            'Nombre': producto.nombre,
+            'Valor Costo': producto.valor_costo,
+            'Precio': producto.precio,
+            'Código de Barras': producto.codigo_barras,
+            'Gramaje': producto.gramaje,
+            'Tipo Gramaje': producto.tipo_gramaje,
+            'Descripción': producto.descripcion,
+            'Departamento': producto.departamento.nombre if producto.departamento else '',
+            'Marca': producto.marca.nombre if producto.marca else '',
+        })
+
+    # Convertir los datos a un DataFrame de pandas
+    df = pd.DataFrame(data)
+
+    # Crear una respuesta HTTP con el archivo Excel
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=productos.xlsx'
+
+    # Guardar el DataFrame en el archivo Excel
+    df.to_excel(response, index=False, engine='openpyxl')
+
+    return response
+
+
+def importar_productos(request):
+    error = None
+    datos = []
+    columnas = []
+
+    if request.method == 'POST' and 'archivo' in request.FILES:
+        archivo = request.FILES['archivo']
+        try:
+            # Leer el archivo Excel con pandas
+            df = pd.read_excel(archivo)
+
+            # Reemplazar valores NaN con None para que Django los maneje correctamente
+            df = df.where(pd.notnull(df), None)
+
+            # Convertir el DataFrame a una lista de diccionarios
+            columnas = df.columns.tolist()
+            datos = df.to_dict(orient='records')
+
+            # Comprobar si se seleccionaron productos para subir
+            if 'subir_seleccionados' in request.POST:
+                seleccionados = request.POST.getlist('productos_seleccionados')
+                # Obtener todos los IDs existentes en la base de datos
+                ids_existentes = set(Producto.objects.values_list('id', flat=True))  # Usamos un set para búsqueda rápida
+
+                productos_nuevos = 0
+                productos_duplicados = 0
+
+                for producto in seleccionados:
+                    producto_data = eval(producto)  # Convertir cadena a diccionario
+                    producto_id = producto_data.get('id')
+
+                    # Verificar si la ID ya existe en la base de datos
+                    if producto_id in ids_existentes:
+                        productos_duplicados += 1
+                    else:
+                        Producto.objects.create(**producto_data)
+                        productos_nuevos += 1
+                        # Agregar la ID del producto recién creado al set de IDs existentes
+                        ids_existentes.add(producto_id)
+
+                if productos_nuevos > 0:
+                    mensaje = f"¡Productos añadidos exitosamente! Se añadieron {productos_nuevos} productos."
+                else:
+                    mensaje = "No se añadieron productos nuevos."
+
+                if productos_duplicados > 0:
+                    mensaje += f" {productos_duplicados} productos tenían ID duplicada y no fueron añadidos."
+
+                return HttpResponse(mensaje)
+
+        except Exception as e:
+            error = f"Error al procesar el archivo: {e}"
+
+    return render(request, 'importar_productos.html', {
+        'error': error,
+        'datos': datos,
+        'columnas': columnas
+    })

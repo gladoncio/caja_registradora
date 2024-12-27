@@ -1,0 +1,95 @@
+{% extends 'base/nav.html' %}
+
+{% block body %}
+<div class="container mt-5">
+    <h1 class="mb-4 text-center">Importar Productos</h1>
+
+    <!-- Formulario para subir el archivo -->
+    <form method="POST" enctype="multipart/form-data" class="mb-4">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="archivo" class="form-label">Seleccionar archivo Excel</label>
+            <input type="file" name="archivo" id="archivo" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Cargar archivo</button>
+    </form>
+
+    <!-- Mostrar mensajes de error o éxito -->
+    {% if error %}
+    <div class="alert alert-danger" role="alert">
+        {{ error }}
+    </div>
+    {% elif mensaje %}
+    <div class="alert alert-success" role="alert">
+        {{ mensaje }}
+    </div>
+    {% endif %}
+
+    <!-- Mostrar los datos en una tabla -->
+    {% if datos %}
+    <h2 class="text-center">Productos Nuevos</h2>
+    <p class="text-muted text-center">
+        Selecciona los productos que deseas agregar a la base de datos.
+    </p>
+
+    <!-- Formulario general para checkboxes -->
+    <form method="POST">
+        {% csrf_token %}
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="text-center">Seleccionar</th>
+                        {% for columna in columnas %}
+                        <th>{{ columna }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fila in datos %}
+                    <tr>
+                        <!-- Checkbox para seleccionar el producto -->
+                        <td class="text-center">
+                            <input 
+                                type="checkbox" 
+                                name="productos_seleccionados" 
+                                value="{{ fila|safe }}" 
+                                class="form-check-input styled-checkbox">
+                        </td>
+                        {% for clave, valor in fila.items %}
+                        <td>
+                            {{ valor|default_if_none:"" }}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <!-- Botón para enviar los productos seleccionados -->
+        <div class="mt-3 text-center">
+            <button type="submit" name="subir_seleccionados" class="btn btn-success">
+                Subir Seleccionados
+            </button>
+        </div>
+    </form>
+    {% endif %}
+</div>
+
+<!-- Estilo de los checkboxes -->
+<style>
+    .styled-checkbox {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
+
+    .styled-checkbox:checked {
+        background-color: #28a745; /* Verde */
+        border-color: #28a745;
+    }
+</style>
+
+{% include 'base/footer.html' %}
+{% include 'base/logout.html' %}
+{% endblock %}

@@ -65,6 +65,8 @@ urlpatterns = [
     path('ventas_dia_especifico/', ventas_dia_especifico, name='ventas_dia_especifico'),
     path('ingresar_clave/<str:vista>/', ingresar_clave, name='ingresar_clave'),
     path('eliminar-producto/<int:producto_id>/', views.eliminar_producto, name='eliminar_producto'),
+    path('exportar-productos/', exportar_productos, name='exportar_productos'),
+    path('importar-productos/', importar_productos, name='importar_productos'),
     
 ]
 
