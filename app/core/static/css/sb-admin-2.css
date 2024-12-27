@@ -10387,6 +10387,8 @@ a:focus {
   min-width: 10rem;
   font-size: 0.85rem;
   margin: 0 0 1rem 0;
+  opacity: 0; /* Comienza invisible */
+  transition: opacity 0.3s ease-in-out; /* Transición de opacidad */
 }
 
 .sidebar .nav-item .collapse .collapse-inner .collapse-header,
@@ -10522,12 +10524,14 @@ a:focus {
 .sidebar .sidebar-card p {
   font-size: 0.75rem;
   color: rgba(255, 255, 255, 0.5);
+
 }
 
 @media (min-width: 768px) {
   .sidebar {
     width: 14rem !important;
   }
+
   .sidebar .nav-item .collapse {
     position: relative;
     left: 0;
@@ -10536,10 +10540,18 @@ a:focus {
     -webkit-animation: none;
     animation: none;
   }
-  .sidebar .nav-item .collapse .collapse-inner {
-    border-radius: 0;
-    box-shadow: none;
-  }
+/* Inicia visible */
+.sidebar .nav-item .collapse .collapse-inner {
+  border-radius: 0;
+  box-shadow: none;
+  position: absolute;
+  z-index: 1;
+  margin-left: 210px;
+  margin-top: -50px;
+  opacity: 1;
+}
+
+
   .sidebar .nav-item .collapsing {
     display: block;
     transition: height 0.15s ease;
@@ -10553,7 +10565,7 @@ a:focus {
     width: 100%;
     text-align: left;
     padding: 1rem;
-    width: 14rem;
+    width: 14rem;/* Transición de opacidad */
   }
   .sidebar .nav-item .nav-link i {
     font-size: 0.85rem;
@@ -11296,3 +11308,5 @@ footer.sticky-footer .copyright {
 body.sidebar-toggled footer.sticky-footer {
   width: 100%;
 }
+
+

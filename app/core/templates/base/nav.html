@@ -134,20 +134,20 @@
             {% if request.user.permisos == 'admin' %}
             <li class="nav-item">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
-                    aria-expanded="true" aria-controls="collapseTwo">
+                    aria-expanded="false" aria-controls="collapseTwo">
                     <i class="fas fa-fw fa-cog"></i>
                     <span>Configuraciones administración</span>
                 </a>
                 <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">
                         <h6 class="collapse-header">Caja:</h6>
-                        <a class="collapse-item" href="{% url "admin:index" %}">Panel del administrador</a>
-                        <a class="collapse-item" href="{% url "generar_codigo_ean13" %}">Generar Código de barras</a>
-                        <a class="collapse-item" href="{% url "lista_usuarios" %}">Administrar Usuarios</a>
-                        <a class="collapse-item" href="{% url "generate_barcode" %}">Tarjeta de Autorización</a>
-                        <a class="collapse-item" href="{% url "producto-list" %}">Administración de productos</a>
-                        <a class="collapse-item" href="{% url "general_dia_especifico" %}">Detalle de un dia</a>
-                        <a class="collapse-item" href="{% url "importar_productos" %}">Importar y exportar productos</a>
+                        <a class="collapse-item" href="{% url 'admin:index' %}">Panel del administrador</a>
+                        <a class="collapse-item" href="{% url 'generar_codigo_ean13' %}">Generar Código de barras</a>
+                        <a class="collapse-item" href="{% url 'lista_usuarios' %}">Administrar Usuarios</a>
+                        <a class="collapse-item" href="{% url 'generate_barcode' %}">Tarjeta de Autorización</a>
+                        <a class="collapse-item" href="{% url 'producto-list' %}">Administración de productos</a>
+                        <a class="collapse-item" href="{% url 'general_dia_especifico' %}">Detalle de un día</a>
+                        <a class="collapse-item" href="{% url 'importar_productos' %}">Importar y exportar productos</a>
                     </div>
                 </div>
             </li>
