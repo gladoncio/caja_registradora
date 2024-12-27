@@ -13,3 +13,4 @@ data/
 datos.json
 app/core/migrations/      
 !app/core/migrations/__init__.py   # No ignorar '__init__.py'
+archivos_excel/

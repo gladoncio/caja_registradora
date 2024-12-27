@@ -2,7 +2,14 @@
 
 {% block body %}
 <div class="container mt-5">
-    <h1 class="mb-4 text-center">Importar Productos</h1>
+    <h1 class="mb-4 text-center">Importar y exportar productos</h1>
+
+    <!-- Botón para exportar productos -->
+    <div class="text-end mb-4">
+        <a href="{% url 'exportar_productos' %}" class="btn btn-secondary">
+            Exportar productos a Excel
+        </a>
+    </div>
 
     <!-- Formulario para subir el archivo -->
     <form method="POST" enctype="multipart/form-data" class="mb-4">
@@ -66,13 +73,16 @@
                 </tbody>
             </table>
         </div>
-        <!-- Botón para enviar los productos seleccionados -->
         <div class="mt-3 text-center">
             <button type="submit" name="subir_seleccionados" class="btn btn-success">
                 Subir Seleccionados
             </button>
         </div>
     </form>
+
+
+    
+    
     {% endif %}
 </div>
 

@@ -1,55 +1,50 @@
-from multiprocessing import context
-import re
-from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse
-from .forms import *
-from .models import *
-from django.views import View
-from django.contrib import messages
-from django.contrib.auth import login, logout, authenticate
-from django.contrib.auth.decorators import login_required
-from django.db.models import F,Q,Max, Min
-from decimal import Decimal
-import datetime
-from escpos.printer import Usb
-from usb.core import USBError
-from django.http import HttpResponse
-import requests
+# 1. Importaciones estándar
+import json
 import os
+import random
+import re
 import shutil
 import subprocess
+import glob
 import zipfile
 from datetime import datetime, timedelta
-from .funciones import check_github_version
-import barcode
-from barcode import generate
-from django.conf import settings  # Agrega esta importación
+from decimal import Decimal
 from io import BytesIO
-from django.urls import reverse
-from django.db.models import Sum, F, ExpressionWrapper, DecimalField
-from django.db.models.functions import Coalesce
-from django.views.generic.edit import UpdateView
-from django.urls import reverse_lazy
-from django.contrib.auth import update_session_auth_hash
-from django.core.exceptions import ObjectDoesNotExist  # Importa la excepción ObjectDoesNotExist
-from barcode.writer import ImageWriter
-import random
-from barcode import EAN13
-from django.core.paginator import Paginator
-from django.views.generic import ListView
 from math import ceil
-from escpos import *
-from .impresora import abrir_caja_impresora, imprimir, imprimir_en_xprinter, generar_y_imprimir_codigo_ean13, generar_comandos_de_impresion
-import locale
-from django.utils.formats import date_format
-import json
-from django.db.models import Count
-from django.http import HttpResponseForbidden
-from django.utils import timezone
-# views.py
-from django.shortcuts import render
-from django.contrib import messages
+
+# 2. Importaciones de librerías de terceros
+import barcode
+import numpy as np
 import pandas as pd
+from barcode.writer import ImageWriter
+from barcode import EAN13, generate
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth import login, logout, authenticate, update_session_auth_hash
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ObjectDoesNotExist
+from django.core.paginator import Paginator
+from django.db.models import Count, F, Max, Min, Q, Sum, ExpressionWrapper, DecimalField
+from django.db.models.functions import Coalesce
+from django.http import JsonResponse, HttpResponse, HttpResponseForbidden
+from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse, reverse_lazy
+from django.utils import timezone
+from django.utils.formats import date_format
+from django.views import View
+from django.views.generic import ListView
+from django.views.generic.edit import UpdateView
+from escpos import *
+from escpos.printer import Usb
+from usb.core import USBError
+from openpyxl import Workbook
+from openpyxl.worksheet.datavalidation import DataValidation
+
+# 3. Importaciones locales
+from .forms import *
+from .impresora import abrir_caja_impresora, imprimir, imprimir_en_xprinter, generar_y_imprimir_codigo_ean13, generar_comandos_de_impresion
+from .funciones import check_github_version
+from .models import *
 
 
 # ██╗░░░░░░█████╗░░██████╗░██╗███╗░░██╗  ██╗░░░██╗██╗███████╗░██╗░░░░░░░██╗░██████╗
@@ -2136,71 +2131,188 @@ def exportar_productos(request):
     # Convertir los datos a un DataFrame de pandas
     df = pd.DataFrame(data)
 
+    # Obtener la fecha actual en formato deseado
+    fecha_actual = datetime.now().strftime('%Y-%m-%d')
+
     # Crear una respuesta HTTP con el archivo Excel
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = 'attachment; filename=productos.xlsx'
+    response['Content-Disposition'] = f'attachment; filename=productos_{fecha_actual}.xlsx'
 
     # Guardar el DataFrame en el archivo Excel
     df.to_excel(response, index=False, engine='openpyxl')
 
     return response
 
-
 def importar_productos(request):
     error = None
+    mensaje = None
     datos = []
     columnas = []
+    datos_procesados = []  # Para la tabla provisional
 
-    if request.method == 'POST' and 'archivo' in request.FILES:
-        archivo = request.FILES['archivo']
-        try:
-            # Leer el archivo Excel con pandas
-            df = pd.read_excel(archivo)
+    if request.method == 'POST':
+        # Manejar la carga de archivo
+        if 'archivo' in request.FILES:
+            archivo = request.FILES['archivo']
+            try:
+                # Leer el archivo Excel con pandas
+                df = pd.read_excel(archivo)
+                df = df.where(pd.notnull(df), None)  # Reemplazar NaN con None
 
-            # Reemplazar valores NaN con None para que Django los maneje correctamente
-            df = df.where(pd.notnull(df), None)
+                # Debug: Ver los valores en el DataFrame para verificar
+                print("Valores en el DataFrame:")
+                print(df.head())  # Mostrar las primeras filas del DataFrame
 
-            # Convertir el DataFrame a una lista de diccionarios
-            columnas = df.columns.tolist()
-            datos = df.to_dict(orient='records')
+                ids_excel = set(df.iloc[:, 0])  # Primera columna del archivo Excel
+                ids_existentes = set(Producto.objects.values_list('id_producto', flat=True))
 
-            # Comprobar si se seleccionaron productos para subir
-            if 'subir_seleccionados' in request.POST:
-                seleccionados = request.POST.getlist('productos_seleccionados')
-                # Obtener todos los IDs existentes en la base de datos
-                ids_existentes = set(Producto.objects.values_list('id', flat=True))  # Usamos un set para búsqueda rápida
+                ids_nuevos = ids_excel - ids_existentes
 
-                productos_nuevos = 0
-                productos_duplicados = 0
-
-                for producto in seleccionados:
-                    producto_data = eval(producto)  # Convertir cadena a diccionario
-                    producto_id = producto_data.get('id')
-
-                    # Verificar si la ID ya existe en la base de datos
-                    if producto_id in ids_existentes:
-                        productos_duplicados += 1
-                    else:
-                        Producto.objects.create(**producto_data)
-                        productos_nuevos += 1
-                        # Agregar la ID del producto recién creado al set de IDs existentes
-                        ids_existentes.add(producto_id)
-
-                if productos_nuevos > 0:
-                    mensaje = f"¡Productos añadidos exitosamente! Se añadieron {productos_nuevos} productos."
+                if not ids_nuevos:
+                    mensaje = "Todas las entradas en el archivo coinciden con los productos existentes."
                 else:
-                    mensaje = "No se añadieron productos nuevos."
+                    # Filtrar solo productos nuevos
+                    df_nuevos = df[df.iloc[:, 0].isin(ids_nuevos)]
+                    columnas = df.columns.tolist()
 
-                if productos_duplicados > 0:
-                    mensaje += f" {productos_duplicados} productos tenían ID duplicada y no fueron añadidos."
+                    # Debug: Mostrar datos antes de la conversión a dict
+                    print("Datos antes de reemplazar NaN y 'nan':")
+                    print(df_nuevos)
 
-                return HttpResponse(mensaje)
+                    # Reemplazar NaN por None y verificar si son 'nan' como texto
+                    datos = df_nuevos.applymap(lambda x: None if (pd.isna(x) or str(x).lower() == 'nan') else x).to_dict(orient='records')
 
-        except Exception as e:
-            error = f"Error al procesar el archivo: {e}"
+                    # Debug: Mostrar datos después de reemplazar
+                    print("Datos después de reemplazar NaN y 'nan':")
+                    print(datos)
+
+                    # Guardar datos procesados en sesión para el siguiente POST
+                    request.session['datos_nuevos'] = datos
+                    request.session['columnas'] = columnas
+                    
+            except Exception as e:
+                error = f"Error al procesar el archivo: {e}"
+
+        # Manejar la subida de productos seleccionados
+        elif 'subir_seleccionados' in request.POST:
+            try:
+                # Recuperar datos guardados en sesión
+                datos_nuevos = request.session.get('datos_nuevos', [])
+                if not datos_nuevos:
+                    error = "No se encontraron datos para procesar. Carga un archivo primero."
+                else:
+                    seleccionados = request.POST.getlist('productos_seleccionados')
+                    if not seleccionados:
+                        error = "No seleccionaste ningún producto."
+                    else:
+                        productos_creados = 0
+                        for producto in seleccionados:
+                            producto_data = eval(producto)  # Convertir cadena a diccionario
+
+                            # Reemplazar valores NaN con None en producto_data
+                            producto_data = {
+                                key: (None if (pd.isna(value) or str(value).lower() == 'nan') else value)
+                                for key, value in producto_data.items()
+                            }
+                            datos_procesados.append(producto_data)  # Guardar datos para la tabla provisional
+
+                            # Crear nuevo producto
+                            Producto.objects.create(
+                                id_producto=producto_data['ID Producto'],
+                                nombre=producto_data['Nombre'],
+                                valor_costo=producto_data.get('Valor Costo'),
+                                precio=producto_data.get('Precio'),
+                                codigo_barras=producto_data.get('Código de Barras'),
+                                gramaje=producto_data.get('Gramaje'),
+                                tipo_gramaje=producto_data.get('Tipo Gramaje'),
+                                descripcion=producto_data.get('Descripción'),
+                                departamento=Departamento.objects.get_or_create(nombre=producto_data.get('Departamento'))[0] if producto_data.get('Departamento') else None,
+                                marca=Marca.objects.get_or_create(nombre=producto_data.get('Marca'))[0] if producto_data.get('Marca') else None,
+                            )
+                            productos_creados += 1
+
+                        mensaje = f"¡Productos añadidos exitosamente! Se añadieron {productos_creados} productos nuevos."
+                        # Limpiar sesión y la lista de datos procesados
+                        datos_procesados.clear()  # Limpiar los datos procesados
+                request.session.pop('datos_nuevos', None)
+                request.session.pop('columnas', None)
+            except Exception as e:
+                error = f"Error al subir los productos seleccionados: {e}"
 
     return render(request, 'importar_productos.html', {
         'error': error,
-        'datos': datos,
-        'columnas': columnas
+        'mensaje': mensaje,
+        'datos': datos or request.session.get('datos_nuevos', []),
+        'columnas': columnas or request.session.get('columnas', []),
+        'datos_procesados': datos_procesados,  # Enviar datos procesados al template
     })
+    
+    
+    
+def exportar_productos_periodico(request):
+    # Consulta los productos
+    productos = Producto.objects.select_related('marca', 'departamento').all()
+
+    # Estructura de los datos para el Excel
+    data = []
+    for producto in productos:
+        data.append({
+            'ID Producto': producto.id_producto,
+            'Nombre': producto.nombre,
+            'Valor Costo': producto.valor_costo,
+            'Precio': producto.precio,
+            'Código de Barras': producto.codigo_barras,
+            'Gramaje': producto.gramaje,
+            'Tipo Gramaje': producto.tipo_gramaje,
+            'Descripción': producto.descripcion,
+            'Departamento': producto.departamento.nombre if producto.departamento else '',
+            'Marca': producto.marca.nombre if producto.marca else '',
+        })
+
+    # Convertir los datos a un DataFrame de pandas
+    df = pd.DataFrame(data)
+
+    # Obtener la fecha actual en formato deseado
+    fecha_actual = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+
+    # Definir el directorio donde se guardarán los archivos Excel
+    directorio = os.path.join(settings.BASE_DIR, 'archivos_excel')
+    
+    # Crear el directorio si no existe
+    if not os.path.exists(directorio):
+        os.makedirs(directorio)
+
+    # Crear el nombre del archivo con fecha y hora para hacerlo único
+    archivo_nombre = f'productos_{fecha_actual}.xlsx'
+    archivo_ruta = os.path.join(directorio, archivo_nombre)
+
+    # Verificar si el archivo se guarda correctamente
+    print(f"Guardando archivo en: {archivo_ruta}")  # Verificar la ruta
+
+    # Guardar el archivo Excel en el directorio
+    try:
+        df.to_excel(archivo_ruta, index=False, engine='openpyxl')
+        print(f"Archivo guardado exitosamente: {archivo_ruta}")  # Confirmar que el archivo se guarda
+    except Exception as e:
+        print(f"Error al guardar el archivo: {e}")  # Capturar posibles errores
+
+    # Limitar el número de archivos guardados (por ejemplo, 5)
+    limite_archivos = 10
+    archivos_excel = glob.glob(os.path.join(directorio, '*.xlsx'))
+
+    # Si el número de archivos excede el límite, eliminar los más antiguos
+    if len(archivos_excel) > limite_archivos:
+        archivos_excel.sort(key=os.path.getmtime)  # Ordenar por fecha de modificación
+        archivos_a_borrar = archivos_excel[:len(archivos_excel) - limite_archivos]
+        
+        for archivo in archivos_a_borrar:
+            os.remove(archivo)
+
+    # Crear la respuesta HTTP con el archivo Excel
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename={archivo_nombre}'
+
+    # Guardar el DataFrame en el archivo Excel
+    df.to_excel(response, index=False, engine='openpyxl')
+
+    return response

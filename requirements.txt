@@ -8,3 +8,4 @@ mysqlclient==2.2.4
 psycopg2-binary==2.9.9
 pandas==2.2.3
 openpyxl==3.1.5
+numpy==2.2.1

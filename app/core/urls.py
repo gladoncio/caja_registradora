@@ -67,6 +67,7 @@ urlpatterns = [
     path('eliminar-producto/<int:producto_id>/', views.eliminar_producto, name='eliminar_producto'),
     path('exportar-productos/', exportar_productos, name='exportar_productos'),
     path('importar-productos/', importar_productos, name='importar_productos'),
+    path('exportar-productos-periodico/', views.exportar_productos_periodico, name='exportar_productos_periodico'),
     
 ]
 
