@@ -156,6 +156,9 @@
                                     {% endif %}
                                     <td>
                                         <a href="{% url 'eliminar_item' item_id=item.id id_carro=id_carro %}" class="btn btn-danger btn-sm">Eliminar</a>
+                                        {% if request.user.permisos == 'admin' %}
+                                        <a href="{% url 'producto-editar' pk=item.producto.id_producto %}" class="btn boton-dinamico btn-sm">Editar</a>
+                                        {% endif %}
                                     </td>
                                 </tr>
                                 <!-- Modal para confirmar eliminación -->

@@ -274,6 +274,20 @@ class Cuadre(models.Model):
         return f'Cierre de caja por {self.usuario.username} el {self.fecha_ingreso}'
     
 
+class RetiroCaja(models.Model):
+    MONTO_OPCIONES = (
+        ('restado', 'Restado'),
+        ('sumado', 'Sumado'),
+    )
+    
+    monto = models.DecimalField(max_digits=10,decimal_places=2)
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)  # Referencia al usuario que hizo el retiro
+    fecha_hora = models.DateTimeField(auto_now_add=True)  # Guarda la fecha y hora del retiro
+    tipo_monto = models.CharField(choices=MONTO_OPCIONES)  # Si el monto fue restado o sumado
+
+    def __str__(self): 
+        return f'Retiro de ${self.monto} - {self.tipo_monto} - Realizado por: {self.usuario.username} el {self.fecha_hora}'
+
 class ActualizacionModel(models.Model):
     id = models.AutoField(primary_key=True)
     fecha_actualizacion = models.DateTimeField()

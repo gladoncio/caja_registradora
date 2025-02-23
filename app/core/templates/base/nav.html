@@ -90,7 +90,7 @@
                 </a>
             </li>
             <li class="nav-item active">
-                <a class="nav-link" href="{% url "ingresar_clave" 'editar_caja_diaria' %}">
+                <a class="nav-link" href="{% url "editar_caja_diaria" %}">
                     <i class="fas fa-user-plus me-2"></i> <!-- Icono de agregar usuario -->
                     {% if request.user.permisos == 'admin' %}
                     <span>Caja diaria y Retiros</span>
