@@ -19,6 +19,10 @@
          <form method="post">
             {% csrf_token %}
             {{ form.as_p }}
+            <div class="form-group">
+               <label for="clave_anulacion">Clave de Anulación</label>
+               <input type="password" name="clave_anulacion" id="clave_anulacion" class="form-control" required>
+            </div>
             <button type="submit" class="btn boton-dinamico mb-4">Guardar</button>
          </form>
          <a href="{% url 'lista_gastos' %}" class="btn btn-secondary">Volver a la Lista de Gastos</a>

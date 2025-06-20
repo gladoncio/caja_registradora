@@ -1652,7 +1652,7 @@ def vaciar_carrito(request, id_carro):
 
 
 # ███████╗██████╗░██╗████████╗░█████╗░██████╗░  ███╗░░░███╗░█████╗░███╗░░██╗████████╗░█████╗░  ██████╗░███████╗
-# ██╔════╝██╔══██╗██║╚══██╔══╝██╔══██╗██╔══██╗  ████╗░████║██╔══██╗████╗░██║╚══██╔══╝██╔══██╗  ██╔══██╗██╔════╝
+# ██╔════╝██╔══██╗██║╚══██╔══╝██╔══██╗██╔══██╗  ████╗░████║██╔══██╗████╗░   ██║╚══██╔══╝██╔══██╗  ██╔══██╗██╔════╝
 # █████╗░░██║░░██║██║░░░██║░░░███████║██████╔╝  ██╔████╔██║██║░░██║██╔██╗██║░░░██║░░░██║░░██║  ██║░░██║█████╗░░
 # ██╔══╝░░██║░░██║██║░░░██║░░░██╔══██║██╔══██╗  ██║╚██╔╝██║██║░░██║██║╚████║░░░██║░░░██║░░██║  ██║░░██║██╔══╝░░
 # ███████╗██████╔╝██║░░░██║░░░██║░░██║██║░░██║  ██║░╚═╝░██║╚█████╔╝██║░╚███║░░░██║░░░╚█████╔╝  ██████╔╝███████╗
@@ -1666,68 +1666,51 @@ def vaciar_carrito(request, id_carro):
 # ░╚════╝░╚═╝░░╚═╝░╚════╝░╚═╝░░╚═╝  ░░░╚═╝░░░  ╚═╝░░╚═╝╚══════╝░░░╚═╝░░░╚═╝╚═╝░░╚═╝░╚════╝░
 @login_required(login_url='/login')
 def editar_monto_caja_diaria(request):
-    # Intenta recuperar el objeto CajaDiaria con ID 1 o crea uno nuevo si no existe
     caja_diaria, created = CajaDiaria.objects.get_or_create(id=1, defaults={'monto': 0.0, 'retiro': 0.0})
 
     if request.method == 'POST':
-        # Obtén el valor actual del monto y el retiro antes de guardar
-        monto_anterior = caja_diaria.monto
-        retiro_anterior = caja_diaria.retiro
-        
-
-        # Verifica si se envió una operación de suma o resta
         operacion = request.POST.get('operacion', None)
 
         if operacion == 'sumar':
-            
             monto_a_sumar = Decimal(request.POST.get('monto', 0.0))
             if monto_a_sumar != 0:
                 abrir_caja_impresora()
-            caja_diaria.monto += monto_a_sumar
-            
+                caja_diaria.monto += monto_a_sumar
+
         elif operacion == 'restar':
-            
             monto_a_restar = Decimal(request.POST.get('monto', 0.0))
             if monto_a_restar <= caja_diaria.monto:
                 if monto_a_restar != 0:
                     abrir_caja_impresora()
-                caja_diaria.monto -= monto_a_restar
+                    caja_diaria.monto -= monto_a_restar
             else:
-                # Muestra un mensaje de error si se intenta restar más de lo disponible
                 messages.error(request, 'No puedes restar más de lo que tienes disponible en la caja.')
 
-
-        if operacion == 'sumar_retiro':
-            # Sumar al retiro existente
+        elif operacion == 'sumar_retiro':
             retiro_a_sumar = Decimal(request.POST.get('retiro', 0.0))
-            if retiro_a_sumar !=0:
+            if retiro_a_sumar != 0:
                 abrir_caja_impresora()
-            caja_diaria.retiro += retiro_a_sumar
+                caja_diaria.retiro += retiro_a_sumar
+
         elif operacion == 'restar_retiro':
-            
-            # Restar al retiro existente si es posible
             retiro_a_restar = Decimal(request.POST.get('retiro', 0.0))
             if retiro_a_restar <= caja_diaria.retiro:
                 if retiro_a_restar != 0:
                     abrir_caja_impresora()
-                caja_diaria.retiro -= retiro_a_restar
+                    caja_diaria.retiro -= retiro_a_restar
             else:
                 messages.error(request, 'No puedes restar más de lo que tienes disponible en el retiro.')
 
-        # Asegúrate de que el retiro nunca sea menor que cero
         if caja_diaria.retiro < 0:
             caja_diaria.retiro = 0
 
-
         caja_diaria.save()
-
-        return redirect('editar_caja_diaria')  # Reemplaza 'nombre_de_la_vista' con el nombre de la vista a la que deseas redirigir después de la edición.
+        return redirect('editar_caja_diaria')
 
     else:
         form = CajaDiariaForm(instance=caja_diaria)
 
     return render(request, 'editar_caja_diaria.html', {'form': form})
-
 
 # ██╗███╗░░██╗░██████╗░██████╗░███████╗░██████╗░█████╗░██████╗░  ░██████╗░░█████╗░░██████╗████████╗░█████╗░
 # ██║████╗░██║██╔════╝░██╔══██╗██╔════╝██╔════╝██╔══██╗██╔══██╗  ██╔════╝░██╔══██╗██╔════╝╚══██╔══╝██╔══██╗

@@ -7,38 +7,29 @@
         <div class="col-lg-12">
             <div class="card shadow mb-4">
                 <div class="card-body solofondo">
-                  {% if messages %}
-                  <div class="alert alert-danger">
-                      <ul>
-                          {% for message in messages %}
-                              <li>{{ message }}</li>
-                          {% endfor %}
-                      </ul>
-                  </div>
-                  {% endif %}
-                    {% if request.user.permisos == 'admin' %}
-                    <h2 class="resize-text">Monto Actual: <span class="subtotal">{{ form.instance.monto|floatformat:configuracion.decimales  }}</span></h2> <!-- Muestra el monto actual -->
-                    {% endif %}
-                    <h2 class="resize-text">Retiro Actual: <span class="subtotal">{{ form.instance.retiro|floatformat:configuracion.decimales  }}</span></h2> <!-- Muestra el retiro actual -->
 
-                    <!-- Formulario para ingresar la clave de seguridad -->
-                    {% if not clave_ingresada %}
-                    <form method="post">
-                        {% csrf_token %}
-                        <div class="form-group resize-text">
-                            <label for="clave">Clave de Seguridad:</label>
-                            <input type="password" id="clave" name="clave" class="form-control resize-text solofondo texto" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Ingresar Clave</button>
-                    </form>
-                    {% else %}
-                    
-                    <!-- Si la clave fue ingresada, mostramos las opciones para operar sobre la caja -->
+                    {% if messages %}
+                    <div class="alert alert-danger">
+                        <ul>
+                            {% for message in messages %}
+                                <li>{{ message }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
                     {% if request.user.permisos == 'admin' %}
+                    <h2 class="resize-text">Monto Actual: <span class="subtotal">{{ form.instance.monto|floatformat:configuracion.decimales }}</span></h2>
+                    {% endif %}
+                    
+                    <h2 class="resize-text">Retiro Actual: <span class="subtotal">{{ form.instance.retiro|floatformat:configuracion.decimales }}</span></h2>
+
+                    {% if request.user.permisos == 'admin' %}
+                    <!-- Formulario para editar monto -->
                     <form method="post">
                         {% csrf_token %}
                         <div class="form-group resize-text">
-                            <label for="monto">Agregar o Restar Monto:</label>                   
+                            <label for="monto">Agregar o Restar Monto:</label>
                             <div class="input-group">
                                 <input type="number" id="monto" name="monto" class="form-control resize-text solofondo texto" min="0" step="0.01" value="0">
                                 <div class="input-group-append">
@@ -50,6 +41,7 @@
                     </form>
                     {% endif %}
 
+                    <!-- Formulario para editar retiro -->
                     <form method="post">
                         {% csrf_token %}
                         <div class="form-group resize-text">
@@ -66,8 +58,6 @@
                         </div>
                     </form>
 
-                    {% endif %}  <!-- Fin del bloque de clave_ingresada -->
-
                     {% if form.errors %}
                     <div class="alert alert-danger mt-3">
                         Por favor, asegúrate de que la operación sea válida.
@@ -80,7 +70,5 @@
 </div>
 
 {% include 'base/footer.html' %}
-<!-- End of Footer -->
-
 {% include 'base/logout.html' %}
 {% endblock %}
