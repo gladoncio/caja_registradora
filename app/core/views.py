@@ -1666,6 +1666,10 @@ def vaciar_carrito(request, id_carro):
 # ░╚════╝░╚═╝░░╚═╝░╚════╝░╚═╝░░╚═╝  ░░░╚═╝░░░  ╚═╝░░╚═╝╚══════╝░░░╚═╝░░░╚═╝╚═╝░░╚═╝░╚════╝░
 @login_required(login_url='/login')
 def editar_monto_caja_diaria(request):
+    usuario_id = request.session.get('usuario_clave_id')
+    if not usuario_id:
+        return redirect('vista_intermedia_clave', vista_destino='accion_protegida')
+    
     caja_diaria, created = CajaDiaria.objects.get_or_create(id=1, defaults={'monto': 0.0, 'retiro': 0.0})
 
     if request.method == 'POST':
@@ -1728,19 +1732,21 @@ def ingresar_gasto(request):
     if request.method == 'POST':
         form = GastoCajaForm(request.POST)
         if form.is_valid():
-            # Realiza la autenticación adicional aquí
-            clave_anulacion = request.POST.get('clave_anulacion', '')  # Obtener la clave ingresada en el formulari
+            clave_anulacion = form.cleaned_data['clave_anulacion']
+            monto = form.cleaned_data['monto']
+            descripcion = form.cleaned_data['descripcion']
+            
             try:
-                # Intenta buscar un usuario con la misma clave de anulación
                 usuario_con_clave_anulacion = Usuario.objects.get(clave_anulacion=clave_anulacion)
-
-                gasto = form.save(commit=False)  # No guardes inmediatamente en la base de datos
-                gasto.usuario = usuario_con_clave_anulacion # Asigna el usuario autenticado al gasto
-                gasto.save()  # Guarda el gasto en la base de datos
-                messages.error(request, 'Gasto ingresado.')
+                gasto = GastoCaja(
+                    usuario=usuario_con_clave_anulacion,
+                    monto=monto,
+                    descripcion=descripcion
+                )
+                gasto.save()
+                messages.success(request, 'Gasto ingresado correctamente.')
                 abrir_caja_impresora()
-                return redirect('ingresar_gasto')  # Redirige a la lista de gastos después de guardar
-        
+                return redirect('ingresar_gasto')
             except Usuario.DoesNotExist:
                 messages.error(request, 'Usuario no encontrado para la clave de anulación proporcionada.')
     else:
@@ -2300,3 +2306,20 @@ def exportar_productos_periodico(request):
     df.to_excel(response, index=False, engine='openpyxl')
 
     return response
+
+def vista_intermedia_clave(request, vista_destino):
+    if request.method == 'POST':
+        form = ClaveForm(request.POST)
+        if form.is_valid():
+            clave = form.cleaned_data['clave_anulacion']
+            try:
+                usuario = Usuario.objects.get(clave_anulacion=clave)
+                # Guarda el ID en la sesión para que no se pueda modificar por el usuario
+                request.session['usuario_clave_id'] = usuario.id
+                return redirect(reverse(vista_destino))
+            except Usuario.DoesNotExist:
+                messages.error(request, 'Clave incorrecta')
+    else:
+        form = ClaveForm()
+
+    return render(request, 'clave_intermedia.html', {'form': form, 'vista_destino': vista_destino})

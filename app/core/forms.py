@@ -207,6 +207,14 @@ class ContraseñaForm(forms.Form):
         label='Contraseña',
         widget=forms.PasswordInput(attrs={'class': 'form-control resize-text onlyinput'})
     )
+    
+class ClaveForm(forms.Form):
+    clave_anulacion = forms.CharField(
+        label="Clave Personal",
+        max_length=20,
+        widget=forms.PasswordInput(attrs={'class': 'form-control resize-text onlyinput'}),
+        required=True
+    )
 
 
 class BarcodeForm(forms.Form):
@@ -217,30 +225,23 @@ class BarcodeForm(forms.Form):
     )
     cantidad = forms.IntegerField(label='Cantidad', initial=1, min_value=1, widget=forms.NumberInput(attrs={'class': 'form-control resize-text onlyinput'}))
 
-class GastoCajaForm(forms.ModelForm):
+class GastoCajaForm(forms.Form):
+    monto = forms.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        widget=forms.NumberInput(attrs={'class': 'form-control resize-text onlyinput'}),
+        label="Monto"
+    )
+    descripcion = forms.CharField(
+        widget=forms.Textarea(attrs={'class': 'form-control resize-text onlyinput'}),
+        label="Descripción"
+    )
     clave_anulacion = forms.CharField(
         max_length=20,
         required=True,
         label="Clave Personal",
         widget=forms.PasswordInput(attrs={'class': 'form-control resize-text onlyinput'}),
     )
-
-    class Meta:
-        model = GastoCaja
-        fields = ['monto', 'descripcion']
-        widgets = {
-            'monto': forms.NumberInput(attrs={'class': 'form-control resize-text onlyinput'}),
-            'descripcion': forms.Textarea(attrs={'class': 'form-control resize-text onlyinput'}),
-        }
-
-    def clean(self):
-        cleaned_data = super().clean()
-        clave_anulacion = cleaned_data.get('clave_anulacion')
-        
-        # Realiza cualquier validación adicional que necesites para la clave de anulación aquí
-
-        return cleaned_data
-    
 
 class CambiarClaveForm(forms.Form):
     nueva_clave = forms.CharField(

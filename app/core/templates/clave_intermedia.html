@@ -1,0 +1,12 @@
+{% extends 'base/nav.html' %}
+
+{% block body %}
+
+
+<h2>Validar Clave</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="btn btn-primary" type="submit">Validar</button>
+</form>
+{% endblock %}

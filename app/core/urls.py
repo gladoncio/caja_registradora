@@ -68,6 +68,8 @@ urlpatterns = [
     path('exportar-productos/', exportar_productos, name='exportar_productos'),
     path('importar-productos/', importar_productos, name='importar_productos'),
     path('exportar-productos-periodico/', views.exportar_productos_periodico, name='exportar_productos_periodico'),
+    path('clave/<str:vista_destino>/', views.vista_intermedia_clave, name='vista_intermedia_clave'),
+
     
 ]
 
