@@ -1666,9 +1666,9 @@ def vaciar_carrito(request, id_carro):
 # ░╚════╝░╚═╝░░╚═╝░╚════╝░╚═╝░░╚═╝  ░░░╚═╝░░░  ╚═╝░░╚═╝╚══════╝░░░╚═╝░░░╚═╝╚═╝░░╚═╝░╚════╝░
 @login_required(login_url='/login')
 def editar_monto_caja_diaria(request):
-    usuario_id = request.session.get('usuario_clave_id')
-    if not usuario_id:
-        return redirect('vista_intermedia_clave', vista_destino='accion_protegida')
+    # usuario_id = request.session.get('usuario_clave_id')
+    # if not usuario_id:
+    #     return redirect('vista_intermedia_clave', vista_destino='accion_protegida')
     
     caja_diaria, created = CajaDiaria.objects.get_or_create(id=1, defaults={'monto': 0.0, 'retiro': 0.0})
 
