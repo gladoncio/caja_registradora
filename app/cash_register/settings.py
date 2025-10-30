@@ -44,6 +44,20 @@ INSTALLED_APPS = [
     'api',
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:3000',        # si tu frontend corre ahí
+    'http://127.0.0.1:3000',
+
+    'http://localhost:8000',        # si usas :8000 como origen
+    'http://127.0.0.1:8000',
+
+    'https://caja.bravito',         # si usas HTTPS puerto 443
+    # Usa alguno de estos solo si de verdad sirves en ese puerto/origen:
+    'https://caja.bravito:8000',    # HTTPS en 8000 (poco común)
+    'http://caja.bravito:8000',     # HTTP en 8000
+]
+
+
 REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
     'DEFAULT_PERMISSION_CLASSES': [
