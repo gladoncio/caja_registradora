@@ -40,16 +40,42 @@ class UsuarioForm(forms.ModelForm):
             'ventas_config': forms.Select(attrs={'class': 'form-control resize-text onlyinput'}),
             'rut': forms.TextInput(attrs={'class': 'form-control resize-text onlyinput'}),
         }
+
+CAJA_HOST = "caja.sofiawisdom.cl"
+
 class MyAuthForm(AuthenticationForm):
     class Meta:
         model = Usuario
-        fields = ['username','password']
-    def __init__(self, *args, **kwargs):
-        super(MyAuthForm, self).__init__(*args, **kwargs)
-        self.fields['username'].widget = forms.TextInput(attrs={'class': 'form-control form-control-lg resize-text', 'placeholder': 'Username'})
+        fields = ['username', 'password']
+
+    def __init__(self, request=None, *args, **kwargs):
+        # MUY IMPORTANTE: pasar request al padre y guardarlo
+        self.request = request
+        super().__init__(request=request, *args, **kwargs)
+
+        # ---- Tus personalizaciones de UI ----
+        self.fields['username'].widget = forms.TextInput(
+            attrs={'class': 'form-control form-control-lg resize-text', 'placeholder': 'Username'}
+        )
         self.fields['username'].label = False
-        self.fields['password'].widget = forms.PasswordInput(attrs={'class': 'form-control form-control-lg resize-text', 'placeholder':'Password'}) 
+
+        self.fields['password'].widget = forms.PasswordInput(
+            attrs={'class': 'form-control form-control-lg resize-text', 'placeholder': 'Password'}
+        )
         self.fields['password'].label = False
+        # -------------------------------------
+
+    def confirm_login_allowed(self, user):
+        # Validaciones base (is_active, etc.)
+        super().confirm_login_allowed(user)
+
+        host = self.request.get_host() if self.request else ""
+        # Solo en caja.sofiawisdom.cl exigimos admin
+        if host == CAJA_HOST and not (user.is_staff or user.is_superuser):
+            raise ValidationError(
+                "Acceso solo para administradores en este sitio.",
+                code="permission_denied",
+            )
 
 
 
