@@ -55,6 +55,12 @@ CSRF_TRUSTED_ORIGINS = [
     # Usa alguno de estos solo si de verdad sirves en ese puerto/origen:
     'https://caja.bravito:8000',    # HTTPS en 8000 (poco común)
     'http://caja.bravito:8000',     # HTTP en 8000
+    
+    'https://caja.sofiawisdom:8000',    # HTTPS en 8000 (poco común)
+    'http://caja.sofiawisdom:8000',   
+    
+    'https://caja.sofiawisdom:443',    # HTTPS en 8000 (poco común)
+    'http://caja.sofiawisdom:443',     # HTTP en 8000
 ]
 
 
