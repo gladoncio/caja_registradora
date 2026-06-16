@@ -12,60 +12,61 @@ from PIL import Image
 from django.utils.formats import date_format
 import io
 import os
-from .middleware import verificar_impresora_conectada
+import socket
 
 
-USB = verificar_impresora_conectada()
+def _detectar_usb():
+    usb_directory = "/dev/usb/"
+    try:
+        usb_devices = os.listdir(usb_directory)
+        lp_devices = [device for device in usb_devices if device.startswith('lp')]
+        if lp_devices:
+            return os.path.join(usb_directory, lp_devices[0])
+    except FileNotFoundError:
+        pass
+    return None
 
 
-# ░██████╗░███████╗███╗░░██╗███████╗██████╗░░█████╗░██████╗░  ███████╗██╗░░░░░
-# ██╔════╝░██╔════╝████╗░██║██╔════╝██╔══██╗██╔══██╗██╔══██╗  ██╔════╝██║░░░░░
-# ██║░░██╗░█████╗░░██╔██╗██║█████╗░░██████╔╝███████║██████╔╝  █████╗░░██║░░░░░
-# ██║░░╚██╗██╔══╝░░██║╚████║██╔══╝░░██╔══██╗██╔══██║██╔══██╗  ██╔══╝░░██║░░░░░
-# ╚██████╔╝███████╗██║░╚███║███████╗██║░░██║██║░░██║██║░░██║  ███████╗███████╗
-# ░╚═════╝░╚══════╝╚═╝░░╚══╝╚══════╝╚═╝░░╚═╝╚═╝░░╚═╝╚═╝░░╚═╝  ╚══════╝╚══════╝
+def _enviar_a_impresora(data):
+    config = Configuracion.objects.get(id=1)
+    if config.tipo_impresora == 'ip':
+        ip = config.ip_impresora or '192.168.100.30'
+        puerto = config.puerto_impresora or 9100
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(5)
+        sock.connect((ip, puerto))
+        sock.send(data)
+        sock.close()
+    else:
+        usb_path = _detectar_usb()
+        if not usb_path:
+            raise Exception("No se encontro impresora USB")
+        with open(usb_path, 'wb') as f:
+            f.write(data)
+    return True
 
-# ░█████╗░░█████╗░███╗░░██╗████████╗███████╗██╗░░██╗████████╗░█████╗░  ██████╗░███████╗  ██╗░░░░░░█████╗░
-# ██╔══██╗██╔══██╗████╗░██║╚══██╔══╝██╔════╝╚██╗██╔╝╚══██╔══╝██╔══██╗  ██╔══██╗██╔════╝  ██║░░░░░██╔══██╗
-# ██║░░╚═╝██║░░██║██╔██╗██║░░░██║░░░█████╗░░░╚███╔╝░░░░██║░░░██║░░██║  ██║░░██║█████╗░░  ██║░░░░░███████║
-# ██║░░██╗██║░░██║██║╚████║░░░██║░░░██╔══╝░░░██╔██╗░░░░██║░░░██║░░██║  ██║░░██║██╔══╝░░  ██║░░░░░██╔══██║
-# ╚█████╔╝╚█████╔╝██║░╚███║░░░██║░░░███████╗██╔╝╚██╗░░░██║░░░╚█████╔╝  ██████╔╝███████╗  ███████╗██║░░██║
-# ░╚════╝░░╚════╝░╚═╝░░╚══╝░░░╚═╝░░░╚══════╝╚═╝░░╚═╝░░░╚═╝░░░░╚════╝░  ╚═════╝░╚══════╝  ╚══════╝╚═╝░░╚═╝
-
-# ██╗░░░██╗███████╗███╗░░██╗████████╗░█████╗░
-# ██║░░░██║██╔════╝████╗░██║╚══██╔══╝██╔══██╗
-# ╚██╗░██╔╝█████╗░░██╔██╗██║░░░██║░░░███████║
-# ░╚████╔╝░██╔══╝░░██║╚████║░░░██║░░░██╔══██║
-# ░░╚██╔╝░░███████╗██║░╚███║░░░██║░░░██║░░██║
-# ░░░╚═╝░░░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░╚═╝░░╚═╝
 
 def generar_comandos_de_impresion(venta):
     config = Configuracion.objects.get(id=1)
     decimales = config.decimales
 
-    # Inicializa una cadena vacía para almacenar los comandos de impresión
     content = ""
     content += "--------------------------\n"
-
-    # Encabezado de la boleta (puedes personalizarlo según tus necesidades)
     content += "Boleta de Venta\n"
     content += f"Fecha: {timezone.localtime(venta.fecha_hora).strftime('%Y-%m-%d %H:%M:%S')} \n"
 
-    # Agregar el método de pago de esta venta
     formas_pago = venta.formapago_set.all()
     if formas_pago.exists():
         metodos_pago = ", ".join([forma.tipo_pago for forma in formas_pago])
-        content += f"Método(s) de Pago: {metodos_pago}\n"
+        content += f"Metodo(s) de Pago: {metodos_pago}\n"
 
     content += "--------------------------\n"
 
-    # Detalles de los productos vendidos
     for venta_producto in venta.ventaproducto_set.all():
         producto = venta_producto.producto
         cantidad = venta_producto.cantidad
         gramaje = venta_producto.gramaje
-        precio_unitario = round(venta_producto.subtotal, decimales)  # Formatea el precio unitario
-        # Agrega los detalles de cada producto a la boleta
+        precio_unitario = round(venta_producto.subtotal, decimales)
         content += f"Producto: {producto.nombre}\n"
         if cantidad != 0:
             content += f"Cantidad: {cantidad}\n"
@@ -74,103 +75,135 @@ def generar_comandos_de_impresion(venta):
         content += f"Subtotal: {precio_unitario}\n"
         content += "--------------------------\n"
 
-    # Total de la venta
-    total_venta = round(venta.total, decimales)  
-    vuelto = round(venta.vuelto, decimales)# Formatea el total de la venta
+    total_venta = round(venta.total, decimales)
+    vuelto = round(venta.vuelto, decimales)
     content += f"vuelto: {vuelto}\n"
     content += f"Total: {total_venta}\n"
     content += "--------------------------\n"
     return content
 
 
-
 def generar_y_imprimir_codigo_ean13(request):
     try:
-        # Genera un número aleatorio de 12 dígitos para el código de barras EAN-13
         codigo_de_barras = ''.join([str(random.randint(0, 9)) for _ in range(12)])
-
-        # Crea el objeto EAN-13
         ean = EAN13(codigo_de_barras, writer=ImageWriter())
-
-        # Genera el código de barras como una imagen PNG
         barcode_image = ean.render()
-
-        # Guarda la imagen en un archivo temporal
         tmp_image_path = "media/barcode.png"
         barcode_image.save(tmp_image_path, 'PNG')
 
-        # Imprimir la imagen usando lpr
-        command = f'lpr -o raw {tmp_image_path} -P {USB}'
-        subprocess.call(command, shell=True)
+        config = Configuracion.objects.get(id=1)
+        if config.tipo_impresora == 'ip':
+            with open(tmp_image_path, 'rb') as f:
+                img_data = f.read()
+            _enviar_a_impresora(img_data)
+        else:
+            usb_path = _detectar_usb()
+            if usb_path:
+                command = f'lpr -o raw {tmp_image_path} -P {usb_path}'
+                subprocess.call(command, shell=True)
 
-        # Devuelve la imagen como respuesta HTTP (opcional)
         response = HttpResponse(content_type='image/png')
         barcode_image.save(response, 'PNG')
-
         return response
-
     except Exception as e:
-        return HttpResponse(f"Error al generar e imprimir el código de barras: {str(e)}", status=500)
+        return HttpResponse(f"Error al generar e imprimir el codigo de barras: {str(e)}", status=500)
 
 
 def imprimir_en_xprinter(content):
     config = Configuracion.objects.get(id=1)
-
-    # Elimina los acentos del contenido
     content_normalized = unidecode(content)
-
-    # Codifica el contenido en UTF-8
     content_encoded = content_normalized.encode('utf-8')
 
-    
-    with open(USB, 'wb') as printer_file:
-        printer_file.write(content_encoded)
+    if config.tipo_impresora == 'ip':
+        _enviar_a_impresora(content_encoded)
+    else:
+        usb_path = _detectar_usb()
+        if not usb_path:
+            raise Exception("No se encontro impresora USB")
+        with open(usb_path, 'wb') as printer_file:
+            printer_file.write(content_encoded)
 
-    return "Impresión exitosa"
+    return "Impresion exitosa"
 
 
 def imprimir(request):
     try:
-        data_to_print = "Imprimiendo desde Python usando redirección de shell >> /dev/usb/lp0"
+        data_to_print = "Test de impresion desde Caja Registradora\n"
+        config = Configuracion.objects.get(id=1)
 
-        command = f'echo "{data_to_print}" >> {USB}'
-
-        # Ejecutar el comando en el shell
-        subprocess.call(command, shell=True)
-
-        return HttpResponse("Impresión exitosa")  # Esto devuelve una respuesta HTTP con un mensaje de éxito.
+        if config.tipo_impresora == 'ip':
+            _enviar_a_impresora(data_to_print.encode('utf-8'))
+            return HttpResponse("Impresion exitosa")
+        else:
+            usb_path = _detectar_usb()
+            if not usb_path:
+                return HttpResponse("No se encontro impresora USB", status=500)
+            command = f'echo "{data_to_print}" >> {usb_path}'
+            subprocess.call(command, shell=True)
+            return HttpResponse("Impresion exitosa")
     except Exception as e:
-        return HttpResponse(f"Error al imprimir: {str(e)}", status=500)  # Esto devuelve una respuesta HTTP con un mensaje de error y un estado 500 (Error interno del servidor).
+        return HttpResponse(f"Error al imprimir: {str(e)}", status=500)
+
 
 def abrir_caja_impresora():
     try:
-        # Comando en formato binario para abrir la gaveta
         open_drawer_command = b'\x1B\x70\x00\x50\x50'
-
-        # Abre el archivo correspondiente al dispositivo USB
-        with open(USB, 'wb') as usb_device:
-            usb_device.write(open_drawer_command)
-
+        _enviar_a_impresora(open_drawer_command)
         return True
     except:
         return False
 
 
-
 def imprimir_ultima_id():
     try:
-        # Obtener la última ID desde tu modelo
         ultima_id = Venta.objects.latest('id')
-
-        # Convertir la ID a una cadena (si es necesario)
         ultima_id_str = str(ultima_id.id)
-
-
         venta = Venta.objects.get(id=ultima_id_str)
-
         contest = generar_comandos_de_impresion(venta)
-
         imprimir_en_xprinter(contest)
     except:
         pass
 
+
+def probar_impresora(request):
+    try:
+        config = Configuracion.objects.get(id=1)
+        content = "==============================\n"
+        content += "     TEST DE IMPRESION\n"
+        content += "==============================\n"
+        content += "Fecha: 2025-06-15 12:00\n"
+        content += "------------------------------\n"
+        content += "Producto       Cant   Total\n"
+        content += "Pan            2      $1.000\n"
+        content += "Leche          1      $1.200\n"
+        content += "------------------------------\n"
+        content += "Total: $2.200\n"
+        content += "Gracias por su compra!\n"
+        content += "\n\n"
+
+        content_normalized = unidecode(content)
+        content_encoded = content_normalized.encode('utf-8')
+
+        if config.tipo_impresora == 'ip':
+            ip = config.ip_impresora or '192.168.100.30'
+            puerto = config.puerto_impresora or 9100
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(10)
+            sock.connect((ip, puerto))
+            sock.send(b'\x1b\x40')
+            sock.send(b'\x1b\x61\x01')
+            sock.send(content_encoded)
+            sock.send(b'\x1b\x69')
+            sock.close()
+        else:
+            usb_path = _detectar_usb()
+            if not usb_path:
+                return HttpResponse("No se encontro impresora USB", status=500)
+            with open(usb_path, 'wb') as f:
+                f.write(b'\x1b\x40')
+                f.write(content_encoded)
+                f.write(b'\x1b\x69')
+
+        return HttpResponse("Test de impresion enviado exitosamente")
+    except Exception as e:
+        return HttpResponse(f"Error en test de impresion: {str(e)}", status=500)

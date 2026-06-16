@@ -12,8 +12,24 @@ services:
     expose:
       - "8000"
     depends_on:
-      - db  # Dependemos del servicio mariadb
+      - db
     privileged: true
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3005:3000"
+    environment:
+      - WATCHPACK_POLLING=true
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - caja
 
   db:
     image: postgres:16
@@ -30,4 +46,3 @@ services:
     restart: always
     ports:
       - 8080:8080
-

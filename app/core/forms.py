@@ -343,7 +343,7 @@ class ProductoForm(forms.ModelForm):
 class ConfiguracionForm(forms.ModelForm):
     class Meta:
         model = Configuracion
-        fields = ['decimales', 'clave_anulacion', 'idioma', 'imprimir', 'tipo_venta', 'porcentaje_iva', 'tamano_letra','separador']
+        fields = ['decimales', 'clave_anulacion', 'idioma', 'imprimir', 'tipo_venta', 'porcentaje_iva', 'tamano_letra','separador', 'tipo_impresora', 'ip_impresora', 'puerto_impresora']
         widgets = {
             'decimales': forms.TextInput(attrs={'class': 'form-control resize-text onlyinput'}),
             'clave_anulacion': forms.TextInput(attrs={'class': 'form-control resize-text onlyinput'}),
@@ -353,4 +353,7 @@ class ConfiguracionForm(forms.ModelForm):
             'porcentaje_iva': forms.TextInput(attrs={'class': 'form-control resize-text onlyinput'}),
             'tamano_letra': forms.TextInput(attrs={'class': 'form-control resize-text onlyinput'}),
             'separador': forms.Select(attrs={'class': 'form-control resize-text onlyinput'}),
+            'tipo_impresora': forms.Select(attrs={'class': 'form-control resize-text onlyinput'}),
+            'ip_impresora': forms.TextInput(attrs={'class': 'form-control resize-text onlyinput'}),
+            'puerto_impresora': forms.NumberInput(attrs={'class': 'form-control resize-text onlyinput'}),
         }

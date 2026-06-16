@@ -8,6 +8,7 @@ from django.conf.urls import include
 from .forms import MyAuthForm
 from django.views.generic.base import TemplateView #import TemplateView
 from .views import *
+from .impresora import probar_impresora
 
 urlpatterns = [
     path('login', LoginView.as_view(template_name='login.html', authentication_form=MyAuthForm,redirect_authenticated_user=True), name='login'),
@@ -57,6 +58,7 @@ urlpatterns = [
     path('producto/editar/<int:pk>/', ProductoEditarView.as_view(), name='producto-editar'),  # Define la URL de edición
     path('impresora-no-conectada/', impresora_no_conectada, name='impresora_no_conectada'),
     path('impresora-si-conectada/', impresora_si_conectada, name='impresora_si_conectada'),
+    path('probar-impresora/', probar_impresora, name='probar_impresora'),
     path('cambiar_usuario/<int:usuario_id>/', cambiar_usuario, name='cambiar_usuario'),
     path('cambiar_clave_anulacion/<int:usuario_id>/', cambiar_clave_anulacion, name='cambiar_clave_anulacion'),
     path('agregar_producto_rapido/<int:producto_id>/', agregar_producto_rapido, name='agregar_producto_rapido'),

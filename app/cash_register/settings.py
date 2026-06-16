@@ -41,38 +41,51 @@ INSTALLED_APPS = [
     'django.contrib.humanize',
     'core',
     'rest_framework',
+    'rest_framework_simplejwt',
+    'corsheaders',
     'api',
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:3000',        # si tu frontend corre ahí
+    'http://localhost:3000',
     'http://127.0.0.1:3000',
-
-    'http://localhost:8000',        # si usas :8000 como origen
+    'http://localhost:8000',
     'http://127.0.0.1:8000',
-
-    'https://caja.bravito',         # si usas HTTPS puerto 443
-    # Usa alguno de estos solo si de verdad sirves en ese puerto/origen:
-    'https://caja.bravito:8000',    # HTTPS en 8000 (poco común)
-    'http://caja.bravito:8000',     # HTTP en 8000
-    
-    'https://caja.sofiawisdom:8000',    # HTTPS en 8000 (poco común)
-    'http://caja.sofiawisdom:8000',   
-    
-    'https://caja.sofiawisdom:443',    # HTTPS en 8000 (poco común)
-    'http://caja.sofiawisdom:443',     # HTTP en 8000
+    'https://caja.bravito',
+    'https://caja.bravito:8000',
+    'http://caja.bravito:8000',
+    'https://caja.sofiawisdom:8000',
+    'http://caja.sofiawisdom:8000',
+    'https://caja.sofiawisdom:443',
+    'http://caja.sofiawisdom:443',
 ]
 
+CORS_ALLOW_ALL_ORIGINS = True
 
 REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
     ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 50,
 }
 
+from datetime import timedelta
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=12),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+}
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',

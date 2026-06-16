@@ -1,56 +1,144 @@
+# Caja Registradora — POS System
 
-<div align="center">
-  <h1><code>Caja registradora</code></h1>
-  <p>
-    <strong>Admistración de ventas Pos</strong>
-  </p>
-  <p style="margin-bottom: 0.5ex;">
-    <img
-        src="https://img.shields.io/github/downloads/gladoncio/caja_registradora/total"
-    />
-    <img
-        src="https://img.shields.io/github/last-commit/gladoncio/caja_registradora"
-    />
-    <img
-        src="https://img.shields.io/github/issues/gladoncio/caja_registradora"
-    />
-    <img
-        src="https://img.shields.io/github/issues-closed/gladoncio/caja_registradora"
-    />
-    <img
-        src="https://img.shields.io/github/repo-size/gladoncio/caja_registradora"
-    />
-    <img
-        src="https://img.shields.io/github/workflow/status/gladoncio/caja_registradora/Compile%20and%20release"
-    />
-  </p>
-</div>
+Sistema POS (Punto de Venta) completo para pequeños negocios. Consta de dos interfaces:
 
-![Sistema](sistema.png)
+- **UI Clásica** (Django Templates) — `http://localhost:8000`
+- **UI Moderna** (Next.js + MUI) — `http://localhost:3005`
 
-### La Caja Registradora es un proyecto Django diseñado para gestionar ventas y conectar impresoras POS. Este proyecto facilita la administración de transacciones comerciales de manera eficiente y conecta hardware de punto de venta para una experiencia más integrada.
+## Stack Tecnológico
 
-## Características Principales
+| Componente | Tecnología |
+|------------|------------|
+| Backend | Django 4.2 + Django REST Framework |
+| Base de datos | PostgreSQL 16 |
+| Frontend Clásico | Django Templates + Bootstrap 4 + SB Admin 2 |
+| Frontend Moderno | Next.js 14 + Material UI 5 + Tailwind CSS |
+| Autenticación | JWT (SimpleJWT) + Sesiones Django |
+| Contenedores | Docker + Docker Compose |
 
-- **Administración de Ventas:** Registra y gestiona las ventas de productos y servicios.
-- **Conexión a Impresoras POS:** Integración con impresoras de punto de venta para imprimir recibos.
-- **Interfaz Intuitiva:** Interfaz de usuario fácil de usar para una experiencia de caja registradora intuitiva.
+## Arquitectura
 
-## Requisitos del Sistema
-- Sistema operativo basado en Debian (otros sistemas operativos serán compatibles en futuras versiones).
-- Conexión a internet para la descarga de dependencias.
-
-## Instrucciones de Instalación
-
-### 1. Descargar el Proyecto
-```bash
-git clone https://github.com/gladoncio/caja_registradora
 ```
-### 2. Ir al Directorio del Proyecto
-```bash
-cd caja_registradora
+app/                    ← Backend Django
+├── api/                ← API REST (serializers, viewsets, urls)
+├── core/               ← Modelos, lógica de negocio, templates clásicos
+└── cash_register/      ← Configuración Django (settings, root urls)
+
+frontend/               ← Frontend Next.js
+├── src/
+│   ├── app/            ← Páginas (App Router)
+│   ├── components/     ← Componentes reutilizables
+│   ├── contexts/       ← Contextos (Auth)
+│   └── lib/            ← Utilidades (API client, shortcuts, themes)
+└── package.json
+
+docker-compose.yml      ← 4 servicios: caja, frontend, db, adminer
 ```
-### 3. Ejecutar el Script de Instalación
+
+## Funcionalidades
+
+### POS / Caja
+- 8 cajas simultáneas con tabs (F1-F8)
+- Búsqueda de productos por código de barras o nombre
+- Productos rápidos con atajos de teclado (presiona `-` + número)
+- Tipos de producto: unidad, gramaje, valor personalizado
+- Métodos de pago: Efectivo, Efectivo Justo, Transferencia, Débito
+- Pagos divididos (efectivo + otro método)
+- Cálculo automático de vuelto
+- Apertura de cajón con autorización por clave
+- Impresión de tickets (USB o IP)
+
+### Atajos de Teclado
+| Tecla | Acción |
+|-------|--------|
+| F1-F8 | Cambiar de caja |
+| F9 | Nueva caja |
+| F10 | Cobrar |
+| Ctrl+D | Abrir cajón |
+| `-` + número | Producto rápido |
+
+Configurables en: **Sistema → Configurar Atajos**
+
+### Productos
+- CRUD completo con diálogo visual
+- Paginación, filtros (departamento, tipo) y orden (nombre, precio, costo, fecha)
+- Asignación de productos rápidos (máx 10) desde la misma página
+- Importar/Exportar Excel
+- Sugerencia de precio basada en costo + margen
+- Cálculo de IVA automático
+
+### Ventas
+- Listado con filtros por fecha/hora
+- Detalle de venta en panel lateral
+- Anulación con clave de autorización
+- Ventas de respaldo (anuladas)
+
+### Reportes
+- Reporte general con totales por método de pago
+- Ventas por departamento
+- Calendario de cierres mensuales
+- Cuadre de caja (conteo de billetes/monedas)
+- Detalle por día específico
+
+### Administración
+- Gestión de usuarios (roles: admin, cajero, bodeguero)
+- Configuración del sistema
+- Apariencia: temas predefinidos (Default, Océano, Atardecer, Bosque, Medianoche)
+- Tamaño de fuente (contenido y menú lateral)
+- Colores personalizados (primario, secundario)
+- Colores de cajas (tabs)
+
+### Sistema
+- Verificar actualizaciones (GitHub Releases)
+- Registro de eventos (ventas, gastos, cierres)
+- Atajos de teclado configurables
+
+## Temas
+
+| Tema | Primario | Secundario |
+|------|----------|------------|
+| Default | Indigo #6366f1 | Emerald #10b981 |
+| Océano | Azul #0284c7 | Teal #0d9488 |
+| Atardecer | Naranja #ea580c | Rosa #d946ef |
+| Bosque | Verde #16a34a | Lima #65a30d |
+| Medianoche | Púrpura #7c3aed | Cian #0891b2 |
+
+## Modelos de Datos
+
+Los principales modelos son:
+- `Usuario` — Usuarios con roles y clave de anulación
+- `Producto` — Productos con precio, costo, tipo de venta
+- `ProductoRapido` — Productos de acceso rápido con tecla y color
+- `CarritoItem` — Items en carrito de compras
+- `Venta` / `VentaProducto` / `FormaPago` — Ventas realizadas
+- `Configuracion` — Configuración global del sistema
+- `CajaDiaria` / `RegistroTransaccion` — Gestión de caja
+- `GastoCaja` — Gastos registrados
+- `VentaRespaldo` — Ventas anuladas (backup)
+
+## Despliegue
+
 ```bash
-sudo ./install.sh
+# Iniciar todos los servicios
+docker-compose up -d
+
+# Reconstruir frontend
+docker-compose build frontend
+
+# Ver logs
+docker-compose logs -f
+
+# Generar datos de prueba
+docker exec caja_registradora-caja-1 python /app/seed_data.py
 ```
+
+## URLs
+
+| Servicio | URL |
+|----------|-----|
+| UI Clásica | http://localhost:8000 |
+| UI Moderna | http://localhost:3005 |
+| API REST | http://localhost:8000/api/ |
+| Adminer (DB) | http://localhost:8080 |
+
+**Login:** admin / 123

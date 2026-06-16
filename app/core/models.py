@@ -90,9 +90,16 @@ class Producto(models.Model):
 
 class ProductoRapido(models.Model):
     producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
+    tecla = models.CharField(max_length=2, blank=True, null=True, verbose_name="Atajo teclado")
+    color = models.CharField(max_length=20, default='#6366f1', verbose_name="Color de botón")
+    orden = models.PositiveIntegerField(default=0, verbose_name="Orden")
+
+    class Meta:
+        ordering = ['orden', 'id']
 
     def __str__(self):
-        return f"Producto rapido id {self.id} - {self.producto.nombre}"
+        tecla = f" [{self.tecla}]" if self.tecla else ""
+        return f"{self.producto.nombre}{tecla}"
 
 
 class Stock(models.Model):
@@ -121,13 +128,13 @@ class CarritoItem(models.Model):
         
     def subtotal(self):
         if self.producto.tipo_venta == 'gramaje':
-            peso_en_gramos = self.gramaje
+            peso_en_gramos = self.gramaje or 0
             if self.producto.tipo_gramaje == 'kg':
                 subtotal = peso_en_gramos * (self.producto.precio / 1000)
             else:
                 subtotal = peso_en_gramos * self.producto.precio
         elif self.producto.tipo_venta == 'valor':
-            subtotal = self.valor * self.cantidad
+            subtotal = (self.valor or 0) * self.cantidad
         else:
             subtotal = self.cantidad * self.producto.precio
 
@@ -163,6 +170,20 @@ class Configuracion(models.Model):
     # Agrega el campo para el tamaño de letra
     tamano_letra = models.PositiveIntegerField(default=10)  # Ejemplo: tamaño de letra por defecto de 10 puntos
 
+    TIPO_IMPRESORA_CHOICES = (
+        ('usb', 'USB'),
+        ('ip', 'IP'),
+    )
+    tipo_impresora = models.CharField(max_length=10, choices=TIPO_IMPRESORA_CHOICES, default='usb')
+    ip_impresora = models.CharField(max_length=50, default='192.168.100.30', blank=True, null=True)
+    puerto_impresora = models.PositiveIntegerField(default=9100, blank=True, null=True)
+
+    TIPO_AUTORIZACION_CHOICES = (
+        ('cualquier', 'Cualquier usuario con clave'),
+        ('propio', 'Solo la clave del usuario actual'),
+    )
+    tipo_autorizacion = models.CharField(max_length=20, choices=TIPO_AUTORIZACION_CHOICES, default='cualquier')
+
     def __str__(self):
         return 'Configuración de la Aplicación'
 
@@ -177,6 +198,10 @@ def crear_configuracion(sender, **kwargs):  # Reemplaza 'tu_app_nombre' con el n
             tipo_venta = '1',
             tamano_letra = 30,
             separador = '1',
+            tipo_impresora = 'usb',
+            ip_impresora = '192.168.100.30',
+            puerto_impresora = 9100,
+            tipo_autorizacion = 'cualquier',
         )
 
 

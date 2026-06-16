@@ -4,16 +4,38 @@
 <div class="container-fluid resize-text mb-4">
    <div class="card">
       <div class="card-body solofondo">
-         <!-- Tu encabezado y contenido aquí -->
          <h1 class="card-title">Editar Configuración</h1>
          <form method="post">
             {% csrf_token %}
             {{ form.as_p }}
             <button type="submit" class="btn boton-dinamico">Guardar</button>
          </form>
+         <hr>
+         <a href="{% url 'probar_impresora' %}" class="btn btn-info boton-dinamico" target="_blank">Probar Impresora</a>
       </div>
    </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var tipoSelect = document.querySelector('[name="tipo_impresora"]');
+    var ipField = document.querySelector('[name="ip_impresora"]').closest('p');
+    var puertoField = document.querySelector('[name="puerto_impresora"]').closest('p');
+
+    function toggleIpFields() {
+        if (tipoSelect.value === 'ip') {
+            ipField.style.display = 'block';
+            puertoField.style.display = 'block';
+        } else {
+            ipField.style.display = 'none';
+            puertoField.style.display = 'none';
+        }
+    }
+
+    toggleIpFields();
+    tipoSelect.addEventListener('change', toggleIpFields);
+});
+</script>
 
 {% include 'base/footer.html' %}
 {% include 'base/logout.html' %}
