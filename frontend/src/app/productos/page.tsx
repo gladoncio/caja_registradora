@@ -13,6 +13,7 @@ import {
 import api, { productosAPI, configAPI } from '@/lib/api'
 import { Producto, Configuracion } from '@/types'
 import { useTheme } from '@mui/material'
+import { formatMoney, formatNumber } from '@/lib/format'
 
 interface ProductForm {
   id_producto?: number; nombre: string; precio: string; valor_costo: string
@@ -55,7 +56,7 @@ export default function ProductosPage() {
     setLoading(true)
     try {
       const [p, d, m, c] = await Promise.all([
-        api.get('/productos/', { params: { page_size: 200 } }),
+        api.get('/productos/', { params: { page_size: 9999 } }),
         api.get('/departamentos/'),
         api.get('/marcas/'),
         configAPI.get(),
@@ -129,7 +130,7 @@ export default function ProductosPage() {
     return sortDir === 'asc' ? <ArrowUpward fontSize="small" /> : <ArrowDownward fontSize="small" />
   }
 
-  useEffect(() => { setPage(0) }, [search, filterDepto, filterTipo])
+  useEffect(() => { setPage(0) }, [search, filterDepto, filterTipo, filterRapido])
 
   const handleSave = async () => {
     if (!form.nombre || !form.precio) return
@@ -242,7 +243,7 @@ export default function ProductosPage() {
                       <Typography variant="body2" fontWeight={700} noWrap pr={3}>{p.nombre}</Typography>
                       <Box display="flex" justifyContent="space-between" alignItems="center" mt={0.5}>
                         <Typography variant="h6" fontWeight={800} color="primary.main" sx={{ fontSize: '1rem' }}>
-                          ${parseInt(p.precio).toLocaleString('es-CL')}
+                          {formatMoney(p.precio)}
                         </Typography>
                         <Chip label={p.tipo_venta} size="small" variant="outlined" sx={{ height: 18, fontSize: 9 }} />
                       </Box>

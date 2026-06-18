@@ -12,8 +12,34 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+class Rol(models.Model):
+    nombre = models.CharField(max_length=50, unique=True)
+    descripcion = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name = 'Rol'
+        verbose_name_plural = 'Roles'
+
+    def __str__(self):
+        return self.nombre
+
+
+class Permiso(models.Model):
+    codigo = models.CharField(max_length=50, unique=True)
+    nombre = models.CharField(max_length=100)
+    descripcion = models.TextField(blank=True)
+    roles = models.ManyToManyField(Rol, related_name='permisos', blank=True)
+
+    class Meta:
+        verbose_name = 'Permiso'
+        verbose_name_plural = 'Permisos'
+        ordering = ['codigo']
+
+    def __str__(self):
+        return f'{self.nombre} ({self.codigo})'
+
+
 class Usuario(AbstractUser):
-    # Define las opciones de permisos como una tupla de tuplas
     PERMISOS_CHOICES = (
         ('cajero', 'Cajero'),
         ('admin', 'Administrador'),
@@ -29,21 +55,92 @@ class Usuario(AbstractUser):
     permisos = models.CharField(max_length=40, choices=PERMISOS_CHOICES, default='cajero')
     
     rut = models.CharField(max_length=40, null=True, verbose_name="Rut", default="", blank=True)
-    clave_anulacion = models.CharField(max_length=20, default="", unique=True)  # Hacer la clave única
+    clave_anulacion = models.CharField(max_length=128, default="", blank=True)
+    rol = models.ForeignKey(Rol, on_delete=models.SET_NULL, null=True, blank=True, related_name='usuarios')
+
+    def set_clave_anulacion(self, raw_clave):
+        from django.contrib.auth.hashers import make_password
+        self.clave_anulacion = make_password(raw_clave)
+        self.save(update_fields=['clave_anulacion'])
+
+    def check_clave_anulacion(self, raw_clave):
+        from django.contrib.auth.hashers import check_password
+        if self.clave_anulacion and self.clave_anulacion.startswith('pbkdf2_'):
+            return check_password(raw_clave, self.clave_anulacion)
+        return self.clave_anulacion == raw_clave
 
 
-# Define la función para crear el usuario admin
+PERMISOS_PREDEFINIDOS = [
+    ('acceso_caja', 'Acceso a caja', 'Usar la caja registradora', ['admin', 'cajero']),
+    ('ver_productos', 'Ver productos', 'Ver lista de productos', ['admin', 'cajero', 'bodeguero']),
+    ('editar_productos', 'Editar productos', 'Crear, editar y eliminar productos', ['admin', 'bodeguero']),
+    ('importar_productos', 'Importar/exportar', 'Importar y exportar productos', ['admin', 'bodeguero']),
+    ('ver_ventas', 'Ver ventas', 'Ver historial de ventas', ['admin', 'cajero']),
+    ('anular_ventas', 'Anular ventas', 'Anular ventas realizadas', ['admin']),
+    ('ver_reportes', 'Ver reportes', 'Ver reportes y calendario de cierres', ['admin', 'cajero']),
+    ('ver_cuadre', 'Ver cuadre', 'Hacer cuadre de caja', ['admin', 'cajero']),
+    ('ver_gastos', 'Ver gastos', 'Ver y registrar gastos', ['admin', 'cajero']),
+    ('ver_configuracion', 'Ver configuración', 'Ver y editar configuración del sistema', ['admin']),
+    ('gestionar_usuarios', 'Gestionar usuarios', 'Crear, editar y eliminar usuarios', ['admin']),
+    ('gestionar_monedas', 'Gestionar monedas', 'Administrar monedas y tasas de cambio', ['admin']),
+    ('gestionar_metodos_pago', 'Gestionar métodos de pago', 'Administrar métodos de pago', ['admin']),
+    ('ver_logs', 'Ver logs', 'Ver logs del sistema', ['admin']),
+    ('ver_actualizaciones', 'Ver actualizaciones', 'Verificar actualizaciones', ['admin']),
+]
+
+
+def crear_roles_permisos(**kwargs):
+    roles_data = {
+        'admin': 'Administrador completo del sistema',
+        'cajero': 'Operador de caja registradora',
+        'bodeguero': 'Encargado de bodega y productos',
+    }
+    for nombre, desc in roles_data.items():
+        Rol.objects.get_or_create(nombre=nombre, defaults={'descripcion': desc})
+
+    for codigo, nombre, desc, roles_nombres in PERMISOS_PREDEFINIDOS:
+        permiso, _ = Permiso.objects.get_or_create(
+            codigo=codigo,
+            defaults={'nombre': nombre, 'descripcion': desc}
+        )
+        for rol_nombre in roles_nombres:
+            rol = Rol.objects.filter(nombre=rol_nombre).first()
+            if rol:
+                permiso.roles.add(rol)
+
+    rol_admin = Rol.objects.filter(nombre='admin').first()
+    if rol_admin:
+        Usuario.objects.filter(rol__isnull=True, permisos='admin').update(rol=rol_admin)
+        Usuario.objects.filter(rol__isnull=True, permisos='cajero').update(rol=rol_admin)
+        Usuario.objects.filter(rol__isnull=True, permisos='bodeguero').update(rol=rol_admin)
+
+    print("Roles y permisos creados exitosamente.")
+
+
 def crear_usuario_admin(**kwargs):
     if not Usuario.objects.filter(username='admin').exists():
-        Usuario.objects.create_superuser(username='admin', password='123', clave_anulacion='123', permisos='admin')
+        rol_admin = Rol.objects.filter(nombre='admin').first()
+        Usuario.objects.create_superuser(
+            username='admin', password='123',
+            clave_anulacion='123', permisos='admin',
+            rol=rol_admin,
+        )
         print("Usuario administrador creado exitosamente.")
+    else:
+        admin = Usuario.objects.filter(username='admin').first()
+        if admin and not admin.rol:
+            rol_admin = Rol.objects.filter(nombre='admin').first()
+            if rol_admin:
+                admin.rol = rol_admin
+                admin.save(update_fields=['rol'])
 
-# Registra la función con la señal post_migrate
+
 @receiver(post_migrate)
 def post_migrate_callback(sender, **kwargs):
+    if sender.name != 'core':
+        return
+    crear_roles_permisos(**kwargs)
     crear_usuario_admin(**kwargs)
-
-    # Resto de los campos y métodos de tu modelo
 
 class Departamento(models.Model):
     nombre = models.CharField(max_length=50)
@@ -143,11 +240,92 @@ class CarritoItem(models.Model):
 
         return subtotal
     
+class Moneda(models.Model):
+    codigo = models.CharField(max_length=3, unique=True, verbose_name='Código (CLP, USD)')
+    nombre = models.CharField(max_length=50, verbose_name='Nombre')
+    simbolo = models.CharField(max_length=5, default='$', verbose_name='Símbolo')
+    decimales = models.PositiveSmallIntegerField(default=0, verbose_name='Decimales')
+    separador_miles = models.CharField(max_length=1, default='.', verbose_name='Separador miles')
+    separador_decimal = models.CharField(max_length=1, default=',', verbose_name='Separador decimal')
+    locale = models.CharField(max_length=20, default='es-CL', verbose_name='Locale (es-CL, en-US)')
+    activa = models.BooleanField(default=True)
+    orden = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        verbose_name = 'Moneda'
+        verbose_name_plural = 'Monedas'
+        ordering = ['orden']
+
+    def __str__(self):
+        return f'{self.codigo} ({self.simbolo})'
+
+
+class TasaCambio(models.Model):
+    moneda_origen = models.ForeignKey(Moneda, on_delete=models.CASCADE, related_name='tasas_origen')
+    moneda_destino = models.ForeignKey(Moneda, on_delete=models.CASCADE, related_name='tasas_destino')
+    tasa = models.DecimalField(max_digits=12, decimal_places=6, verbose_name='Tasa de cambio')
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Tasa de cambio'
+        verbose_name_plural = 'Tasas de cambio'
+        unique_together = ('moneda_origen', 'moneda_destino')
+
+    def __str__(self):
+        return f'1 {self.moneda_origen.codigo} = {self.tasa} {self.moneda_destino.codigo}'
+
+
+class DenominacionMoneda(models.Model):
+    TIPO_CHOICES = (('moneda', 'Moneda'), ('billete', 'Billete'))
+    moneda = models.ForeignKey(Moneda, on_delete=models.CASCADE, related_name='denominaciones')
+    valor = models.DecimalField(max_digits=12, decimal_places=2, verbose_name='Valor')
+    tipo = models.CharField(max_length=10, choices=TIPO_CHOICES, default='billete')
+    nombre = models.CharField(max_length=50, blank=True)
+    activo = models.BooleanField(default=True)
+    orden = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        verbose_name = 'Denominación'
+        verbose_name_plural = 'Denominaciones'
+        ordering = ['moneda', '-valor']
+
+    def save(self, *args, **kwargs):
+        if not self.nombre:
+            self.nombre = f'{self.tipo.capitalize()} de ${int(self.valor):,}'.replace(',', '.')
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f'{self.nombre} ({self.moneda.codigo})'
+
+
+class MetodoPago(models.Model):
+    codigo = models.CharField(max_length=30, unique=True, verbose_name='Código interno')
+    nombre = models.CharField(max_length=50, verbose_name='Nombre visible')
+    icono = models.CharField(max_length=30, default='Money', verbose_name='Icono MUI')
+    activo = models.BooleanField(default=True)
+    orden = models.PositiveIntegerField(default=0)
+    requiere_autorizacion = models.BooleanField(default=False)
+    color = models.CharField(max_length=7, default='#6366f1', verbose_name='Color hex')
+    abre_gaveta = models.BooleanField(default=False, verbose_name='Abre la gaveta')
+    pide_monto = models.BooleanField(default=True, verbose_name='Pide monto al usuario')
+    es_efectivo = models.BooleanField(default=False, verbose_name='Es efectivo (da vuelto)')
+    da_vuelto = models.BooleanField(default=False, verbose_name='Puede dar vuelto')
+    acepta_diferencia = models.BooleanField(default=True, verbose_name='Acepta pago de diferencia (resto)')
+
+    class Meta:
+        verbose_name = 'Método de pago'
+        verbose_name_plural = 'Métodos de pago'
+        ordering = ['orden']
+
+    def __str__(self):
+        return self.nombre
+
+
 class Configuracion(models.Model):
     id = models.AutoField(primary_key=True)
     decimales = models.PositiveIntegerField(default=2)
-    clave_anulacion = models.CharField(max_length=20)
-    idioma = models.CharField(max_length=20)
+    clave_anulacion = models.CharField(max_length=20, blank=True, default='')
+    idioma = models.CharField(max_length=20, blank=True, default='')
     imprimir_opciones = (
         ('no', 'No imprimir'),
         ('con_corte', 'Imprimir con corte'),
@@ -167,8 +345,7 @@ class Configuracion(models.Model):
     tipo_venta = models.CharField(max_length=20, choices=tipo_de_venta, default='1')
     porcentaje_iva = models.DecimalField(max_digits=5, decimal_places=2, default=0.0)
     
-    # Agrega el campo para el tamaño de letra
-    tamano_letra = models.PositiveIntegerField(default=10)  # Ejemplo: tamaño de letra por defecto de 10 puntos
+    tamano_letra = models.PositiveIntegerField(default=10)
 
     TIPO_IMPRESORA_CHOICES = (
         ('usb', 'USB'),
@@ -184,24 +361,82 @@ class Configuracion(models.Model):
     )
     tipo_autorizacion = models.CharField(max_length=20, choices=TIPO_AUTORIZACION_CHOICES, default='cualquier')
 
+    moneda_principal = models.ForeignKey(Moneda, on_delete=models.SET_NULL, null=True, blank=True, related_name='configs')
+    redondeo_multiplo = models.PositiveIntegerField(default=10, verbose_name='Múltiplo de redondeo')
+    debug_mode = models.BooleanField(default=False, verbose_name='Modo Debug')
+
     def __str__(self):
         return 'Configuración de la Aplicación'
 
 @receiver(post_migrate)
-def crear_configuracion(sender, **kwargs):  # Reemplaza 'tu_app_nombre' con el nombre de tu aplicación
-        configuracion, created = Configuracion.objects.get_or_create(
-            decimales = 0,
-            clave_anulacion = '5901234123457',
-            idioma = 'es',
-            imprimir = 'sin_corte',
-            porcentaje_iva = 0.0,
-            tipo_venta = '1',
-            tamano_letra = 30,
-            separador = '1',
-            tipo_impresora = 'usb',
-            ip_impresora = '192.168.100.30',
-            puerto_impresora = 9100,
-            tipo_autorizacion = 'cualquier',
+def crear_configuracion(sender, **kwargs):
+    if sender.name != 'core':
+        return
+    moneda_clp, _ = Moneda.objects.get_or_create(codigo='CLP', defaults={
+        'nombre': 'Peso Chileno', 'simbolo': '$', 'decimales': 0,
+        'separador_miles': '.', 'separador_decimal': ',', 'locale': 'es-CL',
+        'activa': True, 'orden': 1,
+    })
+    Moneda.objects.get_or_create(codigo='USD', defaults={
+        'nombre': 'Dólar Americano', 'simbolo': 'US$', 'decimales': 2,
+        'separador_miles': ',', 'separador_decimal': '.', 'locale': 'en-US',
+        'activa': True, 'orden': 2,
+    })
+    Moneda.objects.get_or_create(codigo='EUR', defaults={
+        'nombre': 'Euro', 'simbolo': '€', 'decimales': 2,
+        'separador_miles': '.', 'separador_decimal': ',', 'locale': 'de-DE',
+        'activa': False, 'orden': 3,
+    })
+    Moneda.objects.get_or_create(codigo='ARS', defaults={
+        'nombre': 'Peso Argentino', 'simbolo': '$', 'decimales': 2,
+        'separador_miles': '.', 'separador_decimal': ',', 'locale': 'es-AR',
+        'activa': False, 'orden': 4,
+    })
+
+    configuracion, created = Configuracion.objects.get_or_create(
+        id=1,
+        defaults={
+            'decimales': 0,
+            'clave_anulacion': '5901234123457',
+            'idioma': 'es',
+            'imprimir': 'sin_corte',
+            'porcentaje_iva': 0.0,
+            'tipo_venta': '1',
+            'tamano_letra': 30,
+            'separador': '1',
+            'tipo_impresora': 'usb',
+            'ip_impresora': '192.168.100.30',
+            'puerto_impresora': 9100,
+            'tipo_autorizacion': 'cualquier',
+            'moneda_principal': moneda_clp,
+            'redondeo_multiplo': 10,
+            'debug_mode': False,
+        }
+    )
+    if not configuracion.moneda_principal:
+        configuracion.moneda_principal = moneda_clp
+        configuracion.save(update_fields=['moneda_principal'])
+
+    for valor, tipo, orden in [
+        (10, 'moneda', 1), (50, 'moneda', 2), (100, 'moneda', 3), (500, 'moneda', 4),
+        (1000, 'billete', 5), (2000, 'billete', 6), (5000, 'billete', 7),
+        (10000, 'billete', 8), (20000, 'billete', 9),
+    ]:
+        DenominacionMoneda.objects.get_or_create(
+            moneda=moneda_clp, valor=valor,
+            defaults={'tipo': tipo, 'orden': orden}
+        )
+
+    for codigo, nombre, icono, color, orden, props in [
+        ('efectivo', 'Efectivo', 'Money', '#22c55e', 1, {'abre_gaveta': True, 'pide_monto': True, 'es_efectivo': True, 'da_vuelto': True, 'acepta_diferencia': False}),
+        ('efectivo_justo', 'Efectivo Justo', 'Money', '#16a34a', 2, {'abre_gaveta': True, 'pide_monto': True, 'es_efectivo': True, 'da_vuelto': False, 'acepta_diferencia': False}),
+        ('debito', 'Débito', 'CreditCard', '#6366f1', 3, {'abre_gaveta': False, 'pide_monto': False, 'es_efectivo': False, 'da_vuelto': False, 'acepta_diferencia': True}),
+        ('credito', 'Crédito', 'CreditCard', '#8b5cf6', 4, {'abre_gaveta': False, 'pide_monto': False, 'es_efectivo': False, 'da_vuelto': False, 'acepta_diferencia': True}),
+        ('transferencia', 'Transferencia', 'SwapHoriz', '#f59e0b', 5, {'abre_gaveta': False, 'pide_monto': False, 'es_efectivo': False, 'da_vuelto': False, 'acepta_diferencia': True}),
+    ]:
+        MetodoPago.objects.get_or_create(
+            codigo=codigo,
+            defaults={'nombre': nombre, 'icono': icono, 'color': color, 'orden': orden, **props}
         )
 
 

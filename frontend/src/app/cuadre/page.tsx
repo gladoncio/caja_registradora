@@ -6,12 +6,14 @@ import {
   TableHead, TableRow, Chip, Divider, IconButton, Tooltip,
 } from '@mui/material'
 import { Assessment, Check, SyncAlt } from '@mui/icons-material'
-import { reportesAPI } from '@/lib/api'
+import api, { reportesAPI } from '@/lib/api'
 import { useTheme } from '@mui/material'
+import { formatMoney } from '@/lib/format'
 
 type Modo = 'cantidad' | 'subtotal'
 
 interface Denominacion {
+  id: number
   campo: string
   label: string
   tipo: string
@@ -21,27 +23,29 @@ interface Denominacion {
   subtotal: number
 }
 
-const DENOMINACIONES: Denominacion[] = [
-  { campo: 'monedas_10', label: '$10', tipo: 'Moneda', valor: 10, modo: 'cantidad', cantidad: 0, subtotal: 0 },
-  { campo: 'monedas_50', label: '$50', tipo: 'Moneda', valor: 50, modo: 'cantidad', cantidad: 0, subtotal: 0 },
-  { campo: 'monedas_100', label: '$100', tipo: 'Moneda', valor: 100, modo: 'cantidad', cantidad: 0, subtotal: 0 },
-  { campo: 'monedas_500', label: '$500', tipo: 'Moneda', valor: 500, modo: 'cantidad', cantidad: 0, subtotal: 0 },
-  { campo: 'billetes_1000', label: '$1.000', tipo: 'Billete', valor: 1000, modo: 'cantidad', cantidad: 0, subtotal: 0 },
-  { campo: 'billetes_2000', label: '$2.000', tipo: 'Billete', valor: 2000, modo: 'cantidad', cantidad: 0, subtotal: 0 },
-  { campo: 'billetes_5000', label: '$5.000', tipo: 'Billete', valor: 5000, modo: 'cantidad', cantidad: 0, subtotal: 0 },
-  { campo: 'billetes_10000', label: '$10.000', tipo: 'Billete', valor: 10000, modo: 'cantidad', cantidad: 0, subtotal: 0 },
-  { campo: 'billetes_20000', label: '$20.000', tipo: 'Billete', valor: 20000, modo: 'cantidad', cantidad: 0, subtotal: 0 },
-]
-
 export default function CuadrePage() {
   const theme = useTheme()
   const [loading, setLoading] = useState(true)
   const [resultado, setResultado] = useState<any>(null)
-  const [rows, setRows] = useState<Denominacion[]>(DENOMINACIONES)
+  const [rows, setRows] = useState<Denominacion[]>([])
   const [maquinasDebito, setMaquinasDebito] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  useEffect(() => { setLoading(false) }, [])
+  useEffect(() => {
+    api.get('/denominaciones/?moneda=1').then(r => {
+      const items: Denominacion[] = r.data.map((d: any) => ({
+        id: d.id,
+        campo: `denom_${d.id}`,
+        label: `${d.tipo === 'moneda' ? '🪙' : '💵'} $${parseInt(d.valor).toLocaleString('es-CL')}`,
+        tipo: d.tipo === 'moneda' ? 'Moneda' : 'Billete',
+        valor: parseFloat(d.valor),
+        modo: 'cantidad' as Modo,
+        cantidad: 0,
+        subtotal: 0,
+      }))
+      setRows(items)
+    }).catch(() => {}).finally(() => setLoading(false))
+  }, [])
 
   const totalEfectivo = rows.reduce((s, r) => s + (r.cantidad * r.valor), 0)
 
@@ -135,7 +139,7 @@ export default function CuadrePage() {
                     <Box display="flex" justifyContent="space-between" mb={1}>
                       <Chip label={r.tipo} size="small" variant="outlined" />
                       <Typography fontWeight={700}>{r.label}</Typography>
-                      <Typography fontWeight={700} color="primary.main">${r.subtotal.toLocaleString('es-CL')}</Typography>
+                      <Typography fontWeight={700} color="primary.main">{formatMoney(r.subtotal)}</Typography>
                     </Box>
                     <Box display="flex" gap={1}>
                       <TextField size="small" label="Cantidad" type="number" value={r.cantidad || ''}
@@ -156,7 +160,7 @@ export default function CuadrePage() {
                 <Box textAlign="right">
                   <Typography variant="caption" color="text.secondary">Total efectivo contado</Typography>
                   <Typography variant="h4" fontWeight={800} color="primary.main">
-                    ${totalEfectivo.toLocaleString('es-CL')}
+                    {formatMoney(totalEfectivo)}
                   </Typography>
                 </Box>
               </Box>
@@ -176,13 +180,13 @@ export default function CuadrePage() {
                 <Grid item xs={6} sm={3}>
                   <Paper elevation={0} sx={{ p: 2, borderRadius: 2, bgcolor: alpha(theme.palette.info.main, 0.05), textAlign: 'center' }}>
                     <Typography variant="caption" color="text.secondary">Esperado</Typography>
-                    <Typography variant="h6" fontWeight={700}>${(resultado.total_efectivo_esperado || 0).toLocaleString('es-CL')}</Typography>
+                    <Typography variant="h6" fontWeight={700}>{formatMoney(resultado.total_efectivo_esperado)}</Typography>
                   </Paper>
                 </Grid>
                 <Grid item xs={6} sm={3}>
                   <Paper elevation={0} sx={{ p: 2, borderRadius: 2, bgcolor: alpha(theme.palette.success.main, 0.05), textAlign: 'center' }}>
                     <Typography variant="caption" color="text.secondary">Contado</Typography>
-                    <Typography variant="h6" fontWeight={700}>${(resultado.total_efectivo_contado || 0).toLocaleString('es-CL')}</Typography>
+                    <Typography variant="h6" fontWeight={700}>{formatMoney(resultado.total_efectivo_contado)}</Typography>
                   </Paper>
                 </Grid>
                 <Grid item xs={6} sm={3}>
@@ -191,7 +195,7 @@ export default function CuadrePage() {
                     <Typography variant="caption" color="text.secondary">Diferencia efectivo</Typography>
                     <Typography variant="h6" fontWeight={700}
                       color={(resultado.diferencia_efectivo || 0) < 0 ? 'success.main' : 'error.main'}>
-                      {resultado.estado_efectivo === 'sobrante' ? '+' : ''}${Math.abs(resultado.diferencia_efectivo || 0).toLocaleString('es-CL')}
+                      {resultado.estado_efectivo === 'sobrante' ? '+' : ''}{formatMoney(Math.abs(resultado.diferencia_efectivo || 0))}
                     </Typography>
                     <Chip label={resultado.estado_efectivo} size="small"
                       color={(resultado.diferencia_efectivo || 0) < 0 ? 'success' : 'error'} sx={{ mt: 0.5 }} />
@@ -200,7 +204,7 @@ export default function CuadrePage() {
                 <Grid item xs={6} sm={3}>
                   <Paper elevation={0} sx={{ p: 2, borderRadius: 2, bgcolor: alpha(theme.palette.warning.main, 0.05), textAlign: 'center' }}>
                     <Typography variant="caption" color="text.secondary">Diferencia débito</Typography>
-                    <Typography variant="h6" fontWeight={700}>${(resultado.diferencia_debito || 0).toLocaleString('es-CL')}</Typography>
+                    <Typography variant="h6" fontWeight={700}>{formatMoney(resultado.diferencia_debito)}</Typography>
                   </Paper>
                 </Grid>
               </Grid>

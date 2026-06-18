@@ -11,17 +11,21 @@ import {
 import {
   Add, Remove, Delete, Search, ShoppingCart, Payment, QrCodeScanner,
   Keyboard, PointOfSale, Close, Check, Money, Casino, CreditCard,
-  Speed, Star, StarBorder, KeyboardAlt,
+  Speed, Star, StarBorder, KeyboardAlt, SwapHoriz, AccountBalance,
 } from '@mui/icons-material'
 import { carritoAPI, productosAPI, ventasAPI, metodosPagoAPI, configAPI, impresoraAPI, autorizacionAPI } from '@/lib/api'
 import { CarritoItem, ProductoSimple, ProductoRapido, Configuracion } from '@/types'
 import { useKeyboardShortcuts } from '@/lib/shortcuts'
 import AuthorizationDialog from '@/components/AuthorizationDialog'
-import BigAlert from './BigAlert'
+import BigAlert from '@/components/BigAlert'
+import { formatMoney, formatNumber, redondear } from '@/lib/format'
 
-const METODO_ICONS: Record<string, React.ReactNode> = {
-  efectivo: <Money />, efectivo_justo: <Money />,
-  transferencia: <CreditCard />, debito: <CreditCard />,
+function getIcon(name: string) {
+  const icons: Record<string, React.ReactNode> = {
+    Money: <Money />, CreditCard: <CreditCard />, SwapHoriz: <SwapHoriz />,
+    AccountBalance: <AccountBalance />, Payment: <Payment />, QrCode: <QrCodeScanner />,
+  }
+  return icons[name] || <Money />
 }
 
 interface PagoState {
@@ -37,6 +41,8 @@ export default function CajaPage({ params }: { params: { id: string } }) {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   const barcodeRef = useRef<HTMLInputElement>(null)
+  const valorRef = useRef<HTMLInputElement>(null)
+  const pesoRef = useRef<HTMLInputElement>(null)
 
   const [carritoNumero, setCarritoNumero] = useState(initialCart)
   const [items, setItems] = useState<CarritoItem[]>([])
@@ -60,7 +66,7 @@ export default function CajaPage({ params }: { params: { id: string } }) {
   const [valorDialog, setValorDialog] = useState(false)
   const [valorProducto, setValorProducto] = useState<ProductoSimple | null>(null)
   const [valorCustom, setValorCustom] = useState('')
-  const [authDialog, setAuthDialog] = useState<{ open: boolean; onSuccess: (clave: string) => void }>({ open: false, onSuccess: () => {} })
+  const [authDialog, setAuthDialog] = useState<{ open: boolean; titulo?: string; mensaje?: string; accion?: string; onSuccess: (clave: string) => void }>({ open: false, onSuccess: () => {} })
   const [shortcutsMenu, setShortcutsMenu] = useState<null | HTMLElement>(null)
   const [showMobileCart, setShowMobileCart] = useState(true)
   const [pago, setPago] = useState<PagoState>({ metodo: '', montoEfectivo: '', vuelto: 0, paso: 'seleccion', totalResto: 0 })
@@ -97,7 +103,9 @@ export default function CajaPage({ params }: { params: { id: string } }) {
 
   useEffect(() => { loadData() }, [loadData])
   useEffect(() => { setTimeout(() => barcodeRef.current?.focus(), 100) }, [carritoNumero])
-  useEffect(() => { const iv = setInterval(loadData, 5000); return () => clearInterval(iv) }, [loadData])
+  useEffect(() => { const iv = setInterval(loadData, 30000); return () => clearInterval(iv) }, [loadData])
+  useEffect(() => { if (valorDialog) setTimeout(() => valorRef.current?.focus(), 150) }, [valorDialog])
+  useEffect(() => { if (pesoDialog) setTimeout(() => pesoRef.current?.focus(), 150) }, [pesoDialog])
 
   // ─── Keyboard Shortcuts ─────────────────────────────
   useKeyboardShortcuts({
@@ -106,26 +114,22 @@ export default function CajaPage({ params }: { params: { id: string } }) {
     'F7': () => switchCart(7), 'F8': () => switchCart(8),
     'F9': async () => { try { const r = await carritoAPI.nuevo(); if (r.data.carrito_numero) switchCart(r.data.carrito_numero) } catch {} },
     'F10': () => { if (items.length > 0 && total > 0) handleOpenPago() },
-    'Ctrl+D': () => setAuthDialog({ open: true, onSuccess: (clave: string) => abrirCajon(clave) }),
-    // Payment method shortcuts (when dialog is open)
-    '1': () => { if (pagoDialog && pago.paso === 'seleccion') handleSelectMetodo('efectivo') },
-    '2': () => { if (pagoDialog && pago.paso === 'seleccion') handleSelectMetodo('efectivo_justo') },
-    '3': () => { if (pagoDialog && pago.paso === 'seleccion') handleSelectMetodo('transferencia') },
-    '4': () => { if (pagoDialog && pago.paso === 'seleccion') handleSelectMetodo('debito') },
+    'Ctrl+D': () => setAuthDialog({ open: true, titulo: 'Abrir cajón', mensaje: 'Ingresa tu clave para abrir el cajón', accion: 'Abrir', onSuccess: (clave: string) => abrirCajon(clave) }),
+    ...Object.fromEntries(metodosPago.slice(0, 9).map((mp: any, i: number) => [
+      `${i + 1}`, () => { if (pagoDialog && pago.paso === 'seleccion') handleSelectMetodo(mp.codigo) }
+    ])),
     '-': () => setPrefixMode(true),
   }, true)
 
-  // Prefix mode: tecla - + número (funciona incluso en inputs)
+  // Prefix mode: tecla - + tecla (busca por tecla, no índice)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (prefixMode) {
-        if ('0123456789'.includes(e.key)) {
+        const key = e.key.toUpperCase()
+        if (key.length === 1 && !['SHIFT', 'CONTROL', 'ALT'].includes(key)) {
           e.preventDefault()
-          const idx = parseInt(e.key)
-          const rp = rapidos.filter(r => r.tecla)[idx]
+          const rp = rapidos.find(r => r.tecla?.toUpperCase() === key)
           if (rp) addProduct(rp.producto)
-          setPrefixMode(false)
-        } else if (e.key !== 'Shift' && e.key !== 'Control' && e.key !== 'Alt') {
           setPrefixMode(false)
         }
       }
@@ -181,6 +185,19 @@ export default function CajaPage({ params }: { params: { id: string } }) {
 
   const removeItem = async (id: number) => { await carritoAPI.delete(id); loadData() }
   const clearCart = async () => { await carritoAPI.vaciar(carritoNumero); loadData() }
+  const focusBarcode = () => setTimeout(() => barcodeRef.current?.focus(), 50)
+  const handleAddValor = async () => {
+    if (!valorProducto || !valorCustom) return
+    await carritoAPI.agregar(valorProducto.id_producto, 1, carritoNumero, { valor: parseFloat(valorCustom) })
+    setValorDialog(false); setValorProducto(null); setValorCustom(''); loadData()
+    focusBarcode()
+  }
+  const handleAddPeso = async () => {
+    if (!pesoProducto || !pesoValor) return
+    await carritoAPI.agregar(pesoProducto.id_producto, 0, carritoNumero, { gramaje: parseFloat(pesoValor) })
+    setPesoDialog(false); setPesoProducto(null); setPesoValor(''); loadData()
+    focusBarcode()
+  }
 
   const abrirCajon = async (clave: string) => {
     setAuthDialog({ open: false, onSuccess: () => {} })
@@ -197,17 +214,36 @@ export default function CajaPage({ params }: { params: { id: string } }) {
     setPagoDialog(true)
   }
 
-  const handleSelectMetodo = (metodo: string) => {
-    if (metodo === 'efectivo') setPago(p => ({ ...p, metodo, paso: 'monto' }))
-    else if (metodo === 'efectivo_justo') confirmarPago('Efectivo Justo', 0, 0)
-    else confirmarPago(metodo, 0, 0)
+  const getMetodo = (codigo: string) => metodosPago.find((m: any) => m.codigo === codigo)
+
+  const handleSelectMetodo = (codigo: string) => {
+    const mp = getMetodo(codigo)
+    if (mp?.requiere_autorizacion) {
+      setAuthDialog({ open: true, titulo: 'Autorizar pago', mensaje: `Ingresa tu clave para pagar con ${mp.nombre}`, accion: 'Pagar', onSuccess: (clave: string) => {
+        setAuthDialog(a => ({ ...a, open: false }))
+        if (mp.pide_monto) setPago(p => ({ ...p, metodo: codigo, paso: 'monto' }))
+        else confirmarPago(codigo, 0, 0, clave)
+      }})
+      return
+    }
+    if (mp?.pide_monto) setPago(p => ({ ...p, metodo: codigo, paso: 'monto' }))
+    else confirmarPago(codigo, 0, 0)
   }
 
-  const confirmarPago = async (metodo: string, restante: number, vuelto: number) => {
+  const confirmarPago = async (metodo: string, restante: number, vuelto: number, clave?: string) => {
     setProcessing(true)
     try {
-      await ventasAPI.generar({ tipo_pago: metodo, carrito_numero: carritoNumero, restante, vuelto_inicial: vuelto })
-      const msg = vuelto > 0 ? `Venta realizada! Vuelto: $${vuelto.toLocaleString('es-CL')}` : 'Venta realizada!'
+      const mp = getMetodo(metodo)
+      const payload: any = {
+        tipo_pago: metodo,
+        carrito_numero: carritoNumero,
+        restante,
+        vuelto_inicial: vuelto,
+        abre_gaveta: mp?.abre_gaveta || false,
+      }
+      if (clave) payload.clave_anulacion = clave
+      await ventasAPI.generar(payload)
+      const msg = vuelto > 0 ? `Venta realizada! Vuelto: ${formatMoney(vuelto)}` : 'Venta realizada!'
       setPagoDialog(false)
       showAlert(msg, 'success')
       setBarcode(''); barcodeRef.current?.focus(); loadData()
@@ -264,7 +300,7 @@ export default function CajaPage({ params }: { params: { id: string } }) {
             })}
           </Box>
           <Box display="flex" gap={0.5} ml={1}>
-            <Tooltip title="Abrir cajón (Ctrl+D)"><IconButton size="small" onClick={() => setAuthDialog({ open: true, onSuccess: (clave: string) => abrirCajon(clave) })}
+            <Tooltip title="Abrir cajón (Ctrl+D)"><IconButton size="small" onClick={() => setAuthDialog({ open: true, titulo: 'Abrir cajón', mensaje: 'Ingresa tu clave para abrir el cajón', accion: 'Abrir', onSuccess: (clave: string) => abrirCajon(clave) })}
               sx={{ bgcolor: alpha(theme.palette.warning.main, 0.1) }}><Casino fontSize="small" /></IconButton></Tooltip>
             <Tooltip title="Atajos"><IconButton size="small" onClick={(e) => setShortcutsMenu(e.currentTarget)}>
               <KeyboardAlt fontSize="small" /></IconButton></Tooltip>
@@ -316,7 +352,7 @@ export default function CajaPage({ params }: { params: { id: string } }) {
                   inputRef={barcodeRef} variant="standard" InputProps={{ disableUnderline: true }}
                   sx={{ '& .MuiInputBase-root': { py: 1.2, fontSize: { xs: '0.9rem', sm: '1rem' } } }} />
                 <Box sx={{ pr: 1 }}>
-                  <Button type="submit" variant="contained" sx={{ borderRadius: 2, minWidth: 36, px: 1.5, height: 34 }}><Search /></Button>
+                  <Button type="submit" variant="contained" aria-label="Buscar" sx={{ borderRadius: 2, minWidth: 36, px: 1.5, height: 34 }}><Search /></Button>
                 </Box>
               </Paper>
 
@@ -330,7 +366,7 @@ export default function CajaPage({ params }: { params: { id: string } }) {
                           secondary={
                             <Box component="span" display="flex" alignItems="center" gap={1} mt={0.3}>
                               <Typography component="span" variant="body2" color="primary.main" fontWeight={700}>
-                                ${parseInt(p.precio).toLocaleString('es-CL')}
+                                {formatMoney(p.precio)}
                               </Typography>
                               <Chip label={p.tipo_venta} size="small" variant="outlined" sx={{ height: 18 }} />
                             </Box>} />
@@ -381,18 +417,18 @@ export default function CajaPage({ params }: { params: { id: string } }) {
                         <TableRow key={item.id} hover>
                           <TableCell>
                             <Typography variant="body2" fontWeight={600}>{item.producto.nombre}</Typography>
-                            <Typography variant="caption" color="text.secondary">${parseInt(item.producto.precio).toLocaleString('es-CL')}/ud.</Typography>
+                            <Typography variant="caption" color="text.secondary">{formatMoney(item.producto.precio)}/ud.</Typography>
                           </TableCell>
                           <TableCell align="center">
                             <Box display="inline-flex" alignItems="center" gap={0.3} sx={{ border: 1, borderColor: 'divider', borderRadius: 2, px: 0.3, py: 0.1 }}>
                               <IconButton size="small" onClick={() => updateCantidad(item, -1)} sx={{ color: 'error.main' }}><Remove fontSize="small" /></IconButton>
-                              <Typography fontWeight={700} mx={0.5} minWidth={24} textAlign="center" variant="body2">
+                              <Typography fontWeight={800} mx={0.8} minWidth={30} textAlign="center" variant="h6" sx={{ fontSize: { xs: '1rem', sm: '1.15rem' } }}>
                                 {item.cantidad || (item.gramaje ? `${item.gramaje}g` : '0')}
                               </Typography>
                               <IconButton size="small" onClick={() => updateCantidad(item, 1)} sx={{ color: 'primary.main' }}><Add fontSize="small" /></IconButton>
                             </Box>
                           </TableCell>
-                          <TableCell align="right"><Typography fontWeight={700} color="primary.main">${item.subtotal.toLocaleString('es-CL')}</Typography></TableCell>
+                          <TableCell align="right"><Typography fontWeight={700} color="primary.main">{formatMoney(item.subtotal)}</Typography></TableCell>
                           <TableCell align="right">
                             <IconButton size="small" onClick={() => removeItem(item.id)} sx={{ color: 'error.main', opacity: 0.5, '&:hover': { opacity: 1 } }}><Delete fontSize="small" /></IconButton>
                           </TableCell>
@@ -408,12 +444,12 @@ export default function CajaPage({ params }: { params: { id: string } }) {
                   <Paper key={item.id} elevation={0} sx={{ p: 1.5, mb: 1, borderRadius: 2, border: 1, borderColor: 'divider' }}>
                     <Box display="flex" justifyContent="space-between" mb={0.5}>
                       <Typography variant="body2" fontWeight={700}>{item.producto.nombre}</Typography>
-                      <Typography variant="h6" fontWeight={800} color="primary.main">${item.subtotal.toLocaleString('es-CL')}</Typography>
+                      <Typography variant="h6" fontWeight={800} color="primary.main">{formatMoney(item.subtotal)}</Typography>
                     </Box>
                     <Box display="flex" justifyContent="space-between" alignItems="center">
-                      <Box display="flex" alignItems="center" gap={0.5} sx={{ border: 1, borderColor: 'divider', borderRadius: 2, px: 0.5 }}>
+                      <Box display="flex" alignItems="center" gap={0.5} sx={{ border: 1, borderColor: 'divider', borderRadius: 2, px: 0.5, py: 0.2 }}>
                         <IconButton size="small" onClick={() => updateCantidad(item, -1)} color="error"><Remove fontSize="small" /></IconButton>
-                        <Typography fontWeight={700}>{item.cantidad || `${item.gramaje}g`}</Typography>
+                        <Typography fontWeight={800} sx={{ fontSize: '1.1rem', minWidth: 28, textAlign: 'center' }}>{item.cantidad || `${item.gramaje}g`}</Typography>
                         <IconButton size="small" onClick={() => updateCantidad(item, 1)} color="primary"><Add fontSize="small" /></IconButton>
                       </Box>
                       <IconButton size="small" onClick={() => removeItem(item.id)} color="error"><Delete fontSize="small" /></IconButton>
@@ -428,7 +464,7 @@ export default function CajaPage({ params }: { params: { id: string } }) {
                   <Box textAlign="right">
                     <Typography variant="caption" color="text.secondary" fontWeight={600}>TOTAL</Typography>
                     <Typography variant="h3" fontWeight={800} color="primary.main" sx={{ fontSize: { xs: '1.75rem', sm: '2.25rem' }, lineHeight: 1.1 }}>
-                      ${total.toLocaleString('es-CL')}
+                      {formatMoney(total)}
                     </Typography>
                   </Box>
                 </Box>
@@ -437,7 +473,7 @@ export default function CajaPage({ params }: { params: { id: string } }) {
                   sx={{ mt: 2, py: 1.8, fontSize: { xs: '1rem', sm: '1.15rem' }, fontWeight: 700, borderRadius: 3,
                     background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`, }}
                   startIcon={<Payment />}>
-                  Cobrar{total > 0 ? `  ·  $${total.toLocaleString('es-CL')}` : ''}
+                  Cobrar{total > 0 ? `  ·  ${formatMoney(total)}` : ''}
                 </Button>
               </Box>
             </CardContent>
@@ -450,7 +486,7 @@ export default function CajaPage({ params }: { params: { id: string } }) {
             <CardContent sx={{ p: { xs: 1.5, sm: 2 } }}>
               <Box display="flex" alignItems="center" gap={1} mb={1.5}>
                 <Speed color="primary" />
-                <Typography variant="subtitle1" fontWeight={700}>Rápidos</Typography>
+                <Typography fontWeight={700} sx={{ fontSize: '1rem' }}>Rápidos</Typography>
                 {prefixMode && <Chip label="Presiona 0-9" size="small" color="warning" sx={{ animation: 'pulse 1s infinite' }} />}
               </Box>
               {rapidos.length === 0 ? (
@@ -459,36 +495,37 @@ export default function CajaPage({ params }: { params: { id: string } }) {
                 </Typography>
               ) : (
                 <Grid container spacing={1}>
-                  {rapidos.map((rp) => {
-                    const idx = quickWithKeys.indexOf(rp)
-                    const key = idx >= 0 ? idx.toString() : null
-                    return (
-                      <Grid item xs={4} sm={3} md={6} key={rp.id}>
-                        <Button variant="outlined" fullWidth
-                          onClick={() => addProduct(rp.producto)}
-                          sx={{
-                            p: 1, borderRadius: 2, textAlign: 'center', flexDirection: 'column', gap: 0.2,
-                            borderColor: 'divider', minHeight: 58, position: 'relative',
-                            bgcolor: alpha(theme.palette.primary.main, 0.03),
-                            '&:hover': { borderColor: 'primary.main', bgcolor: alpha(theme.palette.primary.main, 0.08), transform: 'translateY(-1px)' },
-                            transition: 'all 0.15s ease',
-                          }}>
-                          {key !== null && (
-                            <Box sx={{ position: 'absolute', top: -3, right: -3, width: 18, height: 18, borderRadius: '50%',
-                              bgcolor: prefixMode ? theme.palette.warning.main : theme.palette.primary.main,
-                              color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontSize: 9, fontWeight: 700, boxShadow: 1 }}>
-                              {key}
-                            </Box>
-                          )}
-                          <Typography variant="caption" fontWeight={700} noWrap lineHeight={1.2}>{rp.producto.nombre}</Typography>
-                          <Typography variant="caption" fontWeight={700} color="primary.main">
-                            ${parseInt(rp.producto.precio).toLocaleString('es-CL')}
+                  {rapidos.map((rp) => (
+                    <Grid item xs={4} sm={3} md={6} key={rp.id}>
+                      <Button variant="outlined" fullWidth
+                        onClick={() => addProduct(rp.producto)}
+                        sx={{
+                          p: 1, borderRadius: 2, textAlign: 'center', flexDirection: 'column', gap: 0.2,
+                          borderColor: 'divider', minHeight: 66, position: 'relative',
+                          bgcolor: alpha(theme.palette.primary.main, 0.03),
+                          '&:hover': { borderColor: 'primary.main', bgcolor: alpha(theme.palette.primary.main, 0.08), transform: 'translateY(-1px)' },
+                          transition: 'all 0.15s ease',
+                        }}>
+                        {rp.tecla && (
+                          <Box sx={{ position: 'absolute', top: -4, right: -4, width: 22, height: 22, borderRadius: '50%',
+                            bgcolor: prefixMode ? theme.palette.warning.main : theme.palette.primary.main,
+                            color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 11, fontWeight: 800, boxShadow: 2 }}>
+                            {rp.tecla}
+                          </Box>
+                        )}
+                        <Typography variant="body2" fontWeight={700} noWrap lineHeight={1.2}>{rp.producto.nombre}</Typography>
+                        <Box display="flex" alignItems="center" justifyContent="center" gap={0.5} mt={0.2}>
+                          <Typography variant="body2" fontWeight={800} color="primary.main" sx={{ fontSize: { xs: '0.75rem', sm: '0.85rem' } }}>
+                            {formatMoney(rp.producto.precio)}
                           </Typography>
-                        </Button>
-                      </Grid>
-                    )
-                  })}
+                          <Chip label={rp.producto.tipo_venta} size="small"
+                            color={rp.producto.tipo_venta === 'unidad' ? 'default' : rp.producto.tipo_venta === 'gramaje' ? 'info' : 'warning'}
+                            variant="outlined" sx={{ height: 16, fontSize: 8, fontWeight: 600 }} />
+                        </Box>
+                      </Button>
+                    </Grid>
+                  ))}
                 </Grid>
               )}
               <Typography variant="caption" color="text.disabled" display="block" textAlign="center" mt={1}>
@@ -504,7 +541,7 @@ export default function CajaPage({ params }: { params: { id: string } }) {
                 <Typography variant="subtitle1" fontWeight={700}>Cajón</Typography>
               </Box>
               <Button fullWidth variant="contained" color="warning" size="large"
-                onClick={() => setAuthDialog({ open: true, onSuccess: (clave: string) => abrirCajon(clave) })}
+                onClick={() => setAuthDialog({ open: true, titulo: 'Abrir cajón', mensaje: 'Ingresa tu clave para abrir el cajón', accion: 'Abrir', onSuccess: (clave: string) => abrirCajon(clave) })}
                 startIcon={<Casino />} sx={{ borderRadius: 2, py: 1.5, fontWeight: 700 }}>
                 Abrir Cajón
               </Button>
@@ -515,46 +552,44 @@ export default function CajaPage({ params }: { params: { id: string } }) {
 
       {/* ─── DIALOGS ──────────────────────────────────── */}
 
-      <Dialog open={pesoDialog} onClose={() => setPesoDialog(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 4 } }} TransitionComponent={Zoom}>
+      <Dialog open={pesoDialog} onClose={() => { setPesoDialog(false); focusBarcode() }} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 4 } }} TransitionComponent={Zoom}>
         <DialogTitle><Typography fontWeight={700}>Ingresar peso</Typography></DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" mb={2}>{pesoProducto?.nombre}</Typography>
           <TextField fullWidth label="Peso en gramos" type="number" value={pesoValor}
-            onChange={(e) => setPesoValor(e.target.value)} autoFocus sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }} />
+            onChange={(e) => setPesoValor(e.target.value)}
+            inputRef={pesoRef}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddPeso() } }}
+            sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }} />
         </DialogContent>
         <DialogActions sx={{ p: 3, pt: 0 }}>
-          <Button onClick={() => setPesoDialog(false)} sx={{ borderRadius: 2 }}>Cancelar</Button>
-          <Button variant="contained" onClick={async () => {
-            if (!pesoProducto || !pesoValor) return
-            await carritoAPI.agregar(pesoProducto.id_producto, 0, carritoNumero, { gramaje: parseFloat(pesoValor) })
-            setPesoDialog(false); setPesoProducto(null); setPesoValor(''); loadData()
-          }} sx={{ borderRadius: 2 }}>Agregar</Button>
+          <Button onClick={() => { setPesoDialog(false); focusBarcode() }} sx={{ borderRadius: 2 }}>Cancelar</Button>
+          <Button variant="contained" onClick={handleAddPeso} sx={{ borderRadius: 2 }}>Agregar</Button>
         </DialogActions>
       </Dialog>
 
-      <Dialog open={valorDialog} onClose={() => setValorDialog(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 4 } }} TransitionComponent={Zoom}>
+      <Dialog open={valorDialog} onClose={() => { setValorDialog(false); focusBarcode() }} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 4 } }} TransitionComponent={Zoom}>
         <DialogTitle><Typography fontWeight={700}>Ingresar valor</Typography></DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" mb={2}>{valorProducto?.nombre}</Typography>
           <TextField fullWidth label="Valor personalizado" type="number" value={valorCustom}
-            onChange={(e) => setValorCustom(e.target.value)} autoFocus sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }} />
+            onChange={(e) => setValorCustom(e.target.value)}
+            inputRef={valorRef}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddValor() } }}
+            sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }} />
         </DialogContent>
         <DialogActions sx={{ p: 3, pt: 0 }}>
-          <Button onClick={() => setValorDialog(false)} sx={{ borderRadius: 2 }}>Cancelar</Button>
-          <Button variant="contained" onClick={async () => {
-            if (!valorProducto || !valorCustom) return
-            await carritoAPI.agregar(valorProducto.id_producto, 1, carritoNumero, { valor: parseFloat(valorCustom) })
-            setValorDialog(false); setValorProducto(null); setValorCustom(''); loadData()
-          }} sx={{ borderRadius: 2 }}>Agregar</Button>
+          <Button onClick={() => { setValorDialog(false); focusBarcode() }} sx={{ borderRadius: 2 }}>Cancelar</Button>
+          <Button variant="contained" onClick={handleAddValor} sx={{ borderRadius: 2 }}>Agregar</Button>
         </DialogActions>
       </Dialog>
 
       {/* ─── PAYMENT ──────────────────────────────────── */}
-      <Dialog open={pagoDialog} onClose={() => !processing && setPagoDialog(false)} maxWidth="sm" fullWidth TransitionComponent={Zoom} PaperProps={{ sx: { borderRadius: 4 } }}>
+      <Dialog open={pagoDialog} onClose={() => { if (!processing) { setPagoDialog(false); focusBarcode() }}} maxWidth="sm" fullWidth TransitionComponent={Zoom} PaperProps={{ sx: { borderRadius: 4 } }}>
         <DialogTitle sx={{ pb: 0 }}>
           <Box display="flex" justifyContent="space-between" alignItems="center">
             <Typography variant="h5" fontWeight={800}>Cobrar</Typography>
-            <IconButton onClick={() => setPagoDialog(false)} disabled={processing}><Close /></IconButton>
+            <IconButton onClick={() => { setPagoDialog(false); focusBarcode() }} disabled={processing}><Close /></IconButton>
           </Box>
         </DialogTitle>
         <DialogContent sx={{ pt: 3 }}>
@@ -562,22 +597,25 @@ export default function CajaPage({ params }: { params: { id: string } }) {
             p: 3, borderRadius: 3, textAlign: 'center', mb: 2, border: 2, borderColor: alpha(theme.palette.primary.main, 0.1) }}>
             <Typography variant="caption" fontWeight={600} color="text.secondary">Total a pagar</Typography>
             <Typography variant="h2" fontWeight={800} color="primary.main" sx={{ fontSize: { xs: '2.2rem', sm: '2.8rem' } }}>
-              ${total.toLocaleString('es-CL')}
+              {formatMoney(total)}
             </Typography>
           </Paper>
 
           {pago.paso === 'seleccion' && (
-            <><Typography variant="subtitle2" fontWeight={600} mb={1.5}>Selecciona método (usa 1-4 en teclado)</Typography>
+            <><Typography variant="subtitle2" fontWeight={600} mb={1.5}>Selecciona método (usa 1-{Math.min(metodosPago.length, 9)} en teclado)</Typography>
             <Grid container spacing={1.5}>
               {metodosPago.map((mp, idx) => (
-                <Grid item xs={6} key={mp.id}>
-                  <Button fullWidth variant="outlined" size="large" onClick={() => handleSelectMetodo(mp.id)}
-                    startIcon={METODO_ICONS[mp.id] || <Payment />}
+                <Grid item xs={6} key={mp.codigo}>
+                  <Button fullWidth variant="outlined" size="large" onClick={() => handleSelectMetodo(mp.codigo)}
+                    startIcon={getIcon(mp.icono)}
                     sx={{ py: 2, borderRadius: 2.5, fontWeight: 600, borderWidth: 2, position: 'relative',
-                      '&:hover': { borderWidth: 2, transform: 'translateY(-2px)' } }}>
+                      borderColor: alpha(mp.color || theme.palette.primary.main, 0.3),
+                      transition: 'all 0.15s',
+                      '&:hover': { borderColor: mp.color || theme.palette.primary.main, bgcolor: alpha(mp.color || theme.palette.primary.main, 0.04), transform: 'translateY(-2px)' },
+                    }}>
                     <Box sx={{ position: 'absolute', top: 4, right: 4, width: 20, height: 20, borderRadius: '50%',
-                      bgcolor: alpha(theme.palette.primary.main, 0.1), display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 10, fontWeight: 700 }}>{idx + 1}</Box>
+                      bgcolor: alpha(mp.color || theme.palette.primary.main, 0.1), display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 10, fontWeight: 700, color: mp.color }}>{idx + 1}</Box>
                     {mp.nombre}
                   </Button>
                 </Grid>
@@ -591,33 +629,39 @@ export default function CajaPage({ params }: { params: { id: string } }) {
               onChange={(e) => { const m = parseFloat(e.target.value) || 0; setPago(p => ({ ...p, montoEfectivo: e.target.value, vuelto: m >= total ? m - total : 0 })) }}
               autoFocus InputProps={{ startAdornment: <InputAdornment position="start"><Typography fontWeight={700}>$</Typography></InputAdornment> }}
               sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, fontSize: '1.5rem' }, mb: 2 }} />
-            {pago.vuelto > 0 && (
+            {pago.vuelto > 0 && getMetodo(pago.metodo)?.da_vuelto && (
               <Paper elevation={0} sx={{ background: `linear-gradient(135deg, ${alpha(theme.palette.success.main, 0.1)}, ${alpha(theme.palette.success.light, 0.05)})`,
                 p: 2.5, borderRadius: 3, display: 'flex', justifyContent: 'space-between', border: 2, borderColor: alpha(theme.palette.success.main, 0.15) }}>
                 <Typography fontWeight={700}>Vuelto</Typography>
-                <Typography variant="h4" fontWeight={800} color="success.main">${pago.vuelto.toLocaleString('es-CL')}</Typography>
+                <Typography variant="h4" fontWeight={800} color="success.main">{formatMoney(pago.vuelto)}</Typography>
               </Paper>
             )}
             <Button fullWidth variant="contained" size="large" disabled={!pago.montoEfectivo}
-              onClick={() => { const m = parseFloat(pago.montoEfectivo) || 0; if (m >= total) confirmarPago('efectivo', 0, m - total); else setPago(p => ({ ...p, paso: 'resto', totalResto: total - m })) }}
+              onClick={() => {
+                const m = parseFloat(pago.montoEfectivo) || 0
+                const mp = getMetodo(pago.metodo)
+                if (m >= total) confirmarPago(pago.metodo, 0, mp?.da_vuelto ? m - total : 0)
+                else setPago(p => ({ ...p, paso: 'resto', totalResto: total - m }))
+              }}
               sx={{ mt: 2, py: 1.8, borderRadius: 2.5, fontWeight: 700, fontSize: '1.1rem' }}>
-              {parseFloat(pago.montoEfectivo) >= total ? `Pagar $${total.toLocaleString('es-CL')}` : 'Pago parcial'}
+              {parseFloat(pago.montoEfectivo) >= total ? `Pagar ${formatMoney(total)}` : 'Pago parcial'}
             </Button></>
           )}
 
           {pago.paso === 'resto' && (
             <><Alert severity="info" sx={{ mb: 2, borderRadius: 2 }}>
               <Typography fontWeight={600}>Pago parcial</Typography>
-              <Typography variant="body2">Efectivo: ${(parseFloat(pago.montoEfectivo) || 0).toLocaleString('es-CL')} · Restan: ${pago.totalResto.toLocaleString('es-CL')}</Typography>
+              <Typography variant="body2">{formatMoney(parseFloat(pago.montoEfectivo) || 0)} pagados · Restan: {formatMoney(pago.totalResto)}</Typography>
             </Alert>
             <Typography variant="subtitle2" fontWeight={600} mb={1.5}>Completa con otro método</Typography>
             <Grid container spacing={1.5}>
-              {metodosPago.filter(m => m.id !== 'efectivo').map(mp => (
-                <Grid item xs={6} key={mp.id}>
+              {metodosPago.filter(mp => mp.acepta_diferencia).map(mp => (
+                <Grid item xs={6} key={mp.codigo}>
                   <Button fullWidth variant="outlined" size="large" onClick={() => {
-                    if (mp.id === 'efectivo_justo') confirmarPago('Efectivo Justo', 0, (parseFloat(pago.montoEfectivo) || 0) + pago.totalResto - total)
-                    else confirmarPago(mp.id, pago.totalResto, 0)
-                  }} startIcon={METODO_ICONS[mp.id]} sx={{ py: 2, borderRadius: 2.5, fontWeight: 600, borderWidth: 2 }}>{mp.nombre}</Button>
+                    const totalPagado = (parseFloat(pago.montoEfectivo) || 0) + pago.totalResto
+                    if (mp.es_efectivo) confirmarPago(mp.codigo, 0, mp.da_vuelto ? totalPagado - total : 0)
+                    else confirmarPago(mp.codigo, pago.totalResto, 0)
+                  }} startIcon={getIcon(mp.icono)} sx={{ py: 2, borderRadius: 2.5, fontWeight: 600, borderWidth: 2 }}>{mp.nombre}</Button>
                 </Grid>
               ))}
             </Grid></>
@@ -628,6 +672,7 @@ export default function CajaPage({ params }: { params: { id: string } }) {
       {/* Auth */}
       <AuthorizationDialog open={authDialog.open} onClose={() => setAuthDialog({ ...authDialog, open: false })}
         onSuccess={(_usuario: string, clave: string) => authDialog.onSuccess(clave)}
+        titulo={authDialog.titulo} mensaje={authDialog.mensaje} accion={authDialog.accion}
         titulo="Abrir Cajón" mensaje="Ingresa tu clave" accion="Abrir" icono={<Casino />} />
 
       {/* Shortcuts info */}

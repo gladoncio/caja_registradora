@@ -4,9 +4,11 @@ from django.contrib.auth import authenticate
 
 
 class UsuarioSerializer(serializers.ModelSerializer):
+    rol_nombre = serializers.CharField(source='rol.nombre', read_only=True)
+
     class Meta:
         model = Usuario
-        fields = ['id', 'username', 'email', 'rut', 'permisos', 'ventas_config', 'foto_perfil', 'clave_anulacion', 'is_active']
+        fields = ['id', 'username', 'email', 'rut', 'permisos', 'ventas_config', 'foto_perfil', 'clave_anulacion', 'is_active', 'rol', 'rol_nombre']
         read_only_fields = ['id']
 
 
@@ -15,7 +17,7 @@ class UsuarioCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Usuario
-        fields = ['username', 'password', 'email', 'rut', 'permisos', 'clave_anulacion']
+        fields = ['username', 'password', 'email', 'rut', 'permisos', 'clave_anulacion', 'rol']
 
     def create(self, validated_data):
         user = Usuario.objects.create_user(**validated_data)
@@ -92,9 +94,24 @@ class CarritoItemSerializer(serializers.ModelSerializer):
 
 
 class ConfiguracionSerializer(serializers.ModelSerializer):
+    moneda_config = serializers.SerializerMethodField()
+
     class Meta:
         model = Configuracion
         fields = '__all__'
+
+    def get_moneda_config(self, obj):
+        if not obj.moneda_principal:
+            return None
+        return {
+            'codigo': obj.moneda_principal.codigo,
+            'nombre': obj.moneda_principal.nombre,
+            'simbolo': obj.moneda_principal.simbolo,
+            'decimales': obj.moneda_principal.decimales,
+            'separador_miles': obj.moneda_principal.separador_miles,
+            'separador_decimal': obj.moneda_principal.separador_decimal,
+            'locale': obj.moneda_principal.locale,
+        }
 
 
 class VentaProductoSerializer(serializers.ModelSerializer):
@@ -179,6 +196,53 @@ class BilletesMonedasSerializer(serializers.Serializer):
     billetes_10000 = serializers.IntegerField(default=0)
     billetes_20000 = serializers.IntegerField(default=0)
     maquinas_debito = serializers.IntegerField(default=0)
+
+
+class MonedaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Moneda
+        fields = '__all__'
+
+
+class TasaCambioSerializer(serializers.ModelSerializer):
+    moneda_origen_codigo = serializers.CharField(source='moneda_origen.codigo', read_only=True)
+    moneda_destino_codigo = serializers.CharField(source='moneda_destino.codigo', read_only=True)
+
+    class Meta:
+        model = TasaCambio
+        fields = '__all__'
+
+
+class MetodoPagoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MetodoPago
+        fields = '__all__'
+
+
+class DenominacionMonedaSerializer(serializers.ModelSerializer):
+    moneda_codigo = serializers.CharField(source='moneda.codigo', read_only=True)
+
+    class Meta:
+        model = DenominacionMoneda
+        fields = '__all__'
+
+
+class PermisoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Permiso
+        fields = '__all__'
+
+
+class RolSerializer(serializers.ModelSerializer):
+    permisos = PermisoSerializer(many=True, read_only=True)
+    permisos_ids = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Rol
+        fields = '__all__'
+
+    def get_permisos_ids(self, obj):
+        return list(obj.permisos.values_list('id', flat=True))
 
 
 class ActualizacionModelSerializer(serializers.ModelSerializer):

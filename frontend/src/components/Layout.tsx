@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import {
   Box, AppBar, Toolbar, Typography, Drawer, IconButton, Avatar, Tooltip,
-  Menu, MenuItem, ListItemIcon, alpha, Collapse, List, ListItemButton,
+  Menu, MenuItem, ListItemIcon, alpha, Collapse,   List, ListItem, ListItemButton,
   ListItemText, Divider,
 } from '@mui/material'
 import {
@@ -11,9 +11,10 @@ import {
   AccountBalanceWallet, SystemUpdate, Info, Assessment, Speed,
   AdminPanelSettings, QrCode, People, CreditCard, Inventory,
   CalendarMonth, FileUpload, ExpandLess, ExpandMore, Settings, Keyboard, History,
-  Home, ListAlt, Build, Category, Star,
+  Home, ListAlt, Build, Category, Star, Money, Dashboard,
 } from '@mui/icons-material'
 import { useAuth } from '@/contexts/AuthContext'
+import api from '@/lib/api'
 import { useThemeMode } from './ThemeRegistry'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -53,20 +54,11 @@ const menuGroups: MenuGroup[] = [
     items: [
       { label: 'Productos', icon: <Inventory />, href: '/productos' },
       { label: 'Importar / Exportar', icon: <FileUpload />, href: '/productos/importar' },
-      { label: 'Usuarios', icon: <People />, href: '/usuarios' },
       { label: 'Generar Código Barras', icon: <QrCode />, href: '/generar-codigo' },
       { label: 'Tarjeta Autorización', icon: <CreditCard />, href: '/tarjeta-autorizacion' },
-      { label: 'Configuración', icon: <Settings />, href: '/configuracion' },
     ],
   },
-  {
-    label: 'SISTEMA', icon: <SystemUpdate />,
-    items: [
-      { label: 'Verificar Actualizaciones', icon: <SystemUpdate />, href: '/actualizaciones' },
-      { label: 'Configurar Atajos', icon: <Keyboard />, href: '/configurar-atajos' },
-      { label: 'Registro Eventos', icon: <History />, href: '/logs' },
-    ],
-  },
+  { label: 'Panel Admin', icon: <Dashboard />, href: '/admin', adminOnly: true },
 ]
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -75,6 +67,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [navFontSize, setNavFontSize] = useState(14)
+  const [userPerms, setUserPerms] = useState<string[]>([])
+
+  useEffect(() => {
+    api.get('/me/').then(r => setUserPerms(r.data.permisos_usuario || [])).catch(() => {})
+  }, [])
+
+  const puedeAdmin = userPerms.some(p =>
+    ['ver_configuracion','gestionar_usuarios','gestionar_monedas','gestionar_metodos_pago','ver_logs','ver_actualizaciones'].includes(p)
+  )
   useEffect(() => {
     const load = () => { try { const s = localStorage.getItem('app-nav-font-size'); if (s) setNavFontSize(parseInt(s) || 14) } catch {} }
     load()
@@ -110,46 +111,75 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       {/* Menu groups */}
       <Box sx={{ flex: 1, overflow: 'auto', py: 1, px: 1, fontSize: `${navFontSize}px`, '& *': { fontSize: `${navFontSize}px` } }}>
-        {menuGroups.map((group) => {
-          if (group.adminOnly && user.permisos !== 'admin') return null
+        {menuGroups.map((entry) => {
+          if (entry.adminOnly && !puedeAdmin) return null
+          if ('items' in entry) {
+            const group = entry as any
+            return (
+              <Box key={group.label} sx={{ mb: 1 }}>
+                <Typography variant="caption" sx={{
+                  display: 'block', px: 1.5, py: 1, fontWeight: 700, fontSize: `${navFontSize - 4}px`,
+                  letterSpacing: 1, textTransform: 'uppercase', color: 'text.disabled',
+                }}>
+                  {group.label}
+                </Typography>
+                <List dense disablePadding>
+                  {group.items.map((item: any) => {
+                    if (item.adminOnly && !puedeAdmin) return null
+                    return (
+                      <ListItem key={item.href} disablePadding sx={{ display: 'block' }}>
+                        <ListItemButton component={Link} href={item.href} prefetch={false}
+                          selected={isActive(item.href)}
+                          sx={{
+                            borderRadius: 2, mb: 0.15, minHeight: 40, px: 1.5, mx: 0.5,
+                            '&.Mui-selected': {
+                              bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
+                              '& .MuiListItemIcon-root': { color: 'primary.main' },
+                              '& .MuiListItemText-primary': { color: 'primary.main', fontWeight: 700 },
+                            },
+                            '&:hover': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04) },
+                          }}
+                        >
+                          <ListItemIcon sx={{ minWidth: 32, color: isActive(item.href) ? 'primary.main' : 'text.secondary' }}>
+                            {item.icon}
+                          </ListItemIcon>
+                          <ListItemText primary={item.label} primaryTypographyProps={{
+                            fontSize: '0.85rem',
+                            fontWeight: isActive(item.href) ? 700 : 500,
+                          }} />
+                        </ListItemButton>
+                      </ListItem>
+                    )
+                  })}
+                </List>
+              </Box>
+            )
+          }
+          const item = entry as any
           return (
-            <Box key={group.label} sx={{ mb: 1 }}>
-              <Typography variant="caption" sx={{
-                display: 'block', px: 1.5, py: 1, fontWeight: 700, fontSize: `${navFontSize - 4}px`,
-                letterSpacing: 1, textTransform: 'uppercase', color: 'text.disabled',
-              }}>
-                {group.label}
-              </Typography>
-              <List dense disablePadding>
-                {group.items.map((item) => {
-                  if (item.adminOnly && user.permisos !== 'admin') return null
-                  return (
-                    <ListItemButton
-                      key={item.href}
-                      component={Link}
-                      href={item.href}
-                      selected={isActive(item.href)}
-                      sx={{
-                        borderRadius: 2, mb: 0.15, minHeight: 40, px: 1.5, mx: 0.5,
-                        '&.Mui-selected': {
-                          bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
-                          '& .MuiListItemIcon-root': { color: 'primary.main' },
-                          '& .MuiListItemText-primary': { color: 'primary.main', fontWeight: 700 },
-                        },
-                        '&:hover': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04) },
-                      }}
-                    >
-                      <ListItemIcon sx={{ minWidth: 32, color: isActive(item.href) ? 'primary.main' : 'text.secondary' }}>
-                        {item.icon}
-                      </ListItemIcon>
-                      <ListItemText primary={item.label} primaryTypographyProps={{
-                        fontSize: '0.85rem',
-                        fontWeight: isActive(item.href) ? 700 : 500,
-                      }} />
-                    </ListItemButton>
-                  )
-                })}
-              </List>
+            <Box key={item.href} sx={{ mb: 0.5, px: 0.5 }}>
+              <ListItem disablePadding sx={{ display: 'block' }}>
+                <ListItemButton component={Link} href={item.href} prefetch={false}
+                  selected={isActive(item.href)}
+                  sx={{
+                    borderRadius: 2, minHeight: 40, px: 1.5,
+                    '&.Mui-selected': {
+                      bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
+                      '& .MuiListItemIcon-root': { color: 'primary.main' },
+                      '& .MuiListItemText-primary': { color: 'primary.main', fontWeight: 700 },
+                    },
+                    '&:hover': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04) },
+                  }}
+                >
+                  <ListItemIcon sx={{ minWidth: 32, color: isActive(item.href) ? 'primary.main' : 'text.secondary' }}>
+                    {item.icon}
+                  </ListItemIcon>
+                  <ListItemText primary={item.label} primaryTypographyProps={{
+                    fontSize: '0.85rem',
+                    fontWeight: isActive(item.href) ? 700 : 500,
+                  }} />
+                </ListItemButton>
+              </ListItem>
             </Box>
           )
         })}
@@ -202,16 +232,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <Box sx={{ px: 2, py: 1 }}>
               <Typography variant="subtitle2" fontWeight={700}>{user.username}</Typography>
               <Typography variant="caption" color="text.secondary">
-                {user.permisos === 'admin' ? 'Administrador' : user.permisos === 'cajero' ? 'Cajero' : 'Bodeguero'}
+                {puedeAdmin ? 'Administrador' : user.rol_nombre || user.permisos}
               </Typography>
             </Box>
             <Divider />
-            <MenuItem component={Link} href="/editar-usuario" onClick={() => setAnchorEl(null)}>
+            <MenuItem component={Link} href="/editar-usuario" prefetch={false} onClick={() => setAnchorEl(null)}>
               <ListItemIcon><People fontSize="small" /></ListItemIcon> Perfil
             </MenuItem>
-            {user.permisos === 'admin' && (
-              <MenuItem component={Link} href="/configuracion" onClick={() => setAnchorEl(null)}>
-                <ListItemIcon><Settings fontSize="small" /></ListItemIcon> Configuración
+            {puedeAdmin && (
+              <MenuItem component={Link} href="/admin" prefetch={false} onClick={() => setAnchorEl(null)}>
+                <ListItemIcon><Settings fontSize="small" /></ListItemIcon> Admin Panel
               </MenuItem>
             )}
             <Divider />

@@ -8,6 +8,7 @@ import {
 import { Add } from '@mui/icons-material'
 import { gastosAPI } from '@/lib/api'
 import { Gasto } from '@/types'
+import { formatMoney, formatNumber } from '@/lib/format'
 
 export default function GastosPage() {
   const [gastos, setGastos] = useState<Gasto[]>([])

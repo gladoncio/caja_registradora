@@ -13,6 +13,30 @@ import io
 
 from core.models import *
 from .serializers import *
+from functools import wraps
+
+
+def tiene_permiso(user, permiso_codigo):
+    if not user.is_authenticated:
+        return False
+    if user.is_superuser:
+        return True
+    if not user.rol:
+        return False
+    return user.rol.permisos.filter(codigo=permiso_codigo).exists()
+
+
+def require_permiso(permiso_codigo):
+    def decorator(view_func):
+        @wraps(view_func)
+        @api_view(['GET', 'POST', 'PUT', 'DELETE', 'PATCH'])
+        @permission_classes([IsAuthenticated])
+        def _wrapped_view(request, *args, **kwargs):
+            if not tiene_permiso(request.user, permiso_codigo):
+                return Response({'error': 'No tienes permiso para esta acción'}, status=403)
+            return view_func(request, *args, **kwargs)
+        return _wrapped_view
+    return decorator
 
 
 class IsAdminUser(permissions.BasePermission):
@@ -40,8 +64,16 @@ def login_view(request):
 
 @api_view(['GET'])
 def me_view(request):
-    serializer = UsuarioSerializer(request.user)
-    return Response(serializer.data)
+    user = request.user
+    permisos = []
+    if user.rol:
+        permisos = list(user.rol.permisos.values_list('codigo', flat=True))
+    elif user.is_superuser:
+        permisos = list(Permiso.objects.values_list('codigo', flat=True))
+    data = UsuarioSerializer(user).data
+    data['permisos_usuario'] = permisos
+    data['rol_nombre'] = user.rol.nombre if user.rol else None
+    return Response(data)
 
 
 # ─── Users ──────────────────────────────────────────────────────────────────
@@ -306,6 +338,25 @@ def generar_venta_api(request):
     restante = float(request.data.get('restante', 0))
     vuelto_inicial = float(request.data.get('vuelto_inicial', 0))
     carrito_numero = int(request.data.get('carrito_numero', 1))
+    abre_gaveta = request.data.get('abre_gaveta') in (True, 'true', 'True', 1, '1')
+    clave = request.data.get('clave_anulacion', '')
+
+    metodo_pago = MetodoPago.objects.filter(codigo=tipo_pago).first()
+    if not metodo_pago or not metodo_pago.activo:
+        return Response({'error': 'Método de pago no válido'}, status=400)
+
+    if metodo_pago.requiere_autorizacion:
+        autorizado = False
+        if config.tipo_autorizacion == 'cualquier':
+            for user in Usuario.objects.filter(is_active=True):
+                if user.check_clave_anulacion(clave):
+                    autorizado = True
+                    break
+        elif config.tipo_autorizacion == 'propio':
+            if request.user.check_clave_anulacion(clave):
+                autorizado = True
+        if not autorizado:
+            return Response({'error': 'Clave de autorización inválida'}, status=403)
 
     items = CarritoItem.objects.filter(usuario=request.user, carrito_numero=carrito_numero)
     if not items.exists():
@@ -326,14 +377,12 @@ def generar_venta_api(request):
     if restante > 0:
         monto_efectivo_restante = abs(total - restante)
         FormaPago.objects.create(venta=venta, tipo_pago=tipo_pago, monto=restante)
-        FormaPago.objects.create(venta=venta, tipo_pago="efectivo", monto=monto_efectivo_restante)
-    elif tipo_pago in ("efectivo", "Efectivo Justo"):
-        FormaPago.objects.create(venta=venta, tipo_pago="efectivo", monto=total)
+        FormaPago.objects.create(venta=venta, tipo_pago=tipo_pago, monto=monto_efectivo_restante)
     else:
         FormaPago.objects.create(venta=venta, tipo_pago=tipo_pago, monto=total)
 
     from core.impresora import abrir_caja_impresora, imprimir_ultima_id
-    if tipo_pago == "efectivo" or tipo_pago == "Efectivo Justo" or restante > 0:
+    if abre_gaveta or restante > 0:
         abrir_caja_impresora()
 
     if config.imprimir != 'no':
@@ -351,7 +400,7 @@ def eliminar_venta_api(request, venta_id):
     config = Configuracion.objects.get(id=1)
     venta = get_object_or_404(Venta, id=venta_id)
     clave = request.data.get('clave_anulacion', '')
-    if clave == config.clave_anulacion or clave == request.user.clave_anulacion:
+    if clave == config.clave_anulacion or request.user.check_clave_anulacion(clave):
         venta.delete()
         return Response(status=204)
     return Response({'error': 'Clave incorrecta'}, status=403)
@@ -378,6 +427,50 @@ def configuracion_api(request):
             return Response(serializer.data)
         return Response(serializer.errors, status=400)
     serializer = ConfiguracionSerializer(config)
+    return Response(serializer.data)
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def monedas_api(request):
+    if request.method == 'POST':
+        serializer = MonedaSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+    monedas = Moneda.objects.all()
+    serializer = MonedaSerializer(monedas, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['GET', 'PUT', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def moneda_detail_api(request, pk):
+    moneda = get_object_or_404(Moneda, pk=pk)
+    if request.method == 'DELETE':
+        moneda.delete()
+        return Response(status=204)
+    if request.method == 'PUT':
+        serializer = MonedaSerializer(moneda, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+    return Response(MonedaSerializer(moneda).data)
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def tasas_cambio_api(request):
+    if request.method == 'POST':
+        serializer = TasaCambioSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+    tasas = TasaCambio.objects.select_related('moneda_origen', 'moneda_destino').all()
+    serializer = TasaCambioSerializer(tasas, many=True)
     return Response(serializer.data)
 
 
@@ -585,6 +678,50 @@ def probar_impresora_api(request):
     return probar_impresora(request)
 
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def imprimir_cierre_api(request, cierre_id):
+    from core.impresora import imprimir_en_xprinter
+    from core.models import Configuracion
+
+    cierre = get_object_or_404(RegistroTransaccion, pk=cierre_id)
+    config = Configuracion.objects.get(id=1)
+    decimales = config.decimales
+
+    anterior = RegistroTransaccion.objects.filter(
+        fecha_ingreso__lt=cierre.fecha_ingreso
+    ).aggregate(Max('fecha_ingreso'))['fecha_ingreso__max']
+
+    gastos = GastoCaja.objects.all()
+    if anterior:
+        gastos = gastos.filter(fecha_hora__gte=anterior, fecha_hora__lt=cierre.fecha_ingreso)
+    else:
+        gastos = gastos.filter(fecha_hora__lt=cierre.fecha_ingreso)
+    total_gastos = gastos.aggregate(Sum('monto'))['monto__sum'] or 0
+
+    content = ""
+    content += "--------------------------\n"
+    content += "Reporte\n"
+    content += "Fecha: {}\n".format(timezone.now().strftime('%Y-%m-%d %H:%M:%S'))
+    content += "Fecha del detalle: {}\n".format(cierre.fecha_ingreso.strftime('%Y-%m-%d %H:%M'))
+    content += "--------------------------\n"
+    content += "Ventas del día.\n"
+    content += "Total en Efectivo: ${:.{}f}\n".format(cierre.monto_efectivo or 0, decimales)
+    content += "Total en Débito: ${:.{}f}\n".format(cierre.monto_debito or 0, decimales)
+    content += "Total en Transferencia: ${:.{}f}\n".format(cierre.monto_transferencia or 0, decimales)
+    content += "Total de Retiro: ${:.{}f}\n".format(cierre.monto_retiro or 0, decimales)
+    content += "Total de gastos: ${:.{}f}\n".format(total_gastos, decimales)
+    content += "Caja Diaria: ${:.{}f}\n".format(cierre.valor_caja_diaria or 0, decimales)
+    content += "Total Neto General: ${:.{}f}\n".format(cierre.monto_total or 0, decimales)
+    content += "--------------------------\n"
+
+    try:
+        imprimir_en_xprinter(content)
+        return Response({'status': 'ok', 'mensaje': 'Reporte impreso'})
+    except Exception as e:
+        return Response({'status': 'error', 'mensaje': str(e)}, status=500)
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def estado_impresora_api(request):
@@ -604,11 +741,12 @@ def verificar_clave_api(request):
     usuario_valido = None
 
     if config.tipo_autorizacion == 'cualquier':
-        usuarios = Usuario.objects.filter(clave_anulacion=clave, is_active=True)
-        if usuarios.exists():
-            usuario_valido = usuarios.first()
+        for user in Usuario.objects.filter(is_active=True):
+            if user.check_clave_anulacion(clave):
+                usuario_valido = user
+                break
     elif config.tipo_autorizacion == 'propio':
-        if request.user.clave_anulacion == clave:
+        if request.user.check_clave_anulacion(clave):
             usuario_valido = request.user
 
     if usuario_valido:
@@ -629,10 +767,12 @@ def abrir_caja_api(request):
     autorizado = False
 
     if config.tipo_autorizacion == 'cualquier':
-        if Usuario.objects.filter(clave_anulacion=clave, is_active=True).exists():
-            autorizado = True
+        for user in Usuario.objects.filter(is_active=True):
+            if user.check_clave_anulacion(clave):
+                autorizado = True
+                break
     elif config.tipo_autorizacion == 'propio':
-        if request.user.clave_anulacion == clave:
+        if request.user.check_clave_anulacion(clave):
             autorizado = True
 
     if not autorizado:
@@ -673,9 +813,110 @@ def check_updates_api(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def metodos_pago_api(request):
-    return Response([
-        {'id': 'efectivo', 'nombre': 'Efectivo'},
-        {'id': 'efectivo_justo', 'nombre': 'Efectivo Justo'},
-        {'id': 'transferencia', 'nombre': 'Transferencia'},
-        {'id': 'debito', 'nombre': 'Debito'},
-    ])
+    metodos = MetodoPago.objects.filter(activo=True)
+    serializer = MetodoPagoSerializer(metodos, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def metodos_pago_admin_api(request):
+    if request.method == 'POST':
+        serializer = MetodoPagoSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+    metodos = MetodoPago.objects.all()
+    serializer = MetodoPagoSerializer(metodos, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['GET', 'PUT', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def metodo_pago_detail_api(request, pk):
+    metodo = get_object_or_404(MetodoPago, pk=pk)
+    if request.method == 'DELETE':
+        metodo.delete()
+        return Response(status=204)
+    if request.method == 'PUT':
+        serializer = MetodoPagoSerializer(metodo, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+    return Response(MetodoPagoSerializer(metodo).data)
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def denominaciones_api(request):
+    moneda_id = request.query_params.get('moneda')
+    qs = DenominacionMoneda.objects.select_related('moneda').all()
+    if moneda_id:
+        qs = qs.filter(moneda_id=moneda_id, activo=True)
+    if request.method == 'POST':
+        serializer = DenominacionMonedaSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+    serializer = DenominacionMonedaSerializer(qs, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['GET', 'PUT', 'DELETE'])
+@permission_classes([IsAuthenticated, IsAdminUser])
+def denominacion_detail_api(request, pk):
+    denom = get_object_or_404(DenominacionMoneda, pk=pk)
+    if request.method == 'DELETE':
+        denom.delete()
+        return Response(status=204)
+    if request.method == 'PUT':
+        serializer = DenominacionMonedaSerializer(denom, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+    return Response(DenominacionMonedaSerializer(denom).data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def permisos_api(request):
+    qs = Permiso.objects.all().order_by('codigo')
+    serializer = PermisoSerializer(qs, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def roles_api(request):
+    qs = Rol.objects.prefetch_related('permisos').all()
+    serializer = RolSerializer(qs, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['GET', 'PUT'])
+@permission_classes([IsAuthenticated, IsAdminUser])
+def rol_detail_api(request, pk):
+    rol = get_object_or_404(Rol, pk=pk)
+    if request.method == 'PUT':
+        permisos_ids = request.data.get('permisos', [])
+        rol.permisos.set(permisos_ids)
+        rol.save()
+        serializer = RolSerializer(rol)
+        return Response(serializer.data)
+    serializer = RolSerializer(rol)
+    return Response(serializer.data)
+    denom = get_object_or_404(DenominacionMoneda, pk=pk)
+    if request.method == 'DELETE':
+        denom.delete()
+        return Response(status=204)
+    if request.method == 'PUT':
+        serializer = DenominacionMonedaSerializer(denom, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+    return Response(DenominacionMonedaSerializer(denom).data)

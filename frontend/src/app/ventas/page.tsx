@@ -8,6 +8,7 @@ import {
 import { Receipt, Delete, ReceiptLong, Info } from '@mui/icons-material'
 import { ventasAPI } from '@/lib/api'
 import { Venta } from '@/types'
+import { formatMoney, formatNumber } from '@/lib/format'
 
 export default function VentasPage() {
   const [ventas, setVentas] = useState<Venta[]>([])
@@ -101,7 +102,7 @@ export default function VentasPage() {
                         <TableCell>{v.usuario_username}</TableCell>
                         <TableCell align="right">
                           <Typography fontWeight={700} color="primary.main">
-                            ${parseInt(v.total).toLocaleString('es-CL')}
+                            {formatMoney(v.total)}
                           </Typography>
                         </TableCell>
                         <TableCell>
@@ -152,13 +153,13 @@ export default function VentasPage() {
             {selectedVenta.productos.map((vp, i) => (
               <Box key={i} display="flex" justifyContent="space-between" mb={1}>
                 <Typography variant="body2">{vp.producto_nombre} × {vp.cantidad || `${vp.gramaje}g`}</Typography>
-                <Typography variant="body2" fontWeight={600}>${parseInt(vp.subtotal).toLocaleString('es-CL')}</Typography>
+                <Typography variant="body2" fontWeight={600}>{formatMoney(vp.subtotal)}</Typography>
               </Box>
             ))}
             <Divider sx={{ my: 2 }} />
             <Box display="flex" justifyContent="space-between">
               <Typography fontWeight={700}>Total</Typography>
-              <Typography fontWeight={800} color="primary.main">${parseInt(selectedVenta.total).toLocaleString('es-CL')}</Typography>
+              <Typography fontWeight={800} color="primary.main">{formatMoney(selectedVenta.total)}</Typography>
             </Box>
           </Box>
         )}

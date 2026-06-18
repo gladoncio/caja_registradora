@@ -8,6 +8,13 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
+if (typeof window !== 'undefined') {
+  const debugMode = localStorage.getItem('debug-mode')
+  if (debugMode === 'true') {
+    import('@/components/DebugPanel').then(m => m.installDebugInterceptor(api))
+  }
+}
+
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('access_token')
@@ -93,6 +100,7 @@ export const configAPI = {
 export const reportesAPI = {
   general: () => api.get('/reportes/general/'),
   cuadrar: (data: any) => api.post('/reportes/cuadrar/', data),
+  imprimirCierre: (id: number) => api.post(`/reportes/imprimir-cierre/${id}/`),
 }
 
 export const gastosAPI = {

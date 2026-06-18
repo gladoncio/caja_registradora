@@ -24,6 +24,9 @@ urlpatterns = [
 
     # Config
     path('configuracion/', configuracion_api, name='configuracion'),
+    path('monedas/', monedas_api, name='monedas'),
+    path('monedas/<int:pk>/', moneda_detail_api, name='moneda-detail'),
+    path('tasas-cambio/', tasas_cambio_api, name='tasas-cambio'),
 
     # Caja diaria
     path('caja-diaria/', caja_diaria_api, name='caja-diaria'),
@@ -38,6 +41,7 @@ urlpatterns = [
     path('reportes/dia-especifico/', reporte_dia_especifico_api, name='reporte-dia'),
     path('reportes/cierres/', cierres_caja_api, name='cierres-caja'),
     path('reportes/cuadrar/', cuadrar_api, name='cuadrar'),
+    path('reportes/imprimir-cierre/<int:cierre_id>/', imprimir_cierre_api, name='imprimir-cierre'),
 
     # Autorizacion
     path('autorizar/', verificar_clave_api, name='verificar-clave'),
@@ -49,8 +53,19 @@ urlpatterns = [
     # Actualizaciones
     path('actualizaciones/', check_updates_api, name='actualizaciones'),
 
+    # Permisos y roles
+    path('permisos/', permisos_api, name='permisos'),
+    path('roles/', roles_api, name='roles'),
+    path('roles/<int:pk>/', rol_detail_api, name='rol-detail'),
+
     # Metodos de pago
     path('metodos-pago/', metodos_pago_api, name='metodos-pago'),
+    path('metodos-pago/admin/', metodos_pago_admin_api, name='metodos-pago-admin'),
+    path('metodos-pago/<int:pk>/', metodo_pago_detail_api, name='metodo-pago-detail'),
+
+    # Denominaciones (billetes/monedas)
+    path('denominaciones/', denominaciones_api, name='denominaciones'),
+    path('denominaciones/<int:pk>/', denominacion_detail_api, name='denominacion-detail'),
 
     # Router URLs
     path('', include(router.urls)),

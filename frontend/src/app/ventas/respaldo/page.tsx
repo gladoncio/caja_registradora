@@ -6,6 +6,7 @@ import {
 } from '@mui/material'
 import { Receipt } from '@mui/icons-material'
 import { ventasAPI } from '@/lib/api'
+import { formatMoney, formatNumber } from '@/lib/format'
 
 export default function VentasRespaldoPage() {
   const [ventas, setVentas] = useState<any[]>([])
@@ -39,7 +40,7 @@ export default function VentasRespaldoPage() {
                         <TableCell><Chip label={`#${v.venta_original_id}`} size="small" /></TableCell>
                         <TableCell>{new Date(v.fecha_hora).toLocaleString('es-CL')}</TableCell>
                         <TableCell>{new Date(v.fecha_anulacion).toLocaleString('es-CL')}</TableCell>
-                        <TableCell><Typography fontWeight={700}>${parseInt(v.total).toLocaleString('es-CL')}</Typography></TableCell>
+                        <TableCell><Typography fontWeight={700}>{formatMoney(v.total)}</Typography></TableCell>
                         <TableCell>{v.usuario_username}</TableCell>
                       </TableRow>
                     ))}

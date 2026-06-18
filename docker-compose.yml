@@ -14,8 +14,11 @@ services:
     depends_on:
       - db
     privileged: true
+    environment:
+      - DJANGO_DEBUG=false
 
-  frontend:
+  frontend-dev:
+    profiles: ["dev"]
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
@@ -28,6 +31,19 @@ services:
       - ./frontend:/app
       - /app/node_modules
       - /app/.next
+    depends_on:
+      - caja
+
+  frontend:
+    profiles: ["prod"]
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3005:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api
     depends_on:
       - caja
 

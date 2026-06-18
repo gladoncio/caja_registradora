@@ -4,6 +4,9 @@ import { AuthProvider, useAuth } from '@/contexts/AuthContext'
 import ThemeRegistry from '@/components/ThemeRegistry'
 import Layout from '@/components/Layout'
 import { CircularProgress, Box, GlobalStyles } from '@mui/material'
+import api from '@/lib/api'
+import { setFormatConfig } from '@/lib/format'
+import DebugPanel from '@/components/DebugPanel'
 
 function AppContent({ children }: { children: React.ReactNode }) {
   const { loading } = useAuth()
@@ -36,6 +39,25 @@ function AppContent({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  useEffect(() => {
+    api.get('/configuracion/').then(r => {
+      const c = r.data
+      if (c.moneda_config) {
+        setFormatConfig({
+          moneda: {
+            codigo: c.moneda_config.codigo || 'CLP',
+            simbolo: c.moneda_config.simbolo || '$',
+            decimales: c.moneda_config.decimales ?? 0,
+            separador_miles: c.moneda_config.separador_miles || '.',
+            separador_decimal: c.moneda_config.separador_decimal || ',',
+            locale: c.moneda_config.locale || 'es-CL',
+          },
+          redondeoMultiplo: c.redondeo_multiplo ?? 10,
+        })
+      }
+    }).catch(() => {})
+  }, [])
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
@@ -47,6 +69,7 @@ function AppContent({ children }: { children: React.ReactNode }) {
     <>
       <GlobalStyles styles={{ 'html': { fontSize: `${fontSize}px !important` } }} />
       <Layout>{children}</Layout>
+      <DebugPanel api={api} />
     </>
   )
 }

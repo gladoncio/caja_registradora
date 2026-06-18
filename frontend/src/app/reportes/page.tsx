@@ -9,6 +9,7 @@ import {
 import { Assessment, Add, AttachMoney, Money, CreditCard, Receipt, LocalAtm } from '@mui/icons-material'
 import { reportesAPI, gastosAPI } from '@/lib/api'
 import { InformeGeneral, Gasto } from '@/types'
+import { formatMoney, formatNumber } from '@/lib/format'
 
 export default function ReportesPage() {
   const [reporte, setReporte] = useState<InformeGeneral | null>(null)
@@ -33,12 +34,12 @@ export default function ReportesPage() {
   if (!reporte) return <Typography>Error cargando reporte</Typography>
 
   const stats = [
-    { label: 'Total Ventas', value: `$${reporte.total_ventas.toLocaleString('es-CL')}`, color: 'primary.main', icon: <Receipt /> },
-    { label: 'Efectivo', value: `$${reporte.monto_efectivo.toLocaleString('es-CL')}`, color: 'success.main', icon: <Money /> },
-    { label: 'Débito', value: `$${reporte.monto_debito.toLocaleString('es-CL')}`, color: 'info.main', icon: <CreditCard /> },
-    { label: 'Transferencia', value: `$${reporte.monto_transferencia.toLocaleString('es-CL')}`, color: 'warning.main', icon: <AttachMoney /> },
-    { label: 'Gastos', value: `-$${reporte.total_gastos.toLocaleString('es-CL')}`, color: 'error.main', icon: <LocalAtm /> },
-    { label: 'Caja debería tener', value: `$${reporte.caja_que_deberia.toLocaleString('es-CL')}`, color: 'secondary.main', icon: <Assessment /> },
+    { label: 'Total Ventas', value: formatMoney(reporte.total_ventas), color: 'primary.main', icon: <Receipt /> },
+    { label: 'Efectivo', value: formatMoney(reporte.monto_efectivo), color: 'success.main', icon: <Money /> },
+    { label: 'Débito', value: formatMoney(reporte.monto_debito), color: 'info.main', icon: <CreditCard /> },
+    { label: 'Transferencia', value: formatMoney(reporte.monto_transferencia), color: 'warning.main', icon: <AttachMoney /> },
+    { label: 'Gastos', value: `-${formatMoney(reporte.total_gastos)}`, color: 'error.main', icon: <LocalAtm /> },
+    { label: 'Caja debería tener', value: formatMoney(reporte.caja_que_deberia), color: 'secondary.main', icon: <Assessment /> },
   ]
 
   return (
@@ -82,7 +83,7 @@ export default function ReportesPage() {
                     <Box key={vd.producto__departamento__nombre} display="flex" justifyContent="space-between" py={0.5}>
                       <Typography variant="body2">{vd.producto__departamento__nombre || 'Sin departamento'}</Typography>
                       <Typography variant="body2" fontWeight={700}>
-                        ${vd.total.toLocaleString('es-CL')}
+                        {formatMoney(vd.total)}
                       </Typography>
                     </Box>
                   ))
@@ -114,7 +115,7 @@ export default function ReportesPage() {
                             </TableCell>
                             <TableCell align="right">
                               <Typography fontWeight={700} color="error.main">
-                                -${parseInt(g.monto).toLocaleString('es-CL')}
+                                -{formatMoney(g.monto)}
                               </Typography>
                             </TableCell>
                           </TableRow>

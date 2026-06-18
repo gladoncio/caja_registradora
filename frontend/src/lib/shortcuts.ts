@@ -19,7 +19,7 @@ export function useKeyboardShortcuts(shortcuts: ShortcutMap, enabled = true) {
       const key = [
         e.ctrlKey ? 'Ctrl' : '',
         e.shiftKey ? 'Shift' : '',
-        e.key.length === 1 ? e.key.toUpperCase() : e.key,
+        e.key && e.key.length === 1 ? e.key.toUpperCase() : e.key || '',
       ]
         .filter(Boolean)
         .join('+')
